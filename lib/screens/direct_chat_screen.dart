@@ -3,6 +3,7 @@ import '../models/direct_message.dart';
 import '../widgets/direct_message_widget.dart';
 import '../utils/file_picker.dart';
 import '../utils/image_picker.dart';
+import '../services/message_service.dart';
 
 class DirectChatScreen extends StatefulWidget {
   @override
@@ -12,43 +13,71 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
   final TextEditingController _textController = TextEditingController();
+  final MessageService _messageService = MessageService(baseUrl: 'http://your_api_base_url_here');
   String _currentUser = "User 1";
 
-  void _handleSubmitted(String text) {
+  void _handleSubmitted(String text) async {
     _textController.clear();
     DirectMessage message = DirectMessage(
+      id: '',
       content: text,
       sender: _currentUser,
       timestamp: DateTime.now(),
       type: MessageType.text,
     );
-    setState(() {
-      _messages.insert(0, message);
-    });
+
+    try {
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
+      if (createdMessage != null) {
+        setState(() {
+          _messages.insert(0, createdMessage);
+        });
+      }
+    } catch (e) {
+      print('Failed to send message: $e');
+    }
   }
 
-  void _sendFile(String filePath) {
+  void _sendFile(String filePath) async {
     DirectMessage message = DirectMessage(
+      id: '',
       content: filePath,
       sender: _currentUser,
       timestamp: DateTime.now(),
       type: MessageType.file,
     );
-    setState(() {
-      _messages.insert(0, message);
-    });
+
+    try {
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
+      if (createdMessage != null) {
+        setState(() {
+          _messages.insert(0, createdMessage);
+        });
+      }
+    } catch (e) {
+      print('Failed to send file: $e');
+    }
   }
 
-  void _sendImage(String imagePath) {
+  void _sendImage(String imagePath) async {
     DirectMessage message = DirectMessage(
+      id: '',
       content: imagePath,
       sender: _currentUser,
       timestamp: DateTime.now(),
       type: MessageType.image,
     );
-    setState(() {
-      _messages.insert(0, message);
-    });
+
+    try {
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
+      if (createdMessage != null) {
+        setState(() {
+          _messages.insert(0, createdMessage);
+        });
+      }
+    } catch (e) {
+      print('Failed to send image: $e');
+    }
   }
 
   Future<void> _pickFile() async {
