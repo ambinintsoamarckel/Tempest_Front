@@ -6,6 +6,8 @@ import '../utils/image_picker.dart';
 import '../services/message_service.dart';
 
 class DirectChatScreen extends StatefulWidget {
+  const DirectChatScreen({super.key});
+
   @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
 }
@@ -102,18 +104,18 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         child: Row(
           children: <Widget>[
             IconButton(
-              icon: Icon(Icons.attach_file),
+              icon: const Icon(Icons.attach_file),
               onPressed: _pickFile,
             ),
             IconButton(
-              icon: Icon(Icons.photo),
+              icon: const Icon(Icons.photo),
               onPressed: _pickImage,
             ),
             Flexible(
               child: TextField(
                 controller: _textController,
                 onSubmitted: _handleSubmitted,
-                decoration: InputDecoration.collapsed(
+                decoration: const InputDecoration.collapsed(
                   hintText: "Envoyer un message",
                 ),
               ),
@@ -121,7 +123,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
-                icon: Icon(Icons.send),
+                icon: const Icon(Icons.send),
                 onPressed: () => _handleSubmitted(_textController.text),
               ),
             ),
@@ -141,10 +143,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Direct Chat'),
+        title: const Text('Direct Chat'),
         actions: [
           IconButton(
-            icon: Icon(Icons.swap_horiz),
+            icon: const Icon(Icons.swap_horiz),
             onPressed: _toggleUser,
           ),
         ],
@@ -153,13 +155,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         children: <Widget>[
           Flexible(
             child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               reverse: true,
               itemBuilder: (_, int index) => DirectMessageWidget(message: _messages[index]),
               itemCount: _messages.length,
             ),
           ),
-          Divider(height: 1.0),
+          const Divider(height: 1.0),
           Container(
             decoration: BoxDecoration(color: Theme.of(context).cardColor),
             child: _buildTextComposer(),

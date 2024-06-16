@@ -5,7 +5,7 @@ import '../models/direct_message.dart';
 class DirectMessageWidget extends StatelessWidget {
   final DirectMessage message;
 
-  DirectMessageWidget({required this.message});
+  const DirectMessageWidget({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class DirectMessageWidget extends StatelessWidget {
       messageContent = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.attach_file),
+          const Icon(Icons.attach_file),
           Text(
             message.content.split('/').last,
             style: TextStyle(

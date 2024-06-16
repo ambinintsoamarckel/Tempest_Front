@@ -4,7 +4,7 @@ import '../models/group_message.dart';
 class GroupMessageWidget extends StatelessWidget {
   final GroupMessage message;
 
-  GroupMessageWidget({required this.message});
+  const GroupMessageWidget({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {

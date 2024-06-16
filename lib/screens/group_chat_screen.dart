@@ -3,6 +3,8 @@ import '../models/group_message.dart';
 import '../widgets/group_message_widget.dart';
 
 class GroupChatScreen extends StatefulWidget {
+  const GroupChatScreen({super.key});
+
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
 }
@@ -35,7 +37,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               child: TextField(
                 controller: _textController,
                 onSubmitted: _handleSubmitted,
-                decoration: InputDecoration.collapsed(
+                decoration: const InputDecoration.collapsed(
                   hintText: "Envoyer un message",
                 ),
               ),
@@ -43,7 +45,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
-                icon: Icon(Icons.send),
+                icon: const Icon(Icons.send),
                 onPressed: () => _handleSubmitted(_textController.text),
               ),
             ),
@@ -63,10 +65,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Group Chat'),
+        title: const Text('Group Chat'),
         actions: [
           IconButton(
-            icon: Icon(Icons.swap_horiz),
+            icon: const Icon(Icons.swap_horiz),
             onPressed: _toggleUser,
           ),
         ],
@@ -75,13 +77,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         children: <Widget>[
           Flexible(
             child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
               reverse: true,
               itemBuilder: (_, int index) => GroupMessageWidget(message: _messages[index]),
               itemCount: _messages.length,
             ),
           ),
-          Divider(height: 1.0),
+          const Divider(height: 1.0),
           Container(
             decoration: BoxDecoration(color: Theme.of(context).cardColor),
             child: _buildTextComposer(),

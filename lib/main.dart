@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import 'screens/direct_chat_screen.dart';
+import 'package:mini_social_network/screens/home_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mini Réseau Social',
+      title: 'Houatsappy',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: DirectChatScreen(),
+      home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
