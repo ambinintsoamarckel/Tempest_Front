@@ -1,29 +1,43 @@
 import 'package:flutter/material.dart';
+import '../models/stories.dart';
+import '../widgets/story_widget.dart';
+import '../services/story_service.dart';
 
-class StoriesScreen extends StatelessWidget {
-  const StoriesScreen({super.key});
+class StoryScreen extends StatefulWidget {
+  const StoryScreen({super.key});
+
+  @override
+  _StoryScreenState createState() => _StoryScreenState();
+}
+
+class _StoryScreenState extends State<StoryScreen> {
+  final List<Story> _stories = [];
+  final StoryService _storyService = StoryService(baseUrl: 'http://your_api_base_url_here');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStories();
+  }
+
+  Future<void> _loadStories() async {
+    try {
+      // Load stories from API and set state
+    } catch (e) {
+      print('Failed to load stories: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: 10, // Remplacez par le nombre réel de stories
-      itemBuilder: (context, index) {
-        return Container(
-          width: 100,
-          margin: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              const CircleAvatar(
-                radius: 30,
-                child: Icon(Icons.person),
-              ),
-              const SizedBox(height: 8),
-              Text('Story ${index + 1}'), // Remplacez par le nom de la story
-            ],
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: const Text('Stories')),
+      body: ListView.builder(
+        itemCount: _stories.length,
+        itemBuilder: (context, index) {
+          return StoryWidget(story: _stories[index]);
+        },
+      ),
     );
   }
 }
