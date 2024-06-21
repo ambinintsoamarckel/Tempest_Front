@@ -53,12 +53,13 @@ class ContactService {
     }
   }
 
-  Future<List<Contact>> fetchContacts() async {
+  Future<List<Contact>> getContacts() async {
     final response = await http.get(Uri.parse('$baseUrl/contacts'));
 
     if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Contact.fromJson(json)).toList();
+      List<dynamic> body = jsonDecode(response.body);
+      List<Contact> contacts = body.map((dynamic item) => Contact.fromJson(item)).toList();
+      return contacts;
     } else {
       throw Exception('Failed to load contacts');
     }

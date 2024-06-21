@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: _isOnline ? const Text('Houatsappy') : const Text('Offline'),
+          title: _isOnline ? const Text('HOUATSAPPY') : const Text('Offline'),
           actions: _isOnline
               ? [
             if (_tabController.index == 1)
@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         body: _isOnline
             ? TabBarView(
           controller: _tabController,
-          children: [
+          children: const [
             ContactScreen(),
             ConversationListScreen(),
             StoryScreen(),

@@ -12,7 +12,7 @@ class ContactScreen extends StatefulWidget {
 
 class _ContactScreenState extends State<ContactScreen> {
   final List<Contact> _contacts = [];
-  final List<Contact> _filteredContacts = [];
+  List<Contact> _filteredContacts = [];
   final ContactService _contactService = ContactService(baseUrl: 'http://your_api_base_url_here');
   final TextEditingController _searchController = TextEditingController();
 
@@ -20,43 +20,36 @@ class _ContactScreenState extends State<ContactScreen> {
   void initState() {
     super.initState();
     _loadContacts();
-    _searchController.addListener(_filterContacts);
   }
 
   Future<void> _loadContacts() async {
     try {
-      final contacts = await _contactService.fetchContacts();
+      // Replace with actual contact loading logic
+      List<Contact> contacts = await _contactService.getContacts();
       setState(() {
         _contacts.addAll(contacts);
-        _filteredContacts.addAll(contacts);
+        _filteredContacts = contacts;
       });
     } catch (e) {
       print('Failed to load contacts: $e');
     }
   }
 
-  void _filterContacts() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredContacts.clear();
-      _filteredContacts.addAll(_contacts.where((contact) {
-        return contact.name.toLowerCase().contains(query) ||
-            contact.phoneNumber.contains(query);
-      }).toList());
-    });
-  }
+  void _filterContacts(String query) {
+    List<Contact> filtered = _contacts.where((contact) {
+      return contact.name.toLowerCase().contains(query.toLowerCase()) ||
+          contact.id.contains(query);
+    }).toList();
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+    setState(() {
+      _filteredContacts = filtered;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contacts'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: Padding(
@@ -65,9 +58,9 @@ class _ContactScreenState extends State<ContactScreen> {
               controller: _searchController,
               decoration: const InputDecoration(
                 hintText: 'Rechercher',
-                prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
+              onChanged: _filterContacts,
             ),
           ),
         ),

@@ -12,7 +12,7 @@ class ConversationListScreen extends StatefulWidget {
 
 class _ConversationListScreenState extends State<ConversationListScreen> {
   final List<Conversation> _conversations = [];
-  final ConversationService _conversationService = ConversationService(baseUrl: 'http://your_api_base_url_here');
+  final MessageService _messageService = MessageService();
 
   @override
   void initState() {
@@ -22,9 +22,14 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   Future<void> _loadConversations() async {
     try {
-      List<Conversation> conversations = await _conversationService.getConversations();
+      // Load conversations with contact or group
+      // Example usage with a contact ID and a group ID, replace with your own logic
+      List<Conversation> contactConversations = await _messageService.getConversationsWithContact('contactId');
+      List<Conversation> groupConversations = await _messageService.getConversationsWithGroup('groupId');
+
       setState(() {
-        _conversations.addAll(conversations);
+        _conversations.addAll(contactConversations);
+        _conversations.addAll(groupConversations);
       });
     } catch (e) {
       print('Failed to load conversations: $e');
@@ -34,7 +39,6 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Conversations')),
       body: ListView.builder(
         itemCount: _conversations.length,
         itemBuilder: (context, index) {

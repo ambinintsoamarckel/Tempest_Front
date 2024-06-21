@@ -1,0 +1,6 @@
+enum MessageType {
+  text,
+  file,
+  image,
+  audio, // Ajouter cette ligne si elle n'est pas déjà présente
+}
