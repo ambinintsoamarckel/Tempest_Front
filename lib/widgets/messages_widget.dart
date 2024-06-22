@@ -47,7 +47,7 @@ class ConversationWidget extends StatelessWidget {
       ),
       onTap: () {
         // Navigate to the correct chat screen based on conversation type
-        if (conversation.isGroup) {
+        /*if (conversation.isGroup) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => GroupChatScreen(conversation: conversation)),
@@ -57,7 +57,7 @@ class ConversationWidget extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => DirectChatScreen(conversation: conversation)),
           );
-        }
+        }*/
       },
       onLongPress: () => _showOptions(context),
     );

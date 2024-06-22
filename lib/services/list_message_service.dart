@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/messages.dart';
 
 class MessageService {
-  final String baseUrl = 'http://mahm.tempest.dov';
+  final String baseUrl = 'http://mahm.tempest.dov:3000';
   final storage = FlutterSecureStorage();
 
   Future<List<Conversation>> getConversationsWithContact(String userId) async {
