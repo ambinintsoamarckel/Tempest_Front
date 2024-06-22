@@ -22,10 +22,9 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   Future<void> _loadConversations() async {
     try {
-      // Load conversations with contact or group
-      // Example usage with a contact ID and a group ID, replace with your own logic
-      List<Conversation> contactConversations = await _messageService.getConversationsWithContact('contactId');
-      List<Conversation> groupConversations = await _messageService.getConversationsWithGroup('groupId');
+
+      List<Conversation> contactConversations = await _messageService.getConversationsWithContact('userId');
+      List<Conversation> groupConversations = await _messageService.getConversationsWithGroup('userId');
 
       setState(() {
         _conversations.addAll(contactConversations);
@@ -39,6 +38,9 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Conversations'),
+      ),
       body: ListView.builder(
         itemCount: _conversations.length,
         itemBuilder: (context, index) {

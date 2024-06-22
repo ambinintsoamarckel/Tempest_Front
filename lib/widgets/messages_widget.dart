@@ -20,6 +20,7 @@ class ConversationWidget extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 // Logique pour archiver la conversation
+
               },
             ),
             ListTile(
@@ -27,7 +28,6 @@ class ConversationWidget extends StatelessWidget {
               title: const Text('Supprimer la conversation'),
               onTap: () {
                 Navigator.pop(context);
-                // Logique pour supprimer la conversation
               },
             ),
           ],
@@ -50,12 +50,12 @@ class ConversationWidget extends StatelessWidget {
         if (conversation.isGroup) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const GroupChatScreen()),
+            MaterialPageRoute(builder: (context) => GroupChatScreen(conversation: conversation)),
           );
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const DirectChatScreen()),
+            MaterialPageRoute(builder: (context) => DirectChatScreen(conversation: conversation)),
           );
         }
       },

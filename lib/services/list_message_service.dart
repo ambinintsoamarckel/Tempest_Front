@@ -7,23 +7,40 @@ class MessageService {
   final String baseUrl = 'http://mahm.tempest.dov';
   final storage = FlutterSecureStorage();
 
-  Future<List<Conversation>> getConversationsWithContact(String contactId) async {
-    final response = await http.get(Uri.parse('$baseUrl/messages/personne/$contactId'));
+  Future<List<Conversation>> getConversationsWithContact(String userId) async {
+    final response = await http.get(Uri.parse('$baseUrl/dernierConversation'));
 
     if (response.statusCode == 200) {
       List<dynamic> body = json.decode(response.body);
-      return body.map((dynamic item) => Conversation.fromJson(item)).toList();
+      List<Conversation> conversations = [];
+
+      for (var conv in body) {
+        if (!conv['isGroup']) {
+          conversations.add(Conversation.fromJson(conv));
+        }
+      }
+      return conversations;
+
     } else {
       throw Exception('Failed to load conversations with contact');
     }
   }
 
-  Future<List<Conversation>> getConversationsWithGroup(String groupId) async {
-    final response = await http.get(Uri.parse('$baseUrl/messages/groupe/$groupId'));
+
+  Future<List<Conversation>> getConversationsWithGroup(String userId) async {
+    final response = await http.get(Uri.parse('$baseUrl/dernierConversation'));
 
     if (response.statusCode == 200) {
       List<dynamic> body = json.decode(response.body);
-      return body.map((dynamic item) => Conversation.fromJson(item)).toList();
+      List<Conversation> conversations = [];
+
+      for (var conv in body) {
+        if (conv['isGroup']) {
+          conversations.add(Conversation.fromJson(conv));
+        }
+      }
+      return conversations;
+
     } else {
       throw Exception('Failed to load conversations with group');
     }
