@@ -53,57 +53,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: _isOnline ? const Text('HOUATSAPPY') : const Text('Offline'),
+          title: _isOnline
+              ? const Text('HOUATSAPPY')
+              : const Text('Offline'),
           actions: _isOnline
               ? [
-            if (_tabController.index == 1)
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () {
-                  showSearch(context: context, delegate: CustomSearchDelegate());
-                },
-              ),
-            if (_tabController.index == 2)
-              IconButton(
-                icon: const Icon(Icons.camera_alt),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CameraScreen()),
-                  );
-                },
-              ),
-            IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AccountScreen()),
-                );
-              },
-            ),
-          ]
+                  if (_tabController.index == 1)
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () {
+                        showSearch(context: context, delegate: CustomSearchDelegate());
+                      },
+                    ),
+                  if (_tabController.index == 2)
+                    IconButton(
+                      icon: const Icon(Icons.camera_alt),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CameraScreen()),
+                        );
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AccountScreen()),
+                      );
+                    },
+                  ),
+                ]
               : null,
           bottom: _isOnline
               ? TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.contacts), text: 'Contacts'),
-              Tab(icon: Icon(Icons.message), text: 'Messages'),
-              Tab(icon: Icon(Icons.photo), text: 'Stories'),
-            ],
-          )
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(icon: Icon(Icons.contacts), text: 'Contacts'),
+                    Tab(icon: Icon(Icons.message), text: 'Messages'),
+                    Tab(icon: Icon(Icons.photo), text: 'Stories'),
+                  ],
+                )
               : null,
         ),
         body: _isOnline
             ? TabBarView(
-          controller: _tabController,
-          children: const [
-            ContactScreen(),
-            ConversationListScreen(),
-            StoryScreen(),
-          ],
-        )
+                controller: _tabController,
+                children: const [
+                  ContactScreen(),
+                  ConversationListScreen(),
+                  StoryScreen(),
+                ],
+              )
             : const Center(child: Text('No internet connection')),
         floatingActionButton: _isOnline ? _buildFloatingActionButton() : null,
       ),
@@ -194,3 +196,4 @@ class CameraScreen extends StatelessWidget {
     );
   }
 }
+

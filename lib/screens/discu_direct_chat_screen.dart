@@ -17,11 +17,17 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
   final TextEditingController _textController = TextEditingController();
-  final MessageService _messageService =
-  MessageService(baseUrl: 'http://mahm.tempest.dov:3000');
-  String _currentUser = "User 1";
-  List<DirectMessage> _messagesTransferred = []; // Added for transfer
-  List<DirectMessage> _messagesSaved = []; // Added for save
+  final MessageService _messageService = MessageService(baseUrl: 'http://mahm.tempest.dov:3000');
+  late String _currentUser; // Variable pour le nom de l'utilisateur actuel
+  late String _otherUser; // Variable pour le nom de l'autre utilisateur
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialisation des noms d'utilisateurs (à ajuster selon votre logique)
+    _currentUser = "User A";
+    _otherUser = "User B";
+  }
 
   // Méthode pour vérifier et demander les permissions de la caméra et du stockage
   Future<bool> _requestPermissions() async {
@@ -30,8 +36,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       Permission.storage,
     ];
 
-    Map<Permission, PermissionStatus> permissionStatus =
-    await permissions.request();
+    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
 
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
@@ -45,8 +50,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       return;
     }
 
-    final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       _sendImage(pickedImage.path);
     }
@@ -60,8 +64,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       return;
     }
 
-    final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.camera);
+    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
       _sendImage(pickedImage.path);
     }
@@ -78,8 +81,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -102,8 +104,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -117,7 +118,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   // Méthode pour basculer entre les utilisateurs
   void _toggleUser() {
     setState(() {
-      _currentUser = _currentUser == "User 1" ? "User 2" : "User 1";
+      String temp = _currentUser;
+      _currentUser = _otherUser;
+      _otherUser = temp;
     });
   }
 
@@ -125,7 +128,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Direct Chat'),
+        title: Text('Direct Chat ($_currentUser)'),
         actions: [
           IconButton(
             icon: Icon(Icons.swap_horiz),
@@ -167,10 +170,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Row(
           children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.attach_file),
-              onPressed: _pickFile,
-            ),
             IconButton(
               icon: Icon(Icons.photo_camera),
               onPressed: _takePhoto,
@@ -215,7 +214,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   void _transferMessage(String messageId) {
     print('Transférer le message: $messageId');
     DirectMessage messageToTransfer = _messages.firstWhere(
-          (message) => message.id == messageId,
+      (message) => message.id == messageId,
       orElse: () => DirectMessage(
         id: '',
         content: '',
@@ -268,8 +267,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -280,3 +278,4 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 }
+

@@ -4,30 +4,31 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
-import '../models/discu_group_message.dart'; // Changed to GroupMessage
-import '../widgets/discu_group_message_widget.dart'; // Changed to GroupMessageWidget
+import '../models/discu_group_message.dart';
+import '../widgets/discu_group_message_widget.dart';
 import '../utils/discu_file_picker.dart';
-import '../services/discu_group_chat_service.dart'; // Changed to GroupChatService
+import '../services/discu_group_chat_service.dart';
 
 class GroupChatScreen extends StatefulWidget {
-  final String groupId; // Add groupId
+  final String groupId;
 
-  GroupChatScreen({required this.groupId}); // Update constructor
+  GroupChatScreen({required this.groupId});
 
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
-  final List<GroupMessage> _messages = []; // Changed to GroupMessage
+  final List<GroupMessage> _messages = [];
   final TextEditingController _textController = TextEditingController();
   final GroupChatService _messageService =
-  GroupChatService(baseUrl: 'http://mahm.tempest.dov:3000'); // Changed to GroupChatService
+      GroupChatService(baseUrl: 'http://mahm.tempest.dov:3000');
   String _currentUser = "User 1";
-  List<GroupMessage> _messagesTransferred = []; // Added for transfer
-  List<GroupMessage> _messagesSaved = []; // Added for save
+  String _currentRecipient = "User 2"; // Initial recipient
+  List<GroupMessage> _messagesTransferred = [];
+  List<GroupMessage> _messagesSaved = [];
 
-  // Méthode pour vérifier et demander les permissions de la caméra et du stockage
+  // Method to request camera and storage permissions
   Future<bool> _requestPermissions() async {
     final List<Permission> permissions = [
       Permission.camera,
@@ -35,56 +36,57 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     ];
 
     Map<Permission, PermissionStatus> permissionStatus =
-    await permissions.request();
+        await permissions.request();
 
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
-  // Méthode pour choisir une image depuis la galerie
+  // Method to pick an image from gallery
   Future<void> _pickImage() async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions non accordées');
+      print('Permissions not granted');
       return;
     }
 
     final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       _sendImage(pickedImage.path);
     }
   }
 
-  // Méthode pour prendre une photo à partir de l'appareil photo
+  // Method to take a photo from camera
   Future<void> _takePhoto() async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions non accordées');
+      print('Permissions not granted');
       return;
     }
 
     final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.camera);
+        await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
       _sendImage(pickedImage.path);
     }
   }
 
-  // Méthode pour envoyer une image
+  // Method to send an image
   void _sendImage(String imagePath) async {
     GroupMessage message = GroupMessage(
       id: '',
       content: imagePath,
       sender: _currentUser,
-      groupId: widget.groupId, // Added groupId
+      recipient: _currentRecipient,
+      groupId: widget.groupId,
       timestamp: DateTime.now(),
       type: MessageType.image,
     );
 
     try {
       GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson()); // Changed to createGroupMessage
+          await _messageService.createGroupMessage(widget.groupId, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -95,21 +97,22 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  // Méthode pour gérer l'envoi de messages texte
+  // Method to handle submission of text messages
   void _handleSubmitted(String text) async {
     _textController.clear();
     GroupMessage message = GroupMessage(
       id: '',
       content: text,
       sender: _currentUser,
-      groupId: widget.groupId, // Added groupId
+      recipient: _currentRecipient,
+      groupId: widget.groupId,
       timestamp: DateTime.now(),
       type: MessageType.text,
     );
 
     try {
       GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson()); // Changed to createGroupMessage
+          await _messageService.createGroupMessage(widget.groupId, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -120,10 +123,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  // Méthode pour basculer entre les utilisateurs
+  // Method to toggle between users
   void _toggleUser() {
     setState(() {
-      _currentUser = _currentUser == "User 1" ? "User 2" : "User 1";
+      String temp = _currentUser;
+      _currentUser = _currentRecipient;
+      _currentRecipient = temp;
     });
   }
 
@@ -131,7 +136,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Group Chat'), // Changed title
+        title: Text('Group Chat'),
         actions: [
           IconButton(
             icon: Icon(Icons.swap_horiz),
@@ -145,7 +150,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             child: ListView.builder(
               padding: EdgeInsets.all(8.0),
               reverse: true,
-              itemBuilder: (_, int index) => GroupMessageWidget( // Changed to GroupMessageWidget
+              itemBuilder: (_, int index) => GroupMessageWidget(
                 message: _messages[index],
                 onDelete: _deleteMessage,
                 onTransfer: _transferMessage,
@@ -165,7 +170,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  // Widget pour composer et envoyer des messages
+  // Widget to compose and send messages
   Widget _buildTextComposer() {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
@@ -190,7 +195,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 controller: _textController,
                 onSubmitted: _handleSubmitted,
                 decoration: InputDecoration.collapsed(
-                  hintText: "Envoyer un message",
+                  hintText: "Send a message",
                 ),
               ),
             ),
@@ -207,25 +212,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  // Méthodes pour gérer les messages
+  // Methods to handle messages
   void _deleteMessage(String messageId) {
     setState(() {
       _messages.removeWhere((message) => message.id == messageId);
     });
 
-    _messageService.deleteGroupMessage(widget.groupId, messageId).catchError((e) { // Changed to deleteGroupMessage
+    _messageService.deleteGroupMessage(widget.groupId, messageId).catchError((e) {
       print('Failed to delete message: $e');
     });
   }
 
   void _transferMessage(String messageId) {
-    print('Transférer le message: $messageId');
+    print('Transfer message: $messageId');
     GroupMessage messageToTransfer = _messages.firstWhere(
-          (message) => message.id == messageId,
+      (message) => message.id == messageId,
       orElse: () => GroupMessage(
         id: '',
         content: '',
         sender: '',
+        recipient: '',
         groupId: widget.groupId,
         timestamp: DateTime.now(),
         type: MessageType.text,
@@ -256,7 +262,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  // Méthodes pour choisir un fichier à partir du stockage local
+  // Methods to pick a file from local storage
   Future<void> _pickFile() async {
     String? filePath = await FilePickerUtil.pickFile();
     if (filePath != null) {
@@ -264,20 +270,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  // Méthode pour envoyer un fichier
+  // Method to send a file
   void _sendFile(String filePath) async {
     GroupMessage message = GroupMessage(
       id: '',
       content: filePath,
       sender: _currentUser,
-      groupId: widget.groupId, // Added groupId
+      recipient: _currentRecipient,
+      groupId: widget.groupId,
       timestamp: DateTime.now(),
       type: MessageType.file,
     );
 
     try {
       GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson()); // Changed to createGroupMessage
+          await _messageService.createGroupMessage(widget.groupId, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -288,3 +295,4 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 }
+
