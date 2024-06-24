@@ -7,7 +7,6 @@ final storage = FlutterSecureStorage();
 Dio getClient() {
  final dio = Dio()
     ..httpClientAdapter = BrowserHttpClientAdapter()
-    ..options.extra['withCredentials'] = true // Assurez-vous que les cookies sont envoyés avec les requêtes
     ..interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         print('Request on Web Platform');
