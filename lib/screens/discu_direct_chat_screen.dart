@@ -1,4 +1,4 @@
-import 'dart:io';
+/*import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -277,5 +277,5 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       print('Failed to send file: $e');
     }
   }
-}
+}*/
 
