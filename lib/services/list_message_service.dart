@@ -1,17 +1,17 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dio/dio.dart';
 import '../models/messages.dart';
+import '../network/network_config.dart';
 
 class MessageService {
+  final Dio dio = NetworkConfig().client;
   final String baseUrl = 'http://mahm.tempest.dov:3000';
-  final storage = FlutterSecureStorage();
 
   Future<List<Conversation>> getConversationsWithContact(String userId) async {
-    final response = await http.get(Uri.parse('$baseUrl/dernierConversation'));
+    final response = await dio.get('$baseUrl/dernierConversation');
 
     if (response.statusCode == 200) {
-      List<dynamic> body = json.decode(response.body);
+      List<dynamic> body = response.data;
       List<Conversation> conversations = [];
 
       for (var conv in body) {
@@ -20,18 +20,16 @@ class MessageService {
         }
       }
       return conversations;
-
     } else {
       throw Exception('Failed to load conversations with contact');
     }
   }
 
-
   Future<List<Conversation>> getConversationsWithGroup(String userId) async {
-    final response = await http.get(Uri.parse('$baseUrl/dernierConversation'));
+    final response = await dio.get('$baseUrl/dernierConversation');
 
     if (response.statusCode == 200) {
-      List<dynamic> body = json.decode(response.body);
+      List<dynamic> body = response.data;
       List<Conversation> conversations = [];
 
       for (var conv in body) {
@@ -40,19 +38,20 @@ class MessageService {
         }
       }
       return conversations;
-
     } else {
       throw Exception('Failed to load conversations with group');
     }
   }
 
   Future<void> sendMessageToContact(String contactId, Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/messages/personne/$contactId'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(data),
+    final response = await dio.post(
+      '$baseUrl/messages/personne/$contactId',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+      data: jsonEncode(data),
     );
 
     if (response.statusCode != 201) {
@@ -61,12 +60,14 @@ class MessageService {
   }
 
   Future<void> sendMessageToGroup(String groupId, Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/messages/groupe/$groupId'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(data),
+    final response = await dio.post(
+      '$baseUrl/messages/groupe/$groupId',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+      data: jsonEncode(data),
     );
 
     if (response.statusCode != 201) {
@@ -75,11 +76,13 @@ class MessageService {
   }
 
   Future<void> transferMessageToContact(String contactId, String messageId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/messages/personne/$contactId/$messageId'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
+    final response = await dio.post(
+      '$baseUrl/messages/personne/$contactId/$messageId',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
     );
 
     if (response.statusCode != 200) {
@@ -88,11 +91,13 @@ class MessageService {
   }
 
   Future<void> transferMessageToGroup(String groupId, String messageId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/messages/groupe/$groupId/$messageId'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
+    final response = await dio.post(
+      '$baseUrl/messages/groupe/$groupId/$messageId',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
     );
 
     if (response.statusCode != 200) {
@@ -101,11 +106,13 @@ class MessageService {
   }
 
   Future<void> deleteMessage(String messageId) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/messages/$messageId'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
+    final response = await dio.delete(
+      '$baseUrl/messages/$messageId',
+      options: Options(
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
     );
 
     if (response.statusCode != 200) {
