@@ -3,10 +3,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../network/network_config.dart';
+import '../socket/socket_service.dart';
 
 class UserService {
   final storage = FlutterSecureStorage();
   final Dio dio = NetworkConfig().client;
+  final socketService = SocketService();
 
   Future<UserModel?> createUserWithEmailAndPassword(String email, String password, String name, String photoUrl) async {
     final response = await dio.post(
@@ -20,7 +22,7 @@ class UserService {
     );
 
     if (response.statusCode == 201) {
-      final data = response.data;
+      final data = response.data['user'];
       final user = UserModel.fromJson(data);
       await storage.write(key: 'user', value: jsonEncode(user.toJson()));
       return user;
@@ -40,9 +42,10 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final data = response.data['user'];
         final user = UserModel.fromJson(data);
-        await storage.write(key: 'user', value: jsonEncode(user.toJson()));
+        print('user ${user.name} ${user.email} ${user.uid} ${user.photoUrl}');
+        socketService.initializeSocket(user.uid);
         return user;
       } else {
         throw Exception('Erreur lors de la connexion');
