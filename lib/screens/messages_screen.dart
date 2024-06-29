@@ -22,11 +22,13 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   Future<void> _loadConversations() async {
     try {
-      List<Conversation> contactConversations = await _messageService.getConversationsWithContact('userId');
+      List<Conversation> contactConversations = await _messageService.getConversationsWithContact();
+
 
       setState(() {
         _conversations.addAll(contactConversations);
       });
+           
     } catch (e) {
       print('Failed to load conversations: $e');
     }
