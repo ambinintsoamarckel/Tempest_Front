@@ -9,7 +9,7 @@ class SocketService {
   final storage = FlutterSecureStorage();
 
   void initializeSocket(id) {
-    socket = IO.io('http://localhost:3000', <String, dynamic>{
+    socket = IO.io('http://mahm.tempest.dov:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

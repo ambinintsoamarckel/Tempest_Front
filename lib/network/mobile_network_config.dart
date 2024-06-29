@@ -8,11 +8,15 @@ Dio getClient() {
   return Dio()
     ..interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        print('object ${options.path} ${options.baseUrl} ');
         print('plateforme android');
+
         String? cookie = await storage.read(key: 'authCookie');
-        if (cookie != null) {
+
+        if (options.path != '/login' && cookie != null) {
           options.headers['Cookie'] = cookie;
         }
+        print('plateforme android236');
         return handler.next(options);
       },
       onResponse: (response, handler) async {

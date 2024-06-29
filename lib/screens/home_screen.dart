@@ -101,8 +101,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ? TabBarView(
                 controller: _tabController,
                 children: const [
-                  ContactScreen(),
                   ConversationListScreen(),
+                  ContactScreen(),
                   StoryScreen(),
                 ],
               )

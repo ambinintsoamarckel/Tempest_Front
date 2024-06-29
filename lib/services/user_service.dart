@@ -46,13 +46,13 @@ class UserService {
         final data = response.data['user'];
         final user = UserModel.fromJson(data);
         await storage.write(key: 'user', value: jsonEncode(user.uid));
-        socketService.initializeSocket(user.uid);
+        //socketService.initializeSocket(user.uid);
         return user;
       } else {
         throw Exception('Erreur lors de la connexion');
       }
     } catch (e) {
-      throw Exception('Erreur lors de la connexion');
+      throw Exception('Erreur lors de la connexion $e');
     }
   }
 
