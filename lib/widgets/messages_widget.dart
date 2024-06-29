@@ -20,7 +20,6 @@ class ConversationWidget extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 // Logique pour archiver la conversation
-
               },
             ),
             ListTile(
@@ -39,15 +38,21 @@ class ConversationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(conversation.name),
-      subtitle: Text(conversation.lastMessage),
+      leading: CircleAvatar(
+        backgroundImage: conversation.contact.photo != null 
+          ? NetworkImage(conversation.contact.photo!)
+          : null,
+        child: conversation.contact.photo == null ? const Icon(Icons.person) : null,
+      ),
+      title: Text(conversation.contact.nom),
+      subtitle: Text(conversation.dernierMessage.contenu.texte),
       trailing: Text(
-        conversation.timestamp.toLocal().toString(),
+        conversation.dernierMessage.dateEnvoi.toLocal().toString(),
         style: const TextStyle(color: Colors.grey, fontSize: 12),
       ),
       onTap: () {
         // Navigate to the correct chat screen based on conversation type
-        /*if (conversation.isGroup) {
+        /* if (conversation.contact.type == "groupe") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => GroupChatScreen(conversation: conversation)),
@@ -57,7 +62,7 @@ class ConversationWidget extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => DirectChatScreen(conversation: conversation)),
           );
-        }*/
+        } */
       },
       onLongPress: () => _showOptions(context),
     );

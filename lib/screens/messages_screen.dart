@@ -22,13 +22,10 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
 
   Future<void> _loadConversations() async {
     try {
-
       List<Conversation> contactConversations = await _messageService.getConversationsWithContact('userId');
-      List<Conversation> groupConversations = await _messageService.getConversationsWithGroup('userId');
 
       setState(() {
         _conversations.addAll(contactConversations);
-        _conversations.addAll(groupConversations);
       });
     } catch (e) {
       print('Failed to load conversations: $e');
@@ -39,7 +36,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Conversations'),
+        
       ),
       body: ListView.builder(
         itemCount: _conversations.length,

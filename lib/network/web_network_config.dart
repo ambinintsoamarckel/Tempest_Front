@@ -13,7 +13,6 @@ Dio getClient() {
         String? cookie = await storage.read(key: 'authCookie');
       if (options.path != '/login' && cookie != null) {
           options.headers['Authorization'] = 'Bearer $cookie'; // Utiliser un en-tête personnalisé
-          print('mandeha cookie $cookie');
         }
         return handler.next(options);
       },
