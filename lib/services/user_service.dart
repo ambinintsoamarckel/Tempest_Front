@@ -24,6 +24,7 @@ class UserService {
     if (response.statusCode == 201) {
       final data = response.data['user'];
       final user = UserModel.fromJson(data);
+      
       await storage.write(key: 'user', value: jsonEncode(user.toJson()));
       return user;
     } else {
@@ -44,7 +45,7 @@ class UserService {
       if (response.statusCode == 200) {
         final data = response.data['user'];
         final user = UserModel.fromJson(data);
-        print('user ${user.name} ${user.email} ${user.uid} ${user.photoUrl}');
+        await storage.write(key: 'user', value: jsonEncode(user.uid));
         socketService.initializeSocket(user.uid);
         return user;
       } else {
