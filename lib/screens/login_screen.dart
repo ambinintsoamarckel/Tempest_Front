@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(),
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(16.0),
@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Adding a logo or image
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
-                child: Image.asset('assets/logo.png', height: 100),
+                child: Image.asset('assets/Houatsappy_transparent.png', height: 150),
               ),
               Text(
                 'Welcome Back!',
