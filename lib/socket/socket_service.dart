@@ -35,6 +35,21 @@ class SocketService {
       }
     });
 
+    socket!.on('message_lu_personne', (expediteur) async {
+      String? user = await storage.read(key: 'user');
+      if (user != null) {
+        // Enlever les guillemets supplémentaires
+        user = user.replaceAll('"', '');
+        if (user.trim() == expediteur.toString().trim()) {
+          print('Matched!');
+        } else {
+          print('Not matched');
+        }
+      } else {
+        print('User is null');
+      }
+    });
+
 
     socket!.on('message_envoye_groupe', (groupMembers) async {
       print('Membres du groupe reçus: $groupMembers');
@@ -56,6 +71,29 @@ class SocketService {
         print('Utilisateur est null');
       }
     });
+
+    socket!.on('message_lu_groupe', (groupMembers) async {
+      print('Membres du groupe reçus: $groupMembers');
+
+      String? user = await storage.read(key: 'user');
+      if (user != null) {
+        // Supprimer les guillemets supplémentaires si nécessaire
+        user = user.replaceAll('"', '').trim();
+        bool isMember = groupMembers.contains(user);
+
+        if (isMember) {
+          print('Utilisateur est membre du groupe');
+          // Effectuer l'action spécifique si l'utilisateur est membre du groupe
+        } else {
+          print('Utilisateur n\'est pas membre du groupe');
+          // Effectuer une autre action si nécessaire
+        }
+      } else {
+        print('Utilisateur est null');
+      }
+    });
+
+
 
         socket!.on('utilisateur_cree', (message) {
       print('eto ary $message');
@@ -97,11 +135,24 @@ class SocketService {
       // Handle user disconnected
       //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('story_vue', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
+    
+      socket!.on('story_vue', (viewers) async {
+
+      String? user = await storage.read(key: 'user');
+      if (user != null) {
+        // Enlever les guillemets supplémentaires
+        user = user.replaceAll('"', '');
+        if (user.trim() == viewers.toString().trim()) {
+          print('Matched!');
+        } else {
+          print('Not matched');
+        }
+      } else {
+        print('User is null');
+      }
+
     });
+
       socket!.on('groupe_supprime', (message) {
       print('eto ary $message');
       // Handle user disconnected
