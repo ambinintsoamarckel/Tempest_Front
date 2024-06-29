@@ -1,4 +1,4 @@
-/*import 'dart:io';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ImagePickerUtil {
@@ -12,4 +12,4 @@ class ImagePickerUtil {
       return null;
     }
   }
-}*/
+}

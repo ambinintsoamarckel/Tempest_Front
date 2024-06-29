@@ -18,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
     UserModel? user = await _userService.signInWithEmailAndPassword(email, password);
     if (user != null) {
       // Navigate to the main screen or home screen
-      Navigator.pushReplacementNamed(context, '/home', arguments: user);
+      Navigator.pushReplacementNamed(context, '/direct_chat', arguments: user);
     } else {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(title: Text('Login')),
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(16.0),
@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Adding a logo or image
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
-                child: Image.asset('assets/Houatsappy_transparent.png', height: 150),
+                child: Image.asset('assets/logo.png', height: 100),
               ),
               Text(
                 'Welcome Back!',

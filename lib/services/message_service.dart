@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import '../models/direct_message.dart';
 
 class MessageService {
-  final String baseUrl = "http://mahm.tempest.dov:3000";
+  final String baseUrl;
 
+  MessageService({required this.baseUrl});
 
   Future<DirectMessage?> createMessage(Map<String, dynamic> messageData) async {
     final response = await http.post(
