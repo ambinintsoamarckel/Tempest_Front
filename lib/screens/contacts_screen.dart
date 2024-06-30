@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
-/* import '../screens/chat_screen.dart'; // Importer l'écran de discussion
-import '../screens/create_group_screen.dart'; // Importer l'écran de création de groupe
-import '../screens/view_story_screen.dart'; / */
 
 class ContactScreen extends StatefulWidget {
   const ContactScreen({Key? key}) : super(key: key);
@@ -15,15 +12,14 @@ class ContactScreen extends StatefulWidget {
 
 class _ContactScreenState extends State<ContactScreen> {
   final ContactService _contactService = ContactService();
-  late List<Contact> _contacts;
-  late List<Contact> _filteredContacts;
+  late List<Contact> _contacts = [];
+  late List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadContacts();
-    _filteredContacts = [];
   }
 
   Future<void> _loadContacts() async {
@@ -31,11 +27,10 @@ class _ContactScreenState extends State<ContactScreen> {
       List<Contact> contacts = await _contactService.getContacts();
       setState(() {
         _contacts = contacts;
-        _filteredContacts = contacts; // Initialize filtered contacts with all contacts
+        _filteredContacts = contacts;
       });
     } catch (e) {
       print('Failed to load contacts: $e');
-      // Handle error gracefully
     }
   }
 
@@ -112,31 +107,41 @@ class _ContactScreenState extends State<ContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.6,
-              child: TextField(
-                controller: _searchController,
-                onChanged: _filterContacts,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher...',
-                  border: InputBorder.none,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterContacts,
+              decoration: InputDecoration(
+                hintText: 'Rechercher...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide.none,
                 ),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
           ),
-        ],
+        ),
       ),
-      body: _filteredContacts != null
+      body: _filteredContacts.isNotEmpty
           ? ListView.builder(
               itemCount: _filteredContacts.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () => _navigateToChat(_filteredContacts[index]),
                   onLongPress: () => _showOptions(_filteredContacts[index]),
-                  child: ContactWidget(contact: _filteredContacts[index]),
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    child: Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: ContactWidget(contact: _filteredContacts[index]),
+                    ),
+                  ),
                 );
               },
             )
