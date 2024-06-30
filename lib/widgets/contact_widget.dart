@@ -4,44 +4,17 @@ import '../models/contact.dart';
 class ContactWidget extends StatelessWidget {
   final Contact contact;
 
-  const ContactWidget({super.key, required this.contact});
-
-  void _showOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: const Text('Créer une discussion avec'),
-              onTap: () {
-                Navigator.pop(context);
-                // Logique pour créer une discussion
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.group_add),
-              title: const Text('Créer un groupe avec'),
-              onTap: () {
-                Navigator.pop(context);
-                // Logique pour créer un groupe
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  const ContactWidget({Key? key, required this.contact}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundImage: NetworkImage(contact.avatarUrl),
+        backgroundImage: contact.avatarUrl != null
+            ? NetworkImage(contact.avatarUrl!)
+            : AssetImage('avatar.png'),
       ),
       title: Text(contact.name),
-      onTap: () => _showOptions(context),
     );
   }
 }
