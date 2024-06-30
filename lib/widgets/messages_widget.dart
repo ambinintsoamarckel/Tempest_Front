@@ -120,17 +120,17 @@ class ConversationWidget extends StatelessWidget {
   }
 
   void _navigateToChatScreen(BuildContext context) {
-/*     if (conversation.contact.type == "groupe") {
+    if (conversation.contact.type == "groupe") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => GroupChatScreen(conversation: conversation)),
+        MaterialPageRoute(builder: (context) => GroupChatScreen(groupId: conversation.contact.id)),
       );
     } else if (conversation.contact.type == "utilisateur") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DirectChatScreen(conversation: conversation)),
+        MaterialPageRoute(builder: (context) => DirectChatScreen(id: conversation.contact.id)),
       );
-    } */
+    }
   }
 
   bool _isUnread(String userId) {

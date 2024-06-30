@@ -4,10 +4,10 @@ import '../network/network_config.dart';
 import '../models/direct_message.dart';
 
 class MessageService {
-  final String baseUrl;
+
   final Dio dio;
 
-  MessageService({required this.baseUrl}) : dio = NetworkConfig().client;
+  MessageService() : dio = NetworkConfig().client;
 
   // Méthode pour créer un message
   Future<DirectMessage?> createMessage(String contactId, Map<String, dynamic> messageData) async {
@@ -101,7 +101,7 @@ class MessageService {
   // Méthode pour sauvegarder un message
   Future<void> saveMessage(String id) async {
     try {
-      final response = await dio.post('$baseUrl/messages/$id');
+      final response = await dio.post('/messages/$id');
 
       if (response.statusCode != 200) {
         print('Failed to save message: ${response.data}');

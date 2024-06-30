@@ -4,6 +4,7 @@ import '../models/direct_message.dart';
 
 class DirectMessageWidget extends StatelessWidget {
   final DirectMessage message;
+  final User contact;
   final VoidCallback? onCopy;
   final Function(String) onDelete;
   final Function(String) onTransfer;
@@ -11,6 +12,7 @@ class DirectMessageWidget extends StatelessWidget {
 
   DirectMessageWidget({
     required this.message,
+    required this.contact,
     this.onCopy,
     required this.onDelete,
     required this.onTransfer,
@@ -19,26 +21,27 @@ class DirectMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isContact = message.expediteur.id == contact.id;
     Widget messageContent;
 
-    switch (message.type) {
-      case MessageType.text:
+    switch (message.contenu.type) {
+      case MessageType.texte:
         messageContent = Text(
-          message.content,
+          message.contenu.texte ?? '',
           style: TextStyle(
-            color: message.sender == "User 1" ? Colors.blue : Colors.black,
+            color: isContact ? Colors.blue : Colors.black,
           ),
         );
         break;
-      case MessageType.file:
+      case MessageType.fichier:
         messageContent = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.attach_file),
             Text(
-              message.content.split('/').last,
+              message.contenu.fichier?.split('/').last ?? '',
               style: TextStyle(
-                color: message.sender == "User 1" ? Colors.blue : Colors.black,
+                color: isContact ? Colors.blue : Colors.black,
               ),
             ),
           ],
@@ -46,14 +49,17 @@ class DirectMessageWidget extends StatelessWidget {
         break;
       case MessageType.image:
         messageContent = Image.file(
-          File(message.content),
+          File(message.contenu.image ?? ''),
           width: 150,
           height: 150,
           fit: BoxFit.cover,
         );
         break;
       case MessageType.audio:
-        messageContent = Text('Audio message: ${message.content}');
+        messageContent = Text('Audio message: ${message.contenu.audio}');
+        break;
+      case MessageType.video:
+        messageContent = Text('Video message: ${message.contenu.video}');
         break;
       default:
         messageContent = Text('Unsupported message type');
@@ -93,7 +99,7 @@ class DirectMessageWidget extends StatelessWidget {
                 title: Text('Transférer'),
               ),
             ),
-            if (message.type == MessageType.image || message.type == MessageType.file)
+            if (message.contenu.type == MessageType.image || message.contenu.type == MessageType.fichier)
               PopupMenuItem<String>(
                 value: 'save',
                 child: ListTile(
@@ -104,59 +110,59 @@ class DirectMessageWidget extends StatelessWidget {
           ],
           elevation: 8.0,
         ).then((value) {
-          if (value != null) {
-            _handleMenuItemSelected(context, value);
+          if (value == 'copy' && onCopy != null) {
+            onCopy!();
+          } else if (value == 'delete') {
+            onDelete(message.id);
+          } else if (value == 'transfer') {
+            onTransfer(message.id);
+          } else if (value == 'save' && onSave != null) {
+            onSave!();
           }
         });
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: message.sender == "User 1" ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: <Widget>[
-            if (message.sender != "User 1")
-              Container(
-                margin: const EdgeInsets.only(right: 16.0),
-                child: CircleAvatar(child: Text(message.sender[0])),
+            if (isContact)
+              CircleAvatar(
+              backgroundImage: contact.photo != null
+                  ? NetworkImage(contact.photo!)
+                  : null,
               ),
+            SizedBox(width: 10),
             Column(
-              crossAxisAlignment: message.sender == "User 1" ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: <Widget>[
-                Text(message.sender, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Container(
-                  margin: const EdgeInsets.only(top: 5.0),
+                  padding: EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    color: isContact ? Colors.grey[300] : Colors.blue[100],
+                    borderRadius: isContact
+                        ? BorderRadius.only(
+                            topLeft: Radius.circular(10.0),
+                            topRight: Radius.circular(10.0),
+                            bottomRight: Radius.circular(10.0),
+                          )
+                        : BorderRadius.only(
+                            topLeft: Radius.circular(10.0),
+                            topRight: Radius.circular(10.0),
+                            bottomLeft: Radius.circular(10.0),
+                          ),
+                  ),
                   child: messageContent,
+                ),
+                Text(
+                  message.dateEnvoi.toLocal().toString(),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
-            if (message.sender == "User 1")
-              Container(
-                margin: const EdgeInsets.only(left: 16.0),
-                child: CircleAvatar(child: Text(message.sender[0])),
-              ),
           ],
         ),
       ),
     );
-  }
-
-  void _handleMenuItemSelected(BuildContext context, String value) {
-    switch (value) {
-      case 'copy':
-        if (onCopy != null) onCopy!();
-        break;
-      case 'delete':
-        onDelete(message.id);
-        break;
-      case 'transfer':
-        onTransfer(message.id);
-        break;
-      case 'save':
-        if (onSave != null) onSave!();
-        break;
-      default:
-        break;
-    }
   }
 }

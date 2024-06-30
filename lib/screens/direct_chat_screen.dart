@@ -1,15 +1,18 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Added for secure storage
 import '../models/direct_message.dart';
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_message_service.dart';
 
 class DirectChatScreen extends StatefulWidget {
+  final String id;
+
+  DirectChatScreen({required this.id});
   @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
 }
@@ -19,72 +22,78 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messagesTransferred = [];
   final List<DirectMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
-  final MessageService _messageService =
-  MessageService(baseUrl: 'http://mahm.tempest.dov:3000');
-  late String _currentUser;
-  late String _otherUser;
+  final MessageService _messageService = MessageService();
+  late Future<User> _contactFuture;
 
   @override
   void initState() {
     super.initState();
-    _currentUser = "User A"; // Initialisation des utilisateurs à ajuster
-    _otherUser = "User B";
+    _contactFuture = _loadContact(); // Load contact during initialization
   }
 
-  // Méthodes pour les actions de la caméra et de la galerie
-  Future<bool> _requestPermissions() async {
-    final List<Permission> permissions = [
-      Permission.camera,
-      Permission.storage,
-    ];
+  Future<User> _loadContact() async {
+    try {
+      List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
+      setState(() {
+        _messages.addAll(messages);
+      });
+      return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
+    } catch (e) {
+      print('Failed to load messages: $e');
+      rethrow;
+    }
+  }
 
-    Map<Permission, PermissionStatus> permissionStatus =
-    await permissions.request();
+  // Request permissions
+  Future<bool> _requestPermissions() async {
+    final List<Permission> permissions = [Permission.camera, Permission.storage];
+    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
 
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
-  Future<void> _pickImage() async {
+  // Pick image from gallery
+  Future<void> _pickImage(User contact) async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions non accordées');
+      print('Permissions not granted');
       return;
     }
 
-    final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path);
+      _sendImage(pickedImage.path, contact);
     }
   }
 
-  Future<void> _takePhoto() async {
+  // Take photo with camera
+  Future<void> _takePhoto(User contact) async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions non accordées');
+      print('Permissions not granted');
       return;
     }
 
-    final XFile? pickedImage =
-    await ImagePicker().pickImage(source: ImageSource.camera);
+    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path);
+      _sendImage(pickedImage.path, contact);
     }
   }
 
-  void _sendImage(String imagePath) async {
+  // Send image message
+  void _sendImage(String imagePath, User contact) async {
     DirectMessage message = DirectMessage(
       id: '',
-      content: imagePath,
-      sender: _currentUser,
-      timestamp: DateTime.now(),
-      type: MessageType.image,
+      contenu: MessageContent(type: MessageType.image, image: imagePath),
+      expediteur: contact,
+      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
+      dateEnvoi: DateTime.now(),
+      lu: false,
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(_otherUser, message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -95,19 +104,20 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  void _handleSubmitted(String text) async {
+  // Handle submitted text message
+  void _handleSubmitted(String text, User contact) async {
     _textController.clear();
     DirectMessage message = DirectMessage(
       id: '',
-      content: text,
-      sender: _currentUser,
-      timestamp: DateTime.now(),
-      type: MessageType.text,
+      contenu: MessageContent(type: MessageType.texte, texte: text),
+      expediteur: contact,
+      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
+      dateEnvoi: DateTime.now(),
+      lu: false,
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(_otherUser, message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -118,53 +128,63 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  void _toggleUser() {
-    setState(() {
-      String temp = _currentUser;
-      _currentUser = _otherUser;
-      _otherUser = temp;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Direct Chat ($_currentUser)'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.swap_horiz),
-            onPressed: _toggleUser,
-          ),
-        ],
+        title: FutureBuilder<User>(
+          future: _contactFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading...');
+            } else if (snapshot.hasError) {
+              return Text('Error');
+            } else {
+              return Text(snapshot.data?.nom ?? 'Chat');
+            }
+          },
+        ),
       ),
-      body: Column(
-        children: <Widget>[
-          Flexible(
-            child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
-              reverse: true,
-              itemBuilder: (_, int index) => DirectMessageWidget(
-                message: _messages[index],
-                onDelete: _deleteMessage,
-                onTransfer: _transferMessage,
-                onCopy: _copyMessage,
-                onSave: _saveMessage,
-              ),
-              itemCount: _messages.length,
-            ),
-          ),
-          Divider(height: 1.0),
-          Container(
-            decoration: BoxDecoration(color: Theme.of(context).cardColor),
-            child: _buildTextComposer(),
-          ),
-        ],
+      body: FutureBuilder<User>(
+        future: _contactFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to load chat'));
+          } else {
+            User contact = snapshot.data!;
+            return Column(
+              children: <Widget>[
+                Flexible(
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(8.0),
+                    reverse: true,
+                    itemBuilder: (_, int index) => DirectMessageWidget(
+                      message: _messages[index],
+                      contact: contact, // Pass contact to widget
+                      onDelete: _deleteMessage,
+                      onTransfer: _transferMessage,
+                      onCopy: _copyMessage,
+                      onSave: _saveMessage,
+                    ),
+                    itemCount: _messages.length,
+                  ),
+                ),
+                Divider(height: 1.0),
+                Container(
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor),
+                  child: _buildTextComposer(contact),
+                ),
+              ],
+            );
+          }
+        },
       ),
     );
   }
 
-  Widget _buildTextComposer() {
+  Widget _buildTextComposer(User contact) {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Container(
@@ -173,18 +193,18 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           children: <Widget>[
             IconButton(
               icon: Icon(Icons.photo_camera),
-              onPressed: _takePhoto,
+              onPressed: () => _takePhoto(contact),
             ),
             IconButton(
               icon: Icon(Icons.photo),
-              onPressed: _pickImage,
+              onPressed: () => _pickImage(contact),
             ),
             Flexible(
               child: TextField(
                 controller: _textController,
-                onSubmitted: _handleSubmitted,
+                onSubmitted: (text) => _handleSubmitted(text, contact),
                 decoration: InputDecoration.collapsed(
-                  hintText: "Envoyer un message",
+                  hintText: "Send a message",
                 ),
               ),
             ),
@@ -192,7 +212,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
                 icon: Icon(Icons.send),
-                onPressed: () => _handleSubmitted(_textController.text),
+                onPressed: () => _handleSubmitted(_textController.text, contact),
               ),
             ),
           ],
@@ -213,20 +233,20 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
   void _transferMessage(String messageId) {
     DirectMessage messageToTransfer = _messages.firstWhere(
-          (message) => message.id == messageId,
+      (message) => message.id == messageId,
       orElse: () => DirectMessage(
         id: '',
-        content: '',
-        sender: '',
-        timestamp: DateTime.now(),
-        type: MessageType.text,
+        contenu: MessageContent(type: MessageType.texte, texte: ''),
+        expediteur: User(id: '', nom: '', email: ''),
+        destinataire: User(id: '', nom: '', email: ''),
+        dateEnvoi: DateTime.now(),
+        lu: false,
       ),
     );
     setState(() {
       _messages.removeWhere((message) => message.id == messageId);
       _messagesTransferred.add(messageToTransfer);
     });
-    // Ajouter la logique supplémentaire au besoin
   }
 
   void _saveMessage() {
@@ -235,39 +255,37 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       setState(() {
         _messagesSaved.add(lastMessage);
       });
-      // Ajouter la logique supplémentaire au besoin
     }
   }
 
   void _copyMessage() {
     DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
     if (lastMessage != null) {
-      Clipboard.setData(ClipboardData(text: lastMessage.content));
-      // Ajouter la logique supplémentaire au besoin
+      Clipboard.setData(ClipboardData(text: lastMessage.contenu.texte ?? ''));
     }
   }
 
-  // Méthodes pour choisir un fichier à partir du stockage local
-  Future<void> _pickFile() async {
+  // Pick file from local storage
+  Future<void> _pickFile(User contact) async {
     String? filePath = await FilePickerUtil.pickFile();
     if (filePath != null) {
-      _sendFile(filePath);
+      _sendFile(filePath, contact);
     }
   }
 
-  // Méthode pour envoyer un fichier
-  void _sendFile(String filePath) async {
+  // Send file message
+  void _sendFile(String filePath, User contact) async {
     DirectMessage message = DirectMessage(
       id: '',
-      content: filePath,
-      sender: _currentUser,
-      timestamp: DateTime.now(),
-      type: MessageType.file,
+      contenu: MessageContent(type: MessageType.fichier, fichier: filePath),
+      expediteur: contact,
+      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
+      dateEnvoi: DateTime.now(),
+      lu: false,
     );
 
     try {
-      DirectMessage? createdMessage =
-      await _messageService.createMessage(_otherUser, message.toJson());
+      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
       if (createdMessage != null) {
         setState(() {
           _messages.insert(0, createdMessage);
@@ -276,5 +294,18 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     } catch (e) {
       print('Failed to send file: $e');
     }
+  }
+
+  // Handle sending an audio message (stub function, implement as needed)
+  void _sendAudio(String audioPath, User contact) async {
+    // Your implementation to send audio message
+  }
+
+  // Pick audio from local storage
+  Future<void> _pickAudio(User contact) async {
+/*     String? audioPath = await FilePickerUtil.pickAudio();
+    if (audioPath != null) {
+      _sendAudio(audioPath, contact);
+    } */
   }
 }
