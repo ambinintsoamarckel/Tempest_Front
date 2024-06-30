@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/messages.dart';
 import '../services/list_message_service.dart';
+import '../widgets/messages_widget.dart';
 
 class ConversationListScreen extends StatefulWidget {
   const ConversationListScreen({Key? key}) : super(key: key);
@@ -98,46 +99,8 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
       body: ListView.builder(
         itemCount: _conversations.length,
         itemBuilder: (context, index) {
-          return Column(
-            children: [
-              ListTile(
-                title: Text(
-                  _conversations[index].contact.nom,
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  _conversations[index].dernierMessage.contenu.texte ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                leading: CircleAvatar(
-                  radius: 28.0,
-                  backgroundImage: _conversations[index].contact.photo != null
-                      ? NetworkImage(_conversations[index].contact.photo!)
-                      : null,
-                  child: _conversations[index].contact.photo == null
-                      ? const Icon(Icons.person, size: 28.0)
-                      : null,
-                ),
-                trailing: Text(
-                  '15:30', // Vous pouvez remplacer par l'heure du dernier message
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                onTap: () {
-                  // Handle conversation tap
-                },
-              ),
-              Divider(),
-            ],
-          );
+          return ConversationWidget(conversation: _conversations[index]);
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Handle add new conversation
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blueAccent,
       ),
     );
   }

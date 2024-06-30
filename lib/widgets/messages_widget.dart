@@ -120,6 +120,7 @@ class ConversationWidget extends StatelessWidget {
   }
 
   void _navigateToChatScreen(BuildContext context) {
+    print('object');
     if (conversation.contact.type == "groupe") {
       Navigator.push(
         context,
