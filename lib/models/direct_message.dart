@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart';
 
-enum MessageType { text, file, image }
+enum MessageType { text, file, image, audio }
 
 class DirectMessage {
   final String id;
@@ -18,11 +19,14 @@ class DirectMessage {
 
   factory DirectMessage.fromJson(Map<String, dynamic> json) {
     return DirectMessage(
-      id: json['id'],
-      content: json['content'],
-      sender: json['sender'],
-      timestamp: DateTime.parse(json['timestamp']),
-      type: MessageType.values[json['type']],
+      id: json['id'] ?? '',
+      content: json['content'] ?? '',
+      sender: json['sender'] ?? '',
+      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      type: MessageType.values.firstWhere(
+            (e) => describeEnum(e) == json['type'],
+        orElse: () => MessageType.text,
+      ),
     );
   }
 
@@ -32,7 +36,7 @@ class DirectMessage {
       'content': content,
       'sender': sender,
       'timestamp': timestamp.toIso8601String(),
-      'type': type.index,
+      'type': describeEnum(type),
     };
   }
 }

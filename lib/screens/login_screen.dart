@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Adding a logo or image
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
-                child: Image.asset('assets/Houatsappy_transparent.png', height: 150),
+                child: Image.asset('assets/manga_transparent.png', height: 250),
               ),
               Text(
                 'Welcome Back!',

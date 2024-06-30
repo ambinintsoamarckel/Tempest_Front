@@ -75,8 +75,11 @@ flutter:
   assets:
       - assets/logo.png
       - assets/avatar.png
-      - assets/Houatsappy.png
-      - assets/Houatsappy_transparent.png
+      - assets/manga.png
+      - assets/manga_transparent.png
+      - assets/milay.png
+      - assets/milay_transparent.png
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
