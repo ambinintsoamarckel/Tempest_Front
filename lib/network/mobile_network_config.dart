@@ -8,9 +8,8 @@ Dio getClient() {
   return Dio()
     ..interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        print('plateforme android');
         String? cookie = await storage.read(key: 'authCookie');
-        if (cookie != null) {
+        if (options.path != '/login' && cookie != null) {
           options.headers['Cookie'] = cookie;
         }
         return handler.next(options);
