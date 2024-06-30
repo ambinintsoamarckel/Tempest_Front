@@ -4,6 +4,7 @@ import 'contacts_screen.dart';
 import 'messages_screen.dart';
 import 'stories_screen.dart';
 import 'account_screen.dart';
+import 'custom_search_delegate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -62,7 +63,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     IconButton(
                       icon: const Icon(Icons.search),
                       onPressed: () {
-                        showSearch(context: context, delegate: CustomSearchDelegate());
+                        showSearch(
+                          context: context,
+                          delegate: CustomSearchDelegate(),
+                        );
                       },
                     ),
                   if (_tabController.index == 2)
@@ -141,45 +145,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-// Classe de recherche personnalisée
-class CustomSearchDelegate extends SearchDelegate {
-  @override
-  List<Widget> buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
-      ),
-    ];
-  }
-
-  @override
-  Widget buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, null);
-      },
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    return Center(
-      child: Text('Résultats de la recherche pour "$query"'),
-    );
-  }
-
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    return Center(
-      child: Text('Suggestions de recherche pour "$query"'),
-    );
-  }
-}
-
 // Classe d'exemple pour la caméra
 class CameraScreen extends StatelessWidget {
   const CameraScreen({super.key});
@@ -196,4 +161,3 @@ class CameraScreen extends StatelessWidget {
     );
   }
 }
-

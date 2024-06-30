@@ -10,10 +10,11 @@ class ContactWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundImage: contact.avatarUrl != null
-            ? NetworkImage(contact.avatarUrl!)
-            : AssetImage('avatar.png'),
-      ),
+                        backgroundImage: contact.avatarUrl != null
+                            ? NetworkImage(contact.avatarUrl!)
+                            : null,
+                        child: contact.avatarUrl == null ? const Icon(Icons.person) : null,
+                      ),
       title: Text(contact.name),
     );
   }

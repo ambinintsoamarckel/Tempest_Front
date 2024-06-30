@@ -37,12 +37,14 @@ class Contact {
   final String type;
   final String nom;
   final String? photo;
+  final String presence;
 
   Contact({
     required this.id,
     required this.type,
     required this.nom,
     this.photo,
+    required this.presence,
   });
 
   factory Contact.fromJson(Map<String, dynamic> json) {
@@ -51,9 +53,11 @@ class Contact {
       type: json['type'] ?? '',
       nom: json['nom'] ?? '',
       photo: json['photo'],
+      presence: json['presence'] ?? 'inactif',
     );
   }
 }
+
 
 // Modèle de classe DernierMessageUtilisateur
 class DernierMessageUtilisateur {
