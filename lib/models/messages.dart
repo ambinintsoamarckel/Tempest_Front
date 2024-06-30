@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-// Modèle de classe Contenu
 class Contenu {
   final String type;
   final String? texte;

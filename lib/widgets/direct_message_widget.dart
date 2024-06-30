@@ -1,6 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
 import '../models/direct_message.dart';
+import '../utils/audio_message_player.dart';
+import '../utils/video_message_player.dart';
 
 class DirectMessageWidget extends StatelessWidget {
   final DirectMessage message;
@@ -19,47 +24,75 @@ class DirectMessageWidget extends StatelessWidget {
     this.onSave,
   });
 
-  @override
+ @override
   Widget build(BuildContext context) {
     final bool isContact = message.expediteur.id == contact.id;
     Widget messageContent;
 
     switch (message.contenu.type) {
       case MessageType.texte:
-        messageContent = Text(
-          message.contenu.texte ?? '',
-          style: TextStyle(
-            color: isContact ? Colors.blue : Colors.black,
+        messageContent = Container(
+          padding: EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color: isContact ? Colors.grey[300] : Colors.blue[100],
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0),
+              topRight: Radius.circular(10.0),
+              bottomRight: Radius.circular(10.0),
+              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
+            ),
+          ),
+          child: Text(
+            message.contenu.texte ?? '',
+            style: TextStyle(
+              color: isContact ? Colors.blue : Colors.black,
+            ),
           ),
         );
         break;
       case MessageType.fichier:
-        messageContent = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.attach_file),
-            Text(
-              message.contenu.fichier?.split('/').last ?? '',
-              style: TextStyle(
-                color: isContact ? Colors.blue : Colors.black,
-              ),
+        messageContent = Container(
+          padding: EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color: isContact ? Colors.grey[300] : Colors.blue[100],
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0),
+              topRight: Radius.circular(10.0),
+              bottomRight: Radius.circular(10.0),
+              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
             ),
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.attach_file),
+              SizedBox(height: 5),
+              Text(
+                message.contenu.fichier?.split('/').last ?? '',
+                style: TextStyle(
+                  color: isContact ? Colors.blue : Colors.black,
+                ),
+              ),
+            ],
+          ),
         );
         break;
       case MessageType.image:
-        messageContent = Image.file(
-          File(message.contenu.image ?? ''),
-          width: 150,
-          height: 150,
-          fit: BoxFit.cover,
+        messageContent = ClipRRect(
+          borderRadius: BorderRadius.circular(10.0),
+          child: Image.network(
+            message.contenu.image ?? '',
+            width: 150,
+            height: 150,
+            fit: BoxFit.cover,
+          ),
         );
         break;
       case MessageType.audio:
-        messageContent = Text('Audio message: ${message.contenu.audio}');
+        messageContent = AudioMessagePlayer(audioUrl: message.contenu.audio ?? '');
         break;
       case MessageType.video:
-        messageContent = Text('Video message: ${message.contenu.video}');
+        messageContent = VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
         break;
       default:
         messageContent = Text('Unsupported message type');
@@ -99,7 +132,10 @@ class DirectMessageWidget extends StatelessWidget {
                 title: Text('Transférer'),
               ),
             ),
-            if (message.contenu.type == MessageType.image || message.contenu.type == MessageType.fichier)
+            if (message.contenu.type == MessageType.image ||
+                message.contenu.type == MessageType.fichier ||
+                message.contenu.type == MessageType.audio ||
+                message.contenu.type == MessageType.video)
               PopupMenuItem<String>(
                 value: 'save',
                 child: ListTile(
@@ -117,7 +153,7 @@ class DirectMessageWidget extends StatelessWidget {
           } else if (value == 'transfer') {
             onTransfer(message.id);
           } else if (value == 'save' && onSave != null) {
-            onSave!();
+            _saveFile(context);
           }
         });
       },
@@ -128,32 +164,14 @@ class DirectMessageWidget extends StatelessWidget {
           children: <Widget>[
             if (isContact)
               CircleAvatar(
-              backgroundImage: contact.photo != null
-                  ? NetworkImage(contact.photo!)
-                  : null,
+                backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
             SizedBox(width: 10),
             Column(
               crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: <Widget>[
-                Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: isContact ? Colors.grey[300] : Colors.blue[100],
-                    borderRadius: isContact
-                        ? BorderRadius.only(
-                            topLeft: Radius.circular(10.0),
-                            topRight: Radius.circular(10.0),
-                            bottomRight: Radius.circular(10.0),
-                          )
-                        : BorderRadius.only(
-                            topLeft: Radius.circular(10.0),
-                            topRight: Radius.circular(10.0),
-                            bottomLeft: Radius.circular(10.0),
-                          ),
-                  ),
-                  child: messageContent,
-                ),
+                messageContent,
+                SizedBox(height: 5),
                 Text(
                   message.dateEnvoi.toLocal().toString(),
                   style: Theme.of(context).textTheme.bodySmall,
@@ -164,5 +182,59 @@ class DirectMessageWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _saveFile(BuildContext context) async {
+    final status = await Permission.storage.request();
+    if (status.isGranted) {
+      final directory = await getExternalStorageDirectory();
+      final filePath = directory?.path ?? '';
+      String fileName = '';
+
+      switch (message.contenu.type) {
+        case MessageType.image:
+          fileName = message.contenu.image?.split('/').last ?? 'image.jpg';
+          break;
+        case MessageType.audio:
+          fileName = message.contenu.audio?.split('/').last ?? 'audio.mp3';
+          break;
+        case MessageType.video:
+          fileName = message.contenu.video?.split('/').last ?? 'video.mp4';
+          break;
+        case MessageType.fichier:
+          fileName = message.contenu.fichier?.split('/').last ?? 'file';
+          break;
+        default:
+          return;
+      }
+
+      final fileUrl = _getFileUrl();
+      final file = File('$filePath/$fileName');
+      final response = await http.get(Uri.parse(fileUrl));
+      await file.writeAsBytes(response.bodyBytes);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fichier enregistré sous $fileName')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Permission de stockage refusée')),
+      );
+    }
+  }
+
+  String _getFileUrl() {
+    switch (message.contenu.type) {
+      case MessageType.image:
+        return message.contenu.image ?? '';
+      case MessageType.audio:
+        return message.contenu.audio ?? '';
+      case MessageType.video:
+        return message.contenu.video ?? '';
+      case MessageType.fichier:
+        return message.contenu.fichier ?? '';
+      default:
+        return '';
+    }
   }
 }

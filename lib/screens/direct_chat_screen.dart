@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Added for secure storage
 import '../models/direct_message.dart';
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
@@ -66,6 +64,19 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       _sendImage(pickedImage.path, contact);
     }
   }
+
+  // Fonction pour choisir et envoyer un fichier
+  Future<void> _pickFileAndSend(User contact) async {
+    try {
+      String? filePath = await FilePickerUtil.pickFile();
+      if (filePath != null) {
+        _sendFile(filePath, contact);
+      }
+    } catch (e) {
+      print('Failed to pick and send file: $e');
+    }
+  }
+
 
   // Take photo with camera
   Future<void> _takePhoto(User contact) async {
@@ -159,7 +170,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                 Flexible(
                   child: ListView.builder(
                     padding: EdgeInsets.all(8.0),
-                    reverse: true,
+                    reverse: false,
                     itemBuilder: (_, int index) => DirectMessageWidget(
                       message: _messages[index],
                       contact: contact, // Pass contact to widget
@@ -185,41 +196,46 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   }
 
   Widget _buildTextComposer(User contact) {
-    return IconTheme(
-      data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.photo_camera),
-              onPressed: () => _takePhoto(contact),
-            ),
-            IconButton(
-              icon: Icon(Icons.photo),
-              onPressed: () => _pickImage(contact),
-            ),
-            Flexible(
-              child: TextField(
-                controller: _textController,
-                onSubmitted: (text) => _handleSubmitted(text, contact),
-                decoration: InputDecoration.collapsed(
-                  hintText: "Send a message",
-                ),
+  return IconTheme(
+    data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            icon: Icon(Icons.photo_camera),
+            onPressed: () => _takePhoto(contact),
+          ),
+          IconButton(
+            icon: Icon(Icons.photo),
+            onPressed: () => _pickImage(contact),
+          ),
+          IconButton(
+            icon: Icon(Icons.attach_file), // Ajouter l'icône pour envoyer des fichiers
+            onPressed: () => _pickFileAndSend(contact), // Fonction pour choisir un fichier
+          ),
+          Flexible(
+            child: TextField(
+              controller: _textController,
+              onSubmitted: (text) => _handleSubmitted(text, contact),
+              decoration: InputDecoration.collapsed(
+                hintText: "Send a message",
               ),
             ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                icon: Icon(Icons.send),
-                onPressed: () => _handleSubmitted(_textController.text, contact),
-              ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: IconButton(
+              icon: Icon(Icons.send),
+              onPressed: () => _handleSubmitted(_textController.text, contact),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   void _deleteMessage(String messageId) {
     setState(() {
