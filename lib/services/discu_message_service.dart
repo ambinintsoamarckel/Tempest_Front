@@ -10,7 +10,7 @@ class MessageService {
   MessageService() : dio = NetworkConfig().client;
 
   // Méthode pour créer un message
-  Future<DirectMessage?> createMessage(String contactId, Map<String, dynamic> messageData) async {
+  Future<bool?> createMessage(String contactId, Map<String,dynamic> messageData) async {
     try {
       final response = await dio.post(
         '/messages/personne/$contactId',
@@ -19,7 +19,7 @@ class MessageService {
       );
 
       if (response.statusCode == 201) {
-        return DirectMessage.fromJson(response.data);
+        return true;
       } else {
         print('Failed to create message: ${response.data}');
         throw Exception('Failed to create message');
@@ -79,6 +79,36 @@ class MessageService {
       }
     } catch (e) {
       print('Exception during message deletion: $e');
+      rethrow;
+    }
+  }
+ // Méthode pour envoyer un fichier à une personne spécifiée
+  Future<bool> sendFileToPerson(String contactId, String filePath) async {
+    try {
+      String url = '/messages/personne/$contactId';
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+
+      final response = await dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        print('File sent successfully');
+        return true;
+      } else {
+        print('Failed to send file: ${response.data}');
+        throw Exception('Failed to send file');
+      }
+    } catch (e) {
+      print('Exception during file sending: $e');
       rethrow;
     }
   }

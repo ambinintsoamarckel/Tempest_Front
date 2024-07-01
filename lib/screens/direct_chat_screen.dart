@@ -41,6 +41,19 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       rethrow;
     }
   }
+  Future _reload() async{
+    try {
+      List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
+      setState(() {
+        _messages.clear(); 
+        _messages.addAll(messages);
+      });
+    } catch (e) {
+       print('Failed to load messages: $e');
+      rethrow;
+      
+    }
+  }
 
   // Request permissions
   Future<bool> _requestPermissions() async {
@@ -61,7 +74,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path, contact);
+      _sendFile(pickedImage.path);
     }
   }
 
@@ -70,7 +83,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     try {
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
-        _sendFile(filePath, contact);
+        _sendFile(filePath);
       }
     } catch (e) {
       print('Failed to pick and send file: $e');
@@ -88,51 +101,22 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path, contact);
+      _sendFile(pickedImage.path);
     }
   }
 
   // Send image message
-  void _sendImage(String imagePath, User contact) async {
-    DirectMessage message = DirectMessage(
-      id: '',
-      contenu: MessageContent(type: MessageType.image, image: imagePath),
-      expediteur: contact,
-      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
-      dateEnvoi: DateTime.now(),
-      lu: false,
-    );
-
-    try {
-      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
-      if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
-      }
-    } catch (e) {
-      print('Failed to send image: $e');
-    }
-  }
+ 
 
   // Handle submitted text message
-  void _handleSubmitted(String text, User contact) async {
+  void _handleSubmitted(String text) async {
     _textController.clear();
-    DirectMessage message = DirectMessage(
-      id: '',
-      contenu: MessageContent(type: MessageType.texte, texte: text),
-      expediteur: contact,
-      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
-      dateEnvoi: DateTime.now(),
-      lu: false,
-    );
+   
 
     try {
-      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
+      bool? createdMessage = await _messageService.createMessage(widget.id, {"texte":text});
       if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
+       _reload();
       }
     } catch (e) {
       print('Failed to send message: $e');
@@ -217,7 +201,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           Flexible(
             child: TextField(
               controller: _textController,
-              onSubmitted: (text) => _handleSubmitted(text, contact),
+              onSubmitted: (text) => _handleSubmitted(text),
               decoration: InputDecoration.collapsed(
                 hintText: "Send a message",
               ),
@@ -227,7 +211,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 4.0),
             child: IconButton(
               icon: Icon(Icons.send),
-              onPressed: () => _handleSubmitted(_textController.text, contact),
+              onPressed: () => _handleSubmitted(_textController.text),
             ),
           ),
         ],
@@ -237,15 +221,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 }
 
 
-  void _deleteMessage(String messageId) {
-    setState(() {
-      _messages.removeWhere((message) => message.id == messageId);
-    });
-
-    _messageService.deleteMessage(messageId).catchError((e) {
-      print('Failed to delete message: $e');
-    });
-  }
+void _deleteMessage(String messageId) async {
+  await _messageService.deleteMessage(messageId).catchError((e) {
+    print('Failed to delete message: $e');
+  }).whenComplete(() {
+    _reload();
+  });
+}
 
   void _transferMessage(String messageId) {
     DirectMessage messageToTransfer = _messages.firstWhere(
@@ -285,37 +267,25 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   Future<void> _pickFile(User contact) async {
     String? filePath = await FilePickerUtil.pickFile();
     if (filePath != null) {
-      _sendFile(filePath, contact);
+      _sendFile(filePath);
     }
   }
 
   // Send file message
-  void _sendFile(String filePath, User contact) async {
-    DirectMessage message = DirectMessage(
-      id: '',
-      contenu: MessageContent(type: MessageType.fichier, fichier: filePath),
-      expediteur: contact,
-      destinataire: User(id: widget.id, nom: 'Other User', email: ''),
-      dateEnvoi: DateTime.now(),
-      lu: false,
-    );
-
-    try {
-      DirectMessage? createdMessage = await _messageService.createMessage(widget.id, message.toJson());
-      if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
-      }
-    } catch (e) {
-      print('Failed to send file: $e');
+void _sendFile(String filePath) async {
+  try {
+    bool success = await _messageService.sendFileToPerson(widget.id, filePath);
+    if (success) {
+      // Rafraîchissez votre liste de messages après l'envoi réussi si nécessaire
+      _reload();
     }
+  } catch (e) {
+    print('Failed to send file: $e');
   }
+}
 
-  // Handle sending an audio message (stub function, implement as needed)
-  void _sendAudio(String audioPath, User contact) async {
-    // Your implementation to send audio message
-  }
+
+
 
   // Pick audio from local storage
   Future<void> _pickAudio(User contact) async {

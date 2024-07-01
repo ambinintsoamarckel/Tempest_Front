@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import '../utils/downloader.dart';
 
 class VideoMessagePlayer extends StatefulWidget {
   final String videoUrl;
@@ -85,29 +86,9 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
       Navigator.pop(context);
     }
   }
-
-  Future<void> _downloadVideo() async {
-    final status = await Permission.storage.request();
-    if (status.isGranted) {
-      final directory = await getExternalStorageDirectory();
-      final filePath = directory?.path ?? '';
-      final fileName = widget.videoUrl.split('/').last;
-      final file = File('$filePath/$fileName');
-
-      final response = await http.get(Uri.parse(widget.videoUrl));
-      await file.writeAsBytes(response.bodyBytes);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Video downloaded as $fileName')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Storage permission denied')),
-      );
-    }
+    void _downloadVideo() {
+    downloadFile(context, widget.videoUrl, "video");
   }
-
-
 
   Widget _buildControls() {
     return Container(
@@ -164,7 +145,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
         ? Column(
             children: [
               Container(
-                width: 400,
+                width: 300,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: Stack(

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
+import '../utils/downloader.dart';
 
 class DirectMessageWidget extends StatelessWidget {
   final DirectMessage message;
@@ -185,44 +186,30 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   Future<void> _saveFile(BuildContext context) async {
-    final status = await Permission.storage.request();
-    if (status.isGranted) {
-      final directory = await getExternalStorageDirectory();
-      final filePath = directory?.path ?? '';
-      String fileName = '';
-
+      String type;
       switch (message.contenu.type) {
         case MessageType.image:
-          fileName = message.contenu.image?.split('/').last ?? 'image.jpg';
+          type = "image";
           break;
         case MessageType.audio:
-          fileName = message.contenu.audio?.split('/').last ?? 'audio.mp3';
+          type = "audio";
           break;
         case MessageType.video:
-          fileName = message.contenu.video?.split('/').last ?? 'video.mp4';
+         type = "video";
           break;
         case MessageType.fichier:
-          fileName = message.contenu.fichier?.split('/').last ?? 'file';
+       type = "file";
           break;
         default:
           return;
       }
 
       final fileUrl = _getFileUrl();
-      final file = File('$filePath/$fileName');
-      final response = await http.get(Uri.parse(fileUrl));
-      await file.writeAsBytes(response.bodyBytes);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fichier enregistré sous $fileName')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Permission de stockage refusée')),
-      );
+      downloadFile(context, fileUrl, type);
+     
+   
     }
-  }
-
+  
   String _getFileUrl() {
     switch (message.contenu.type) {
       case MessageType.image:
