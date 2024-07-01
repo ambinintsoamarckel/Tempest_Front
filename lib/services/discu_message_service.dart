@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../network/network_config.dart';
 import '../models/direct_message.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class MessageService {
 
@@ -82,14 +84,25 @@ class MessageService {
       rethrow;
     }
   }
- // Méthode pour envoyer un fichier à une personne spécifiée
   Future<bool> sendFileToPerson(String contactId, String filePath) async {
     try {
       String url = '/messages/personne/$contactId';
+      
+      // Déterminer le type MIME
+      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+      
+      // Créer un MultipartFile avec le type MIME correct
+      MultipartFile file = await MultipartFile.fromFile(
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      );
+      
+      // Créer FormData
       FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
+        'file': file,
       });
 
+      // Envoyer la requête POST avec Dio
       final response = await dio.post(
         url,
         data: formData,
@@ -101,15 +114,15 @@ class MessageService {
       );
 
       if (response.statusCode == 201) {
-        print('File sent successfully');
+        print('File sent successfully: ${response.data}');
         return true;
       } else {
         print('Failed to send file: ${response.data}');
-        throw Exception('Failed to send file');
+        return false;
       }
     } catch (e) {
       print('Exception during file sending: $e');
-      rethrow;
+      return false;
     }
   }
 
