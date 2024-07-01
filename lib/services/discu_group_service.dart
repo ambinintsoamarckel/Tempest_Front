@@ -3,15 +3,15 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import '../models/group_message.dart';
 import '../network/network_config.dart';
-
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 class GroupChatService {
-  final String baseUrl;
   final Dio dio = NetworkConfig().client;
 
-  GroupChatService({required this.baseUrl});
+  GroupChatService();
 
   // Method to create a group message
-  Future<GroupMessage?> createGroupMessage(String groupId, Map<String, dynamic> messageData) async {
+  Future<bool?> createMessage(String groupId, Map<String, dynamic> messageData) async {
     final response = await dio.post(
       '/messages/groupe/$groupId',
       data: jsonEncode(messageData),
@@ -19,7 +19,7 @@ class GroupChatService {
     );
 
     if (response.statusCode == 201) {
-      return GroupMessage.fromJson(response.data);
+      return true;
     } else {
       print('Failed to create group message: ${response.data}');
       throw Exception('Failed to create group message');
@@ -27,8 +27,8 @@ class GroupChatService {
   }
 
   // Method to get a group message by ID
-  Future<GroupMessage?> getGroupMessageById(String id, String messageId) async {
-    final response = await dio.get('/groupes/$id');
+  Future<GroupMessage?> getGroupMessageById(String groupId, String messageId) async {
+    final response = await dio.get('/messages/groupe/$groupId/$messageId');
 
     if (response.statusCode == 200) {
       return GroupMessage.fromJson(response.data);
@@ -39,9 +39,9 @@ class GroupChatService {
   }
 
   // Method to update a group message
-  Future<GroupMessage?> updateGroupMessage(String id, Map<String, dynamic> messageData) async {
+  Future<GroupMessage?> updateGroupMessage(String groupId, String messageId, Map<String, dynamic> messageData) async {
     final response = await dio.put(
-      '/groupes/$id',
+      '/messages/groupe/$groupId/$messageId',
       data: jsonEncode(messageData),
       options: Options(headers: {'Content-Type': 'application/json'}),
     );
@@ -55,7 +55,7 @@ class GroupChatService {
   }
 
   // Method to delete a group message
-  Future<void> deleteGroupMessage(String groupId, String messageId) async {
+  Future<void> deleteMessage(String groupId, String messageId) async {
     final response = await dio.delete('/messages/groupe/$groupId/$messageId');
 
     if (response.statusCode != 204) {
@@ -66,7 +66,7 @@ class GroupChatService {
 
   // Method to transfer a group message
   Future<void> transferGroupMessage(String groupId, String messageId) async {
-    final response = await dio.post('/messages/groupe/$groupId/$messageId');
+    final response = await dio.post('/messages/groupe/$groupId/$messageId/transfer');
 
     if (response.statusCode != 200) {
       print('Failed to transfer group message: ${response.data}');
@@ -76,7 +76,7 @@ class GroupChatService {
 
   // Method to save a group message
   Future<void> saveGroupMessage(String groupId, String messageId) async {
-    final response = await dio.post('/groups/$groupId/messages/$messageId/save');
+    final response = await dio.post('/messages/groupe/$groupId/$messageId/save');
 
     if (response.statusCode != 200) {
       print('Failed to save group message: ${response.data}');
@@ -84,13 +84,12 @@ class GroupChatService {
     }
   }
 
-  // Method to receive group messages
   Future<List<GroupMessage>> receiveGroupMessages(String groupId) async {
     final response = await dio.get('/messages/groupe/$groupId');
 
     if (response.statusCode == 200) {
-      List<dynamic> messagesJson = response.data;
-      return messagesJson.map((json) => GroupMessage.fromJson(json)).toList();
+List<dynamic> messagesJson = response.data;
+        return messagesJson.map((json) => GroupMessage.fromJson(json)).toList();
     } else {
       print('Failed to receive group messages: ${response.data}');
       throw Exception('Failed to receive group messages');
@@ -147,6 +146,47 @@ class GroupChatService {
     if (response.statusCode != 204) {
       print('Failed to remove member from group: ${response.data}');
       throw Exception('Failed to remove member from group');
+    }
+  }
+    Future<bool> sendFileToGroup(String groupId, String filePath) async {
+    try {
+      String url = '/messages/groupe/$groupId';
+      
+      // Déterminer le type MIME
+      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+      
+      // Créer un MultipartFile avec le type MIME correct
+      MultipartFile file = await MultipartFile.fromFile(
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      );
+      
+      // Créer FormData
+      FormData formData = FormData.fromMap({
+        'file': file,
+      });
+
+      // Envoyer la requête POST avec Dio
+      final response = await dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (response.statusCode == 201) {
+        print('File sent successfully: ${response.data}');
+        return true;
+      } else {
+        print('Failed to send file: ${response.data}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception during file sending: $e');
+      return false;
     }
   }
 

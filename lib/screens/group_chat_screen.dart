@@ -6,39 +6,72 @@ import '../models/group_message.dart';
 import '../widgets/group_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_group_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
 
   GroupChatScreen({required this.groupId});
-
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
   final List<GroupMessage> _messages = [];
+  final List<GroupMessage> _messagesTransferred = [];
+  final List<GroupMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
-  final GroupChatService _messageService = GroupChatService(baseUrl: 'http://mahm.tempest.dov:3000');
-  String _currentUser = "User 1";
-  String _currentRecipient = "User 2"; // Initial recipient
-  List<GroupMessage> _messagesTransferred = [];
-  List<GroupMessage> _messagesSaved = [];
+  final GroupChatService _messageService = GroupChatService();
+  late Future<Group> _groupFuture;
+  final storage = FlutterSecureStorage();
+  late Future<String> _currentUser;
 
-  // Method to request camera and storage permissions
+  @override
+  void initState() {
+    super.initState();
+    _groupFuture = _loadGroup();
+    _currentUser = _loadCurrentUser();
+  }
+
+  Future<String> _loadCurrentUser() async {
+    String? user = await storage.read(key: 'user');
+    user = user!.replaceAll('"', '').trim();
+    return user;
+  }
+
+  Future<Group> _loadGroup() async {
+    try {
+      List<GroupMessage> messages = await _messageService.receiveGroupMessages(widget.groupId);
+      setState(() {
+        _messages.addAll(messages);
+      });
+      return messages[0].groupe;
+    } catch (e) {
+      print('Failed to load messages: $e');
+      rethrow;
+    }
+  }
+
+  Future _reload() async {
+    try {
+      List<GroupMessage> messages = await _messageService.receiveGroupMessages(widget.groupId);
+      setState(() {
+        _messages.clear();
+        _messages.addAll(messages);
+      });
+    } catch (e) {
+      print('Failed to load messages: $e');
+      rethrow;
+    }
+  }
+
   Future<bool> _requestPermissions() async {
-    final List<Permission> permissions = [
-      Permission.camera,
-      Permission.storage,
-    ];
-
+    final List<Permission> permissions = [Permission.camera, Permission.storage];
     Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
-
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
-  // Method to pick an image from gallery
   Future<void> _pickImage() async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
@@ -48,11 +81,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path);
+      _sendFile(pickedImage.path);
     }
   }
 
-  // Method to take a photo from camera
+  Future<void> _pickFileAndSend() async {
+    try {
+      String? filePath = await FilePickerUtil.pickFile();
+      if (filePath != null) {
+        _sendFile(filePath);
+      }
+    } catch (e) {
+      print('Failed to pick and send file: $e');
+    }
+  }
+
   Future<void> _takePhoto() async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
@@ -62,72 +105,110 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      _sendImage(pickedImage.path);
+      _sendFile(pickedImage.path);
     }
   }
 
-  // Method to send an image
-  void _sendImage(String imagePath) async {
-    GroupMessage message = GroupMessage(
-      id: '',
-      content: imagePath,
-      sender: _currentUser,
-      recipient: _currentRecipient,
-      groupId: widget.groupId,
-      timestamp: DateTime.now(),
-      type: MessageType.image,
-    );
-
-    try {
-      GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson());
-      if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
-      }
-    } catch (e) {
-      print('Failed to send image: $e');
-    }
-  }
-
-  // Method to handle submission of text messages
   void _handleSubmitted(String text) async {
     _textController.clear();
-    GroupMessage message = GroupMessage(
-      id: '',
-      content: text,
-      sender: _currentUser,
-      recipient: _currentRecipient,
-      groupId: widget.groupId,
-      timestamp: DateTime.now(),
-      type: MessageType.text,
-    );
-
     try {
-      GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson());
+      bool? createdMessage = await _messageService.createMessage(widget.groupId, {"texte": text});
       if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
+        _reload();
       }
     } catch (e) {
       print('Failed to send message: $e');
     }
   }
 
-  // Method to toggle between users
-  void _toggleUser() {
-    setState(() {
-      String temp = _currentUser;
-      _currentUser = _currentRecipient;
-      _currentRecipient = temp;
-    });
+  bool _isLastReadMessageByCurrentUser(int index) {
+    if (_messages.isEmpty || index != _messages.length - 1) return false;
+    GroupMessage message = _messages[index];
+    return message.luPar!.contains(widget.groupId);
   }
 
-  // Widget to compose and send messages
-  Widget _buildTextComposer() {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: FutureBuilder<Group>(
+          future: _groupFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text('Loading...');
+            } else if (snapshot.hasError) {
+              return Text('Error');
+            } else {
+              return Text(snapshot.data?.nom ?? 'Chat');
+            }
+          },
+        ),
+      ),
+      body: FutureBuilder<Group>(
+        future: _groupFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to load chat'));
+          } else {
+            return Column(
+              children: <Widget>[
+                Flexible(
+                  child: FutureBuilder<String>(
+                    future: _currentUser,
+                    builder: (context, userSnapshot) {
+                      if (userSnapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (userSnapshot.hasError) {
+                        return Center(child: Text('Failed to load user'));
+                      } else {
+                        return ListView.builder(
+                          padding: EdgeInsets.all(8.0),
+                          reverse: false,
+                          itemBuilder: (_, int index) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                GroupMessageWidget(
+                                  message: _messages[index],
+                                  currentUser: userSnapshot.data!,
+                                  onDelete: _deleteMessage,
+                                  onTransfer: _transferMessage,
+                                  onCopy: _copyMessage,
+                                  onSave: _saveMessage,
+                                ),
+                                if (_isLastReadMessageByCurrentUser(index))
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 5.0, right: 10.0),
+                                    child: CircleAvatar(
+                                      radius: 10,
+                                      backgroundImage: NetworkImage(snapshot.data!.membres.firstWhere((member) => member.id == widget.groupId).photo ?? ''),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                          itemCount: _messages.length,
+                        );
+                      }
+                    },
+                  ),
+                ),
+                Divider(height: 1.0),
+                Container(
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor),
+                  child: _buildTextComposer(snapshot.data!),
+                ),
+              ],
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTextComposer(Group group) {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Container(
@@ -135,21 +216,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         child: Row(
           children: <Widget>[
             IconButton(
-              icon: Icon(Icons.attach_file),
-              onPressed: _pickFile,
-            ),
-            IconButton(
               icon: Icon(Icons.photo_camera),
-              onPressed: _takePhoto,
+              onPressed: () => _takePhoto(),
             ),
             IconButton(
               icon: Icon(Icons.photo),
-              onPressed: _pickImage,
+              onPressed: () => _pickImage(),
+            ),
+            IconButton(
+              icon: Icon(Icons.attach_file),
+              onPressed: () => _pickFileAndSend(),
             ),
             Flexible(
               child: TextField(
                 controller: _textController,
-                onSubmitted: _handleSubmitted,
+                onSubmitted: (text) => _handleSubmitted(text),
                 decoration: InputDecoration.collapsed(
                   hintText: "Send a message",
                 ),
@@ -168,74 +249,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Group Chat'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.swap_horiz),
-            onPressed: _toggleUser,
-          ),
-        ],
-      ),
-      body: Column(
-        children: <Widget>[
-          Flexible(
-            child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
-              reverse: true,
-              itemBuilder: (_, int index) => GroupMessageWidget(
-                message: _messages[index],
-                onDelete: _deleteMessage,
-                onTransfer: _transferMessage,
-                onCopy: _copyMessage,
-                onSave: _saveMessage,
-              ),
-              itemCount: _messages.length,
-            ),
-          ),
-          Divider(height: 1.0),
-          Container(
-            decoration: BoxDecoration(color: Theme.of(context).cardColor),
-            child: _buildTextComposer(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Methods to handle messages
-  void _deleteMessage(String messageId) {
-    setState(() {
-      _messages.removeWhere((message) => message.id == messageId);
-    });
-
-    _messageService.deleteGroupMessage(widget.groupId, messageId).catchError((e) {
+  void _deleteMessage(String messageId) async {
+    await _messageService.deleteMessage(widget.groupId, messageId).catchError((e) {
       print('Failed to delete message: $e');
+    }).whenComplete(() {
+      _reload();
     });
   }
 
   void _transferMessage(String messageId) {
-    print('Transfer message: $messageId');
-    GroupMessage messageToTransfer = _messages.firstWhere(
-          (message) => message.id == messageId,
-      orElse: () => GroupMessage(
-        id: '',
-        content: '',
-        sender: '',
-        recipient: '',
-        groupId: widget.groupId,
-        timestamp: DateTime.now(),
-        type: MessageType.text,
-      ),
-    );
-    setState(() {
-      _messages.removeWhere((message) => message.id == messageId);
-      _messagesTransferred.add(messageToTransfer);
-    });
-    // Additional logic as needed
+    // Implementation for transferring a message
   }
 
   void _saveMessage() {
@@ -244,48 +267,31 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       setState(() {
         _messagesSaved.add(lastMessage);
       });
-      // Additional logic as needed
     }
   }
 
   void _copyMessage() {
     GroupMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
     if (lastMessage != null) {
-      Clipboard.setData(ClipboardData(text: lastMessage.content));
-      // Additional logic as needed
+      Clipboard.setData(ClipboardData(text: lastMessage.contenu.texte ?? ''));
     }
   }
 
-  // Methods to pick a file from local storage
-  Future<void> _pickFile() async {
-    String? filePath = await FilePickerUtil.pickFile();
-    if (filePath != null) {
-      _sendFile(filePath);
-    }
-  }
-
-  // Method to send a file
   void _sendFile(String filePath) async {
-    GroupMessage message = GroupMessage(
-      id: '',
-      content: filePath,
-      sender: _currentUser,
-      recipient: _currentRecipient,
-      groupId: widget.groupId,
-      timestamp: DateTime.now(),
-      type: MessageType.file,
-    );
-
     try {
-      GroupMessage? createdMessage =
-      await _messageService.createGroupMessage(widget.groupId, message.toJson());
-      if (createdMessage != null) {
-        setState(() {
-          _messages.insert(0, createdMessage);
-        });
+      bool success = await _messageService.sendFileToGroup(widget.groupId, filePath);
+      if (success) {
+        print('File sent successfully');
+        _reload();
+      } else {
+        print('Failed to send file');
       }
     } catch (e) {
-      print('Failed to send file: $e');
+      print('Exception during file sending: $e');
     }
+  }
+
+  Future<void> _pickAudio() async {
+    // Implementation for picking audio
   }
 }

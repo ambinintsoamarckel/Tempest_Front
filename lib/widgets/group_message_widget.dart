@@ -1,9 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../models/group_message.dart'; // Assurez-vous que le chemin est correct
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+import '../models/group_message.dart';
+import '../utils/audio_message_player.dart';
+import '../utils/video_message_player.dart';
+import '../utils/downloader.dart';
 
 class GroupMessageWidget extends StatelessWidget {
   final GroupMessage message;
+  final String currentUser;
   final VoidCallback? onCopy;
   final Function(String) onDelete;
   final Function(String) onTransfer;
@@ -11,6 +18,7 @@ class GroupMessageWidget extends StatelessWidget {
 
   GroupMessageWidget({
     required this.message,
+    required this.currentUser,
     this.onCopy,
     required this.onDelete,
     required this.onTransfer,
@@ -19,41 +27,73 @@ class GroupMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isCurrentUser = message.expediteur.id == currentUser;
     Widget messageContent;
 
-    switch (message.type) {
-      case MessageType.text:
-        messageContent = Text(
-          message.content,
-          style: TextStyle(
-            color: message.sender == "User 1" ? Colors.blue : Colors.black,
+    switch (message.contenu.type) {
+      case MessageType.texte:
+        messageContent = Container(
+          padding: EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color: isCurrentUser ? Colors.grey[300] : Colors.blue[100],
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0),
+              topRight: Radius.circular(10.0),
+              bottomRight: Radius.circular(10.0),
+              bottomLeft: isCurrentUser ? Radius.circular(10.0) : Radius.circular(0.0),
+            ),
+          ),
+          child: Text(
+            message.contenu.texte ?? '',
+            style: TextStyle(
+              color: isCurrentUser ? Colors.blue : Colors.black,
+            ),
           ),
         );
         break;
-      case MessageType.file:
-        messageContent = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.attach_file),
-            Text(
-              message.content.split('/').last,
-              style: TextStyle(
-                color: message.sender == "User 1" ? Colors.blue : Colors.black,
-              ),
+      case MessageType.fichier:
+        messageContent = Container(
+          padding: EdgeInsets.all(10.0),
+          decoration: BoxDecoration(
+            color: isCurrentUser ? Colors.grey[300] : Colors.blue[100],
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10.0),
+              topRight: Radius.circular(10.0),
+              bottomRight: Radius.circular(10.0),
+              bottomLeft: isCurrentUser ? Radius.circular(10.0) : Radius.circular(0.0),
             ),
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.attach_file),
+              SizedBox(height: 5),
+              Text(
+                message.contenu.fichier?.split('/').last ?? '',
+                style: TextStyle(
+                  color: isCurrentUser ? Colors.blue : Colors.black,
+                ),
+              ),
+            ],
+          ),
         );
         break;
       case MessageType.image:
-        messageContent = Image.file(
-          File(message.content),
-          width: 150,
-          height: 150,
-          fit: BoxFit.cover,
+        messageContent = ClipRRect(
+          borderRadius: BorderRadius.circular(10.0),
+          child: Image.network(
+            message.contenu.image ?? '',
+            width: 150,
+            height: 150,
+            fit: BoxFit.cover,
+          ),
         );
         break;
       case MessageType.audio:
-        messageContent = Text('Audio message: ${message.content}');
+        messageContent = AudioMessagePlayer(audioUrl: message.contenu.audio ?? '');
+        break;
+      case MessageType.video:
+        messageContent = VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
         break;
       default:
         messageContent = Text('Unsupported message type');
@@ -76,87 +116,108 @@ class GroupMessageWidget extends StatelessWidget {
               value: 'copy',
               child: ListTile(
                 leading: Icon(Icons.content_copy),
-                title: Text('Copy'),
+                title: Text('Copier'),
               ),
             ),
             PopupMenuItem<String>(
               value: 'delete',
               child: ListTile(
                 leading: Icon(Icons.delete),
-                title: Text('Delete'),
+                title: Text('Supprimer'),
               ),
             ),
             PopupMenuItem<String>(
               value: 'transfer',
               child: ListTile(
                 leading: Icon(Icons.forward),
-                title: Text('Transfer'),
+                title: Text('Transférer'),
               ),
             ),
-            if (message.type == MessageType.image || message.type == MessageType.file)
+            if (message.contenu.type == MessageType.image ||
+                message.contenu.type == MessageType.fichier ||
+                message.contenu.type == MessageType.audio ||
+                message.contenu.type == MessageType.video)
               PopupMenuItem<String>(
                 value: 'save',
                 child: ListTile(
                   leading: Icon(Icons.save),
-                  title: Text('Save'),
+                  title: Text('Enregistrer'),
                 ),
               ),
           ],
           elevation: 8.0,
         ).then((value) {
-          if (value != null) {
-            _handleMenuItemSelected(context, value);
+          if (value == 'copy' && onCopy != null) {
+            onCopy!();
+          } else if (value == 'delete') {
+            onDelete(message.id);
+          } else if (value == 'transfer') {
+            onTransfer(message.id);
+          } else if (value == 'save' && onSave != null) {
+            _saveFile(context);
           }
         });
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: message.sender == "User 1" ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: isCurrentUser ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: <Widget>[
-            if (message.sender != "User 1")
-              Container(
-                margin: const EdgeInsets.only(right: 16.0),
-                child: CircleAvatar(child: Text(message.sender[0])),
-              ),
+            if (isCurrentUser)
+        
+            SizedBox(width: 10),
             Column(
-              crossAxisAlignment: message.sender == "User 1" ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: <Widget>[
-                Text(message.sender, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: messageContent,
+                messageContent,
+                SizedBox(height: 5),
+                Text(
+                  message.dateEnvoi.toLocal().toString(),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
-            if (message.sender == "User 1")
-              Container(
-                margin: const EdgeInsets.only(left: 16.0),
-                child: CircleAvatar(child: Text(message.sender[0])),
-              ),
           ],
         ),
       ),
     );
   }
 
-  void _handleMenuItemSelected(BuildContext context, String value) {
-    switch (value) {
-      case 'copy':
-        if (onCopy != null) onCopy!();
+  Future<void> _saveFile(BuildContext context) async {
+    String type;
+    switch (message.contenu.type) {
+      case MessageType.image:
+        type = "image";
         break;
-      case 'delete':
-        onDelete(message.id);
+      case MessageType.audio:
+        type = "audio";
         break;
-      case 'transfer':
-        onTransfer(message.id);
+      case MessageType.video:
+        type = "video";
         break;
-      case 'save':
-        if (onSave != null) onSave!();
+      case MessageType.fichier:
+        type = "file";
         break;
       default:
-        break;
+        return;
+    }
+
+    final fileUrl = _getFileUrl();
+    downloadFile(context, fileUrl, type);
+  }
+
+  String _getFileUrl() {
+    switch (message.contenu.type) {
+      case MessageType.image:
+        return message.contenu.image ?? '';
+      case MessageType.audio:
+        return message.contenu.audio ?? '';
+      case MessageType.video:
+        return message.contenu.video ?? '';
+      case MessageType.fichier:
+        return message.contenu.fichier ?? '';
+      default:
+        return '';
     }
   }
 }
