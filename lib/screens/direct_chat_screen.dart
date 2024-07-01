@@ -122,6 +122,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       print('Failed to send message: $e');
     }
   }
+  bool _isLastReadMessageByCurrentUser(int index) {
+  if (_messages.isEmpty || index != _messages.length-1) return false;
+  DirectMessage message = _messages[index];
+  return message.destinataire.id == widget.id && message.lu ;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -151,21 +156,36 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             User contact = snapshot.data!;
             return Column(
               children: <Widget>[
-                Flexible(
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(8.0),
-                    reverse: false,
-                    itemBuilder: (_, int index) => DirectMessageWidget(
-                      message: _messages[index],
-                      contact: contact, // Pass contact to widget
-                      onDelete: _deleteMessage,
-                      onTransfer: _transferMessage,
-                      onCopy: _copyMessage,
-                      onSave: _saveMessage,
-                    ),
-                    itemCount: _messages.length,
-                  ),
+              Flexible(
+                child: ListView.builder(
+                  padding: EdgeInsets.all(8.0),
+                  reverse: false,
+                  itemBuilder: (_, int index) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        DirectMessageWidget(
+                          message: _messages[index],
+                          contact: contact,
+                          onDelete: _deleteMessage,
+                          onTransfer: _transferMessage,
+                          onCopy: _copyMessage,
+                          onSave: _saveMessage,
+                        ),
+                        if (_isLastReadMessageByCurrentUser(index))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5.0, right: 10.0),
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundImage: NetworkImage(contact.photo ?? ''),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                  itemCount: _messages.length,
                 ),
+              ),
                 Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
@@ -263,14 +283,6 @@ void _deleteMessage(String messageId) async {
     }
   }
 
-  // Pick file from local storage
-  Future<void> _pickFile(User contact) async {
-    String? filePath = await FilePickerUtil.pickFile();
-    if (filePath != null) {
-      _sendFile(filePath);
-    }
-  }
-
   // Send file message
 void _sendFile(String filePath) async {
   try {
@@ -283,10 +295,6 @@ void _sendFile(String filePath) async {
     print('Failed to send file: $e');
   }
 }
-
-
-
-
   // Pick audio from local storage
   Future<void> _pickAudio(User contact) async {
 /*     String? audioPath = await FilePickerUtil.pickAudio();
