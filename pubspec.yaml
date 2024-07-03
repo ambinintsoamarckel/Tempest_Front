@@ -43,6 +43,7 @@ dependencies:
   dio: ^5.1.1
   video_player: ^2.1.1
   audioplayers: ^6.0.0
+  flutter_local_notifications: ^12.0.2
 
 
 
@@ -73,7 +74,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
+  # To add assets to your application, add an assets sect
+ion, like this:
   assets:
       - assets/logo.png
       - assets/avatar.png

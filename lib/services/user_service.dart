@@ -45,6 +45,7 @@ class UserService {
       if (response.statusCode == 200) {
         final data = response.data['user'];
         final user = UserModel.fromJson(data);
+        
         await storage.write(key: 'user', value: jsonEncode(user.uid));
         socketService.initializeSocket(user.uid);
         return user;

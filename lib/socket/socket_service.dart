@@ -1,6 +1,8 @@
 import 'package:mini_social_network/models/user.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../models/direct_message.dart';
+import 'notification_service.dart';
 
 
 
@@ -20,18 +22,78 @@ class SocketService {
       // Handle user connected
       socket!.emit('user_connected', id);
     });
-    socket!.on('message_envoye_personne', (destinataire) async {
+ socket!.on('message_envoye_personne', (data) async {
       String? user = await storage.read(key: 'user');
+      DirectMessage message = DirectMessage.fromJson(data);
+
+      if (user != null) {
+        user = user.replaceAll('"', '');
+        if (user.trim() == message.destinataire.id.trim()) {
+          String notificationContent;
+          switch (message.contenu.type) {
+            case MessageType.texte:
+              notificationContent = message.contenu.texte ?? 'Vous avez reçu un nouveau message texte.';
+              break;
+            case MessageType.image:
+              notificationContent = 'Vous avez reçu une nouvelle image.';
+              break;
+            case MessageType.fichier:
+              notificationContent = 'Vous avez reçu un nouveau fichier.';
+              break;
+            case MessageType.audio:
+              notificationContent = 'Vous avez reçu un nouveau message audio.';
+              break;
+            case MessageType.video:
+              notificationContent = 'Vous avez reçu une nouvelle vidéo.';
+              break;
+            default:
+              notificationContent = 'Vous avez reçu un nouveau message.';socket!.on('message_envoye_personne', (data) async {
+      String? user = await storage.read(key: 'user');
+      DirectMessage message = DirectMessage.fromJson(data);
+
       if (user != null) {
         // Enlever les guillemets supplémentaires
         user = user.replaceAll('"', '');
-        if (user.trim() == destinataire.toString().trim()) {
-          print('Matched!');
-        } else {
-          print('Not matched');
+        if (user.trim() == message.destinataire.id.trim()) {
+          // Afficher la notification en fonction du type de message
+          String notificationContent;
+          switch (message.contenu.type) {
+            case MessageType.texte:
+              notificationContent = message.contenu.texte ?? 'Vous avez reçu un nouveau message texte.';
+              break;
+            case MessageType.image:
+              notificationContent = 'Vous avez reçu une nouvelle image.';
+              break;
+            case MessageType.fichier:
+              notificationContent = 'Vous avez reçu un nouveau fichier.';
+              break;
+            case MessageType.audio:
+              notificationContent = 'Vous avez reçu un nouveau message audio.';
+              break;
+            case MessageType.video:
+              notificationContent = 'Vous avez reçu une nouvelle vidéo.';
+              break;
+            default:
+              notificationContent = 'Vous avez reçu un nouveau message.';
+          }
+
+          await NotificationService().showNotification(
+            0,
+            'Nouveau message de ${message.expediteur.nom}',
+            notificationContent,
+          );
         }
-      } else {
-        print('User is null');
+      }
+    });
+
+          }
+
+          await NotificationService().showNotification(
+            0,
+            'Nouveau message de ${message.expediteur.nom}',
+            notificationContent,
+          );
+        }
       }
     });
 
