@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _checkConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('example.com');
+      final result = await InternetAddress.lookup('mahm.tempest.dov');
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
         setState(() {
           _isOnline = true;

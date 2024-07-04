@@ -73,7 +73,11 @@ class UserService {
   Future<bool> checkSession() async {
     try {
       final response = await dio.get('/session');
-      return response.statusCode == 200;
+      if(response.statusCode == 200) {
+        socketService.initializeSocket(response.data['id']);
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Session check error: $e');
       return false;
