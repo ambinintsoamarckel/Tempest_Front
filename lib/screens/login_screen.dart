@@ -11,20 +11,52 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final UserService _userService = UserService();
+  bool _isLoading = false;
 
   void _signIn() async {
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
-    UserModel? user = await _userService.signInWithEmailAndPassword(email, password);
-    if (user != null) {
-      // Navigate to the main screen or home screen
-      Navigator.pushReplacementNamed(context, '/home', arguments: user);
-    } else {
-      // Show error message
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      String email = _emailController.text.trim();
+      String password = _passwordController.text.trim();
+
+      if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill in all fields.')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      UserModel? user = await _userService.signInWithEmailAndPassword(email, password);
+
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/home', arguments: user);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to login. Please check your credentials.')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to login. Please check your credentials.')),
+        SnackBar(content: Text('Failed to login: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -37,7 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Adding a logo or image
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
                 child: Image.asset('assets/manga_transparent.png', height: 250),
@@ -82,17 +113,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
               SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _signIn,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  textStyle: TextStyle(fontSize: 18),
-                ),
-                child: Text('Login'),
-              ),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _signIn,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                      child: Text('Login'),
+                    ),
             ],
           ),
         ),
@@ -100,4 +133,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

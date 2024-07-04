@@ -22,32 +22,7 @@ class SocketService {
       // Handle user connected
       socket!.emit('user_connected', id);
     });
- socket!.on('message_envoye_personne', (data) async {
-      String? user = await storage.read(key: 'user');
-      DirectMessage message = DirectMessage.fromJson(data);
-
-      if (user != null) {
-        user = user.replaceAll('"', '');
-        if (user.trim() == message.destinataire.id.trim()) {
-          String notificationContent;
-          switch (message.contenu.type) {
-            case MessageType.texte:
-              notificationContent = message.contenu.texte ?? 'Vous avez reçu un nouveau message texte.';
-              break;
-            case MessageType.image:
-              notificationContent = 'Vous avez reçu une nouvelle image.';
-              break;
-            case MessageType.fichier:
-              notificationContent = 'Vous avez reçu un nouveau fichier.';
-              break;
-            case MessageType.audio:
-              notificationContent = 'Vous avez reçu un nouveau message audio.';
-              break;
-            case MessageType.video:
-              notificationContent = 'Vous avez reçu une nouvelle vidéo.';
-              break;
-            default:
-              notificationContent = 'Vous avez reçu un nouveau message.';socket!.on('message_envoye_personne', (data) async {
+socket!.on('message_envoye_personne', (data) async {
       String? user = await storage.read(key: 'user');
       DirectMessage message = DirectMessage.fromJson(data);
 
@@ -75,17 +50,6 @@ class SocketService {
               break;
             default:
               notificationContent = 'Vous avez reçu un nouveau message.';
-          }
-
-          await NotificationService().showNotification(
-            0,
-            'Nouveau message de ${message.expediteur.nom}',
-            notificationContent,
-          );
-        }
-      }
-    });
-
           }
 
           await NotificationService().showNotification(

@@ -12,8 +12,8 @@ class ContactScreen extends StatefulWidget {
 
 class _ContactScreenState extends State<ContactScreen> {
   final ContactService _contactService = ContactService();
-  late List<Contact> _contacts = [];
-  late List<Contact> _filteredContacts = [];
+  final List<Contact> _contacts = [];
+  final List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -25,14 +25,32 @@ class _ContactScreenState extends State<ContactScreen> {
   Future<void> _loadContacts() async {
     try {
       List<Contact> contacts = await _contactService.getContacts();
-      setState(() {
-        _contacts = contacts;
-        _filteredContacts = contacts;
-      });
+   
+        setState(() {
+          _contacts.addAll(contacts);
+          _filteredContacts.addAll(contacts);
+        });
+      
     } catch (e) {
       print('Failed to load contacts: $e');
     }
   }
+  Future<void> _reload() async {
+    try {
+      List<Contact> contacts = await _contactService.getContacts();
+   
+        setState(() {
+          _contacts.clear();
+          _filteredContacts.clear();
+          _contacts.addAll(contacts);
+          _filteredContacts.addAll(contacts);
+        });
+      
+    } catch (e) {
+      print('Failed to load contacts: $e');
+    }
+  }
+
 
   void _selectContact(Contact contact) {
     Navigator.pop(context, contact);
@@ -44,7 +62,8 @@ class _ContactScreenState extends State<ContactScreen> {
     }).toList();
 
     setState(() {
-      _filteredContacts = filteredContacts;
+      _filteredContacts.clear();
+      _filteredContacts.addAll(filteredContacts);
     });
   }
 

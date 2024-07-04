@@ -3,6 +3,7 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'models/user.dart';
+import 'services/user_service.dart';
 
 void main() {
   runApp(MyApp());
@@ -37,11 +38,42 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginScreen(),
+        '/': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/profile': (context) => ProfileScreen(user: ModalRoute.of(context)!.settings.arguments as UserModel),
-
       },
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  void _checkSession() async {
+    bool isValidSession = await _userService.checkSession();
+    if (isValidSession) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

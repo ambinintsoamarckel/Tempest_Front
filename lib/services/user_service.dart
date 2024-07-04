@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/user.dart';
 import '../network/network_config.dart';
 import '../socket/socket_service.dart';
@@ -31,6 +32,19 @@ class UserService {
       throw Exception('Erreur lors de la création de l\'utilisateur');
     }
   }
+    Future<bool> logout() async {
+    try {
+      final response = await dio.post('/logout'); 
+      await storage.delete(key: 'authCookie');
+      await storage.delete(key: 'user');
+      return response.statusCode==200;
+
+    } catch (e) {
+      print('Logout error: $e');
+      return false;
+    } 
+  }
+
 
   Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
@@ -54,6 +68,15 @@ class UserService {
       }
     } catch (e) {
       throw Exception('Erreur lors de la connexion $e');
+    }
+  }
+  Future<bool> checkSession() async {
+    try {
+      final response = await dio.get('/session');
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Session check error: $e');
+      return false;
     }
   }
 

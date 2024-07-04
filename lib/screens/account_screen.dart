@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import '../services/user_service.dart';
 
 class AccountScreen extends StatelessWidget {
-  const AccountScreen({Key? key}) : super(key: key);
+  AccountScreen({Key? key}) : super(key: key);
+
+  final UserService _userService = UserService();
+
+  void _logout(BuildContext context) async {
+    bool deconected=await _userService.logout();
+    if (deconected) {
+          Navigator.pushReplacementNamed(context, '/login');
+      
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +63,7 @@ class AccountScreen extends StatelessWidget {
             SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                // Action à exécuter lors du clic sur le bouton
+                _logout(context);
               },
               child: Text('Déconnexion'),
             ),
@@ -61,4 +73,3 @@ class AccountScreen extends StatelessWidget {
     );
   }
 }
-

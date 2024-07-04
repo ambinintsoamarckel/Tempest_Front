@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AccountScreen()),
+                MaterialPageRoute(builder: (context) => AccountScreen()),
               );
             },
           ),
@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ? TabBarView(
         controller: _tabController,
         children: const [
+
           ContactScreen(),
           ConversationListScreen(),
           StoryScreen(),
