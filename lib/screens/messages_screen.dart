@@ -3,6 +3,7 @@ import '../models/messages.dart';
 import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../services/user_service.dart';
+import '../main.dart'; // Importez le fichier principal où le routeObserver est défini.
 
 class ConversationListScreen extends StatefulWidget {
   const ConversationListScreen({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class ConversationListScreen extends StatefulWidget {
   _ConversationListScreenState createState() => _ConversationListScreenState();
 }
 
-class _ConversationListScreenState extends State<ConversationListScreen> {
+class _ConversationListScreenState extends State<ConversationListScreen> with RouteAware {
   final MessageService _messageService = MessageService();
   final UserService _userService = UserService();
   late Future<List<Conversation>> _conversationsFuture;
@@ -19,16 +20,34 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
   @override
   void initState() {
     super.initState();
-    _conversationsFuture = _loadConversations();
+    _loadConversations();
   }
 
-  Future<List<Conversation>> _loadConversations() async {
-    try {
-      return await _messageService.getConversationsWithContact();
-    } catch (e) {
-      print('Failed to load conversations: $e');
-      return [];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute? route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
     }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    _loadConversations();
+  }
+
+  Future<void> _loadConversations() async {
+    setState(() {
+      _conversationsFuture = _messageService.getConversationsWithContact();
+    });
   }
 
   void _logout(BuildContext context) async {

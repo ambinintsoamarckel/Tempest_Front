@@ -5,6 +5,9 @@ import 'screens/profile_screen.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
 
+
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() {
   runApp(MyApp());
 }
@@ -13,6 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorObservers: [routeObserver],
       title: 'Houatsappy',
       debugShowCheckedModeBanner: false, // Désactive le ruban "Debug"
       theme: ThemeData(
