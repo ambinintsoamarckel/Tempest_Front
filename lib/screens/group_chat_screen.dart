@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -6,19 +7,22 @@ import '../models/group_message.dart';
 import '../widgets/group_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_group_service.dart';
+import 'contacts_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../models/contact.dart';
+import 'package:dio/dio.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
 
   GroupChatScreen({required this.groupId});
+
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
   final List<GroupMessage> _messages = [];
-  final List<GroupMessage> _messagesTransferred = [];
   final List<GroupMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
   final GroupChatService _messageService = GroupChatService();
@@ -173,7 +177,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                 GroupMessageWidget(
                                   message: _messages[index],
                                   currentUser: userSnapshot.data!,
-                                  onDelete: _deleteMessage,
+                                  onDelete: (messageId) => _deleteMessage(messageId, widget.groupId),
                                   onTransfer: _transferMessage,
                                   onCopy: _copyMessage,
                                   onSave: _saveMessage,
@@ -249,19 +253,66 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  void _deleteMessage(String messageId) async {
+  void _deleteMessage(String messageId, String groupId) async {
     try {
-      await _messageService.deleteMessage(widget.groupId, messageId);
+      await _messageService.deleteMessage(messageId, groupId);
+      print('Message deleted successfully');
       _reload(); // Recharge les messages après la suppression réussie
+    } on DioError catch (e) {
+      if (e.response != null && e.response!.statusCode == 404) {
+        print('Message not found or already deleted');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Le message est introuvable ou a déjà été supprimé.')),
+        );
+      } else if (e.response != null) {
+        print('Failed to delete message: ${e.response!.statusCode} - ${e.response!.statusMessage}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur de suppression: ${e.response!.statusCode} ${e.response!.statusMessage}')),
+        );
+      } else {
+        print('Unexpected error: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
+        );
+      }
     } catch (e) {
       print('Failed to delete message: $e');
-      // Gérer l'erreur selon les besoins
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
+      );
     }
   }
 
+  void _transferMessage(String messageId) async {
+    final selectedContact = await Navigator.push<Contact>(
+      context,
+      MaterialPageRoute(builder: (context) => const ContactScreen()),
+    );
 
-  void _transferMessage(String messageId) {
-    // Implementation for transferring a message
+    if (selectedContact != null) {
+      try {
+        await _messageService.transferMessage(selectedContact.id, messageId);
+        print('Message transferred successfully');
+        _reload();
+      } on DioError catch (e) {
+        if (e.response != null) {
+          print('Erreur de réponse du serveur ${e.response!.statusCode}: ${e.response!.statusMessage}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur du serveur: ${e.response!.statusCode} ${e.response!.statusMessage}')),
+          );
+        } else {
+          print('Erreur inattendue: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
+          );
+        }
+      } catch (e) {
+        print('Failed to transfer message: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
+        );
+      }
+    }
   }
 
   void _saveMessage() {
@@ -294,7 +345,49 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
+ /* Future<void> _addMember(String utilisateurId) async {
+    try {
+      bool success = await _messageService.addMemberToGroup(widget.groupId, utilisateurId);
+      if (success) {
+        print('Member added successfully');
+        _reload(); // Recharge les informations du groupe après l'ajout réussi
+      } else {
+        print('Failed to add member');
+      }
+    } catch (e) {
+      print('Failed to add member: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'ajout du membre, veuillez réessayer.')),
+      );
+    }
+  }
+
+  Future<void> _removeMember(String utilisateurId) async {
+    try {
+      bool success = await _messageService.removeMemberFromGroup(widget.groupId, utilisateurId);
+      if (success) {
+        print('Member removed successfully');
+        _reload(); // Recharge les informations du groupe après la suppression réussie
+      } else {
+        print('Failed to remove member');
+      }
+    } catch (e) {
+      print('Failed to remove member: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la suppression du membre, veuillez réessayer.')),
+      );
+    }
+  }
+*/
+
   Future<void> _pickAudio() async {
     // Implementation for picking audio
   }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 }
+

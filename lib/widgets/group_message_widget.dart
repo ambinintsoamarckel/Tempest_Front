@@ -163,9 +163,7 @@ class GroupMessageWidget extends StatelessWidget {
         child: Row(
           mainAxisAlignment: isCurrentUser ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: <Widget>[
-            if (isCurrentUser)
-        
-            SizedBox(width: 10),
+            if (isCurrentUser) SizedBox(width: 10),
             Column(
               crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: <Widget>[
