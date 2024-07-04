@@ -3,14 +3,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
 import '../models/direct_message.dart';
+import '../models/contact.dart'; // Assurez-vous d'importer Contact
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_message_service.dart';
+import 'contacts_screen.dart'; // Assurez-vous d'importer ContactScreen
 
 class DirectChatScreen extends StatefulWidget {
   final String id;
 
   DirectChatScreen({required this.id});
+
   @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
 }
@@ -46,13 +49,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     try {
       List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
       setState(() {
-        _messages.clear(); 
+        _messages.clear();
         _messages.addAll(messages);
       });
     } catch (e) {
-       print('Failed to load messages: $e');
+      print('Failed to load messages: $e');
       rethrow;
-      
     }
   }
 
@@ -245,22 +247,21 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     });
   }
 
-  void _transferMessage(String messageId) {
-    DirectMessage messageToTransfer = _messages.firstWhere(
-      (message) => message.id == messageId,
-      orElse: () => DirectMessage(
-        id: '',
-        contenu: MessageContent(type: MessageType.texte, texte: ''),
-        expediteur: User(id: '', nom: '', email: ''),
-        destinataire: User(id: '', nom: '', email: ''),
-        dateEnvoi: DateTime.now(),
-        lu: false,
-      ),
+  void _transferMessage(String messageId) async {
+    final selectedContact = await Navigator.push<Contact>(
+      context,
+      MaterialPageRoute(builder: (context) => const ContactScreen()),
     );
-    setState(() {
-      _messages.removeWhere((message) => message.id == messageId);
-      _messagesTransferred.add(messageToTransfer);
-    });
+
+    if (selectedContact != null) {
+      try {
+        await _messageService.transferMessage(selectedContact.id, messageId);
+        print('Message transferred successfully');
+        _reload();
+      } catch (e) {
+        print('Failed to transfer message: $e');
+      }
+    }
   }
 
   void _saveMessage() {
@@ -280,9 +281,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   }
 
   void _sendFile(String filePath) async {
-
     try {
-      bool success = await _messageService.sendFileToPerson(widget.id, filePath);
+      bool success = await _messageService.sendFileToPerson(filePath, widget.id);
       if (success) {
         print('File sent successfully');
         _reload();
@@ -290,11 +290,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         print('Failed to send file');
       }
     } catch (e) {
-      print('Exception during file sending: $e');
+      print('Failed to send file: $e');
     }
-  }
-  // Pick audio from local storage
-  Future<void> _pickAudio(User contact) async {
-    // Implementation for picking audio
   }
 }

@@ -34,63 +34,8 @@ class _ContactScreenState extends State<ContactScreen> {
     }
   }
 
-  void _navigateToChat(Contact contact) {
-    // Navigate to chat screen with the contact
-    /* Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(contact: contact),
-      ),
-    ); */
-  }
-
-  void _showOptions(Contact contact) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.group),
-              title: Text('Créer un groupe avec ${contact.name}'),
-              onTap: () {
-                Navigator.pop(context);
-                _createGroupWithContact(contact);
-              },
-            ),
-            /* if (contact.hasActiveStory)
-              ListTile(
-                leading: const Icon(Icons.image),
-                title: Text('Voir la story de ${contact.name}'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _viewStory(contact);
-                },
-              ), */
-          ],
-        );
-      },
-    );
-  }
-
-  void _createGroupWithContact(Contact contact) {
-    // Navigate to create group screen with the contact
-    /* Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateGroupScreen(contact: contact),
-      ),
-    ); */
-  }
-
-  void _viewStory(Contact contact) {
-    // Navigate to view story screen with the contact
-    /* Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ViewStoryScreen(contact: contact),
-      ),
-    ); */
+  void _selectContact(Contact contact) {
+    Navigator.pop(context, contact);
   }
 
   void _filterContacts(String query) {
@@ -130,24 +75,23 @@ class _ContactScreenState extends State<ContactScreen> {
       ),
       body: _filteredContacts.isNotEmpty
           ? ListView.builder(
-              itemCount: _filteredContacts.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () => _navigateToChat(_filteredContacts[index]),
-                  onLongPress: () => _showOptions(_filteredContacts[index]),
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                    child: Padding(
-                      padding: EdgeInsets.all(10.0),
-                      child: ContactWidget(contact: _filteredContacts[index]),
-                    ),
-                  ),
-                );
-              },
-            )
-          : Center(
-              child: CircularProgressIndicator(),
+        itemCount: _filteredContacts.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () => _selectContact(_filteredContacts[index]),
+            child: Card(
+              margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+              child: Padding(
+                padding: EdgeInsets.all(10.0),
+                child: ContactWidget(contact: _filteredContacts[index]),
+              ),
             ),
+          );
+        },
+      )
+          : Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

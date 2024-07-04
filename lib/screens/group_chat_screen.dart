@@ -250,12 +250,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _deleteMessage(String messageId) async {
-    await _messageService.deleteMessage(widget.groupId, messageId).catchError((e) {
+    try {
+      await _messageService.deleteMessage(widget.groupId, messageId);
+      _reload(); // Recharge les messages après la suppression réussie
+    } catch (e) {
       print('Failed to delete message: $e');
-    }).whenComplete(() {
-      _reload();
-    });
+      // Gérer l'erreur selon les besoins
+    }
   }
+
 
   void _transferMessage(String messageId) {
     // Implementation for transferring a message
