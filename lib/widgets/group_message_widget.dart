@@ -27,7 +27,7 @@ class GroupMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCurrentUser = message.expediteur.id == currentUser;
+    final bool isCurrentUser = message.expediteur.id != currentUser;
     Widget messageContent;
 
     switch (message.contenu.type) {
@@ -163,15 +163,30 @@ class GroupMessageWidget extends StatelessWidget {
        child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(
-          mainAxisAlignment: isCurrentUser ? MainAxisAlignment.start : MainAxisAlignment.end,
+          mainAxisAlignment: !isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: <Widget>[
-            if (isCurrentUser)
-            SizedBox(width: 10),
-            Flexible( // Utilisez Flexible pour permettre le retour à la ligne automatique
+            if (isCurrentUser) ...[
+              CircleAvatar(
+                backgroundImage: message.expediteur.photo != null ? NetworkImage(message.expediteur.photo!) : null,
+              ),
+              SizedBox(width: 10),
+            ],
+            Flexible(
               child: Column(
-                crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: <Widget>[
-                  messageContent,
+                  if (isCurrentUser)
+                    Text(
+                      message.expediteur.nom ?? 'Anonyme',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  Container(
+                    margin: EdgeInsets.only(top: 5.0),
+                    child: messageContent,
+                  ),
                   SizedBox(height: 5),
                   Text(
                     message.dateEnvoi.toLocal().toString(),
@@ -180,6 +195,8 @@ class GroupMessageWidget extends StatelessWidget {
                 ],
               ),
             ),
+            if (isCurrentUser)
+              SizedBox(width: 10),
           ],
         ),
       ),
