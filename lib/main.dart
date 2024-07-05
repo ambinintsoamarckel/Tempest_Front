@@ -4,8 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
-
-
+import 'services/current_screen_manager.dart';
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() {

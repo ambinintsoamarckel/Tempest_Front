@@ -1,35 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
 import '../models/direct_message.dart';
-import '../models/contact.dart'; // Assurez-vous d'importer Contact
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_message_service.dart';
-import 'contacts_screen.dart'; // Assurez-vous d'importer ContactScreen
+
 
 class DirectChatScreen extends StatefulWidget {
   final String id;
+  static final GlobalKey<_DirectChatScreenState> directChatScreenKey = GlobalKey<_DirectChatScreenState>();
 
-  DirectChatScreen({required this.id});
+  DirectChatScreen({required this.id}) : super(key: directChatScreenKey);
 
-  @override
+
+   @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
+
+  void reload() {
+    final state = directChatScreenKey.currentState;
+    if (state != null) {
+      state._reload();
+    }
+  }
 }
 
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
+    final List<DirectMessage> _messagesSaved = [];
   final List<DirectMessage> _messagesTransferred = [];
-  final List<DirectMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
   final MessageService _messageService = MessageService();
   late Future<User> _contactFuture;
+  final CurrentScreenManager screenManager=CurrentScreenManager();
+
+  Future<void> _reload() async {
+    try {
+      List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
+      setState(() {
+        _messages.clear();
+        _messages.addAll(messages);
+      });
+    } catch (e) {
+      print('Failed to load messages: $e');
+      rethrow;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _contactFuture = _loadContact(); // Load contact during initialization
+    _contactFuture = _loadContact();
+    screenManager.updateCurrentScreen('directChat'); // Load contact during initialization
   }
 
   Future<User> _loadContact() async {
@@ -39,19 +63,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         _messages.addAll(messages);
       });
       return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
-    } catch (e) {
-      print('Failed to load messages: $e');
-      rethrow;
-    }
-  }
-
-  Future _reload() async {
-    try {
-      List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
-      setState(() {
-        _messages.clear();
-        _messages.addAll(messages);
-      });
     } catch (e) {
       print('Failed to load messages: $e');
       rethrow;
@@ -127,7 +138,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     return message.destinataire.id == widget.id && message.lu;
   }
 
-  @override
+ 
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -198,6 +210,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
+
   Widget _buildTextComposer(User contact) {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
@@ -214,8 +227,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
               onPressed: () => _pickImage(contact),
             ),
             IconButton(
-              icon: Icon(Icons.attach_file), // Ajouter l'icône pour envoyer des fichiers
-              onPressed: () => _pickFileAndSend(contact), // Fonction pour choisir un fichier
+              icon: Icon(Icons.attach_file),
+              onPressed: () => _pickFileAndSend(contact),
             ),
             Flexible(
               child: TextField(
@@ -250,21 +263,22 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     });
   }
 
-  void _transferMessage(String messageId) async {
-    final selectedContact = await Navigator.push<Contact>(
-      context,
-      MaterialPageRoute(builder: (context) => const ContactScreen()),
+  void _transferMessage(String messageId) {
+    DirectMessage messageToTransfer = _messages.firstWhere(
+      (message) => message.id == messageId,
+      orElse: () => DirectMessage(
+        id: '',
+        contenu: MessageContent(type: MessageType.texte, texte: ''),
+        expediteur: User(id: '', nom: '', email: ''),
+        destinataire: User(id: '', nom: '', email: ''),
+        dateEnvoi: DateTime.now(),
+        lu: false,
+      ),
     );
-
-    if (selectedContact != null) {
-      try {
-        await _messageService.transferMessage(selectedContact.id, messageId);
-        print('Message transferred successfully');
-        _reload();
-      } catch (e) {
-        print('Failed to transfer message: $e');
-      }
-    }
+    setState(() {
+      _messages.removeWhere((message) => message.id == messageId);
+      _messagesTransferred.add(messageToTransfer);
+    });
   }
 
   void _saveMessage() {
@@ -285,7 +299,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
   void _sendFile(String filePath) async {
     try {
-      bool success = await _messageService.sendFileToPerson(filePath, widget.id);
+      bool success = await _messageService.sendFileToPerson(widget.id, filePath);
       if (success) {
         print('File sent successfully');
         _reload();
@@ -293,7 +307,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         print('Failed to send file');
       }
     } catch (e) {
-      print('Failed to send file: $e');
+      print('Exception during file sending: $e');
     }
+  }
+
+  // Pick audio from local storage
+  Future<void> _pickAudio(User contact) async {
+    // Implementation for picking audio
   }
 }

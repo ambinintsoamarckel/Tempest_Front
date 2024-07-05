@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/messages.dart';
 import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
@@ -7,20 +8,29 @@ import '../main.dart'; // Importez le fichier principal où le routeObserver est
 
 class ConversationListScreen extends StatefulWidget {
   const ConversationListScreen({Key? key}) : super(key: key);
+  static final GlobalKey<_ConversationListScreenState> conversationListScreenKey = GlobalKey<_ConversationListScreenState>();
 
   @override
   _ConversationListScreenState createState() => _ConversationListScreenState();
+   void reload() {
+    final state = conversationListScreenKey.currentState;
+    if (state != null) {
+      state._loadConversations();
+    }
+  }
 }
 
 class _ConversationListScreenState extends State<ConversationListScreen> with RouteAware {
   final MessageService _messageService = MessageService();
   final UserService _userService = UserService();
   late Future<List<Conversation>> _conversationsFuture;
+  final CurrentScreenManager screenManager=CurrentScreenManager();
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
+    screenManager.updateCurrentScreen('conversationList');
   }
 
   @override
@@ -41,6 +51,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> with Ro
   @override
   void didPopNext() {
     super.didPopNext();
+    screenManager.updateCurrentScreen('conversationList');
     _loadConversations();
   }
 

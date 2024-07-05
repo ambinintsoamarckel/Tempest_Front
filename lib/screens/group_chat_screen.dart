@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
 import '../models/group_message.dart';
@@ -29,12 +30,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   late Future<Group> _groupFuture;
   final storage = FlutterSecureStorage();
   late Future<String> _currentUser;
+  final CurrentScreenManager screenManager=CurrentScreenManager();
 
   @override
   void initState() {
     super.initState();
     _groupFuture = _loadGroup();
     _currentUser = _loadCurrentUser();
+    screenManager.updateCurrentScreen('groupChat');
   }
 
   Future<String> _loadCurrentUser() async {

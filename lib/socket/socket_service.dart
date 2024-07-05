@@ -1,10 +1,11 @@
-import 'package:mini_social_network/models/user.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mini_social_network/screens/direct_chat_screen.dart';
+import 'package:mini_social_network/screens/messages_screen.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/direct_message.dart';
 import 'notification_service.dart';
-
-
+import '../services/current_screen_manager.dart'; // Importez le CurrentScreenManager
 
 class SocketService {
   IO.Socket? socket;
@@ -19,18 +20,16 @@ class SocketService {
     socket!.connect();
 
     socket!.on('connect', (_) {
-      // Handle user connected
       socket!.emit('user_connected', id);
     });
-socket!.on('message_envoye_personne', (data) async {
+
+    socket!.on('message_envoye_personne', (data) async {
       String? user = await storage.read(key: 'user');
       DirectMessage message = DirectMessage.fromJson(data);
 
       if (user != null) {
-        // Enlever les guillemets supplémentaires
         user = user.replaceAll('"', '');
         if (user.trim() == message.destinataire.id.trim()) {
-          // Afficher la notification en fonction du type de message
           String notificationContent;
           switch (message.contenu.type) {
             case MessageType.texte:
@@ -57,14 +56,40 @@ socket!.on('message_envoye_personne', (data) async {
             'Nouveau message de ${message.expediteur.nom}',
             notificationContent,
           );
+          print('Eto le screen');
+          print(CurrentScreenManager.currentScreen);
+          print(CurrentScreenManager.currentScreen == 'conversationList');
+          // Vérifier l'écran actuel en utilisant CurrentScreenManager
+          if (CurrentScreenManager.currentScreen == 'directChat') {
+            final state = DirectChatScreen.directChatScreenKey.currentState;
+
+            if (state != null) {
+            if(state.widget.id==message.expediteur.id)
+                {
+                  state.widget.reload();    
+                }
+              
+            }
+          }
+          if(CurrentScreenManager.currentScreen == 'conversationList')
+          {
+            
+            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            print(state);
+
+                      if (state != null) {
+                        print('appelreload');
+                   
+                            state.widget.reload();    
+                          
+                    }
         }
       }
-    });
+    }});
 
     socket!.on('message_lu_personne', (expediteur) async {
       String? user = await storage.read(key: 'user');
       if (user != null) {
-        // Enlever les guillemets supplémentaires
         user = user.replaceAll('"', '');
         if (user.trim() == expediteur.toString().trim()) {
           print('Matched!');
@@ -76,22 +101,18 @@ socket!.on('message_envoye_personne', (data) async {
       }
     });
 
-
     socket!.on('message_envoye_groupe', (groupMembers) async {
       print('Membres du groupe reçus: $groupMembers');
 
       String? user = await storage.read(key: 'user');
       if (user != null) {
-        // Supprimer les guillemets supplémentaires si nécessaire
         user = user.replaceAll('"', '').trim();
         bool isMember = groupMembers.contains(user);
 
         if (isMember) {
           print('Utilisateur est membre du groupe');
-          // Effectuer l'action spécifique si l'utilisateur est membre du groupe
         } else {
           print('Utilisateur n\'est pas membre du groupe');
-          // Effectuer une autre action si nécessaire
         }
       } else {
         print('Utilisateur est null');
@@ -103,70 +124,54 @@ socket!.on('message_envoye_personne', (data) async {
 
       String? user = await storage.read(key: 'user');
       if (user != null) {
-        // Supprimer les guillemets supplémentaires si nécessaire
         user = user.replaceAll('"', '').trim();
         bool isMember = groupMembers.contains(user);
 
         if (isMember) {
           print('Utilisateur est membre du groupe');
-          // Effectuer l'action spécifique si l'utilisateur est membre du groupe
         } else {
           print('Utilisateur n\'est pas membre du groupe');
-          // Effectuer une autre action si nécessaire
         }
       } else {
         print('Utilisateur est null');
       }
     });
 
+    socket!.on('utilisateur_cree', (message) {
+      print('eto ary $message');
+    });
 
+    socket!.on('utilisateur_modifie', (message) {
+      print('eto ary $message');
+    });
 
-        socket!.on('utilisateur_cree', (message) {
+    socket!.on('utilisateur_supprime', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('utilisateur_modifie', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('utilisateur_supprime', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('story_ajoutee', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('photo_changee', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('groupe_quitte', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('groupe_cree', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-      socket!.on('story_supprimee', (message) {
-      print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
-    });
-    
-      socket!.on('story_vue', (viewers) async {
 
+    socket!.on('story_ajoutee', (message) {
+      print('eto ary $message');
+    });
+
+    socket!.on('photo_changee', (message) {
+      print('eto ary $message');
+    });
+
+    socket!.on('groupe_quitte', (message) {
+      print('eto ary $message');
+    });
+
+    socket!.on('groupe_cree', (message) {
+      print('eto ary $message');
+    });
+
+    socket!.on('story_supprimee', (message) {
+      print('eto ary $message');
+    });
+
+    socket!.on('story_vue', (viewers) async {
       String? user = await storage.read(key: 'user');
       if (user != null) {
-        // Enlever les guillemets supplémentaires
         user = user.replaceAll('"', '');
         if (user.trim() == viewers.toString().trim()) {
           print('Matched!');
@@ -176,56 +181,44 @@ socket!.on('message_envoye_personne', (data) async {
       } else {
         print('User is null');
       }
-
     });
 
-      socket!.on('groupe_supprime', (message) {
+    socket!.on('groupe_supprime', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('photo_groupe_changee', (message) {
+
+    socket!.on('photo_groupe_changee', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('membre_ajoute', (message) {
+
+    socket!.on('membre_ajoute', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('membre_supprime', (message) {
+
+    socket!.on('membre_supprime', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('groupe_mis_a_jour', (message) {
+
+    socket!.on('groupe_mis_a_jour', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('message_supprime', (message) {
+
+    socket!.on('message_supprime', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
-      socket!.on('membre_supprime', (message) {
+
+    socket!.on('membre_supprime', (message) {
       print('eto ary $message');
-      // Handle user disconnected
-      //socket!.emit('user_disconnected', 'USER_ID');
     });
+
     socket!.on('disconnect', (_) {
       print('déconnecté');
-      // Handle user disconnected
       socket!.emit('user_disconnected', id);
     });
 
     socket!.on('message', (data) {
       print('message: $data');
-      // Handle incoming message
     });
-
-    // Add more event handlers as needed
   }
 
   void sendMessage(String message) {

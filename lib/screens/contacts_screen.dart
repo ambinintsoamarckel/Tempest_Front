@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
@@ -15,11 +16,13 @@ class _ContactScreenState extends State<ContactScreen> {
   final List<Contact> _contacts = [];
   final List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
+  final CurrentScreenManager screenManager=CurrentScreenManager();
 
   @override
   void initState() {
     super.initState();
     _loadContacts();
+    screenManager.updateCurrentScreen('contact');
   }
 
   Future<void> _loadContacts() async {
