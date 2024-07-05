@@ -114,7 +114,6 @@ class MessageService {
       );
 
       if (response.statusCode == 201) {
-        print('File sent successfully: ${response.data}');
         return true;
       } else {
         print('Failed to send file: ${response.data}');
@@ -188,7 +187,7 @@ class MessageService {
       print('Response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        print('Messages sent successfully');
+
       } else {
         print('Failed to send messages: ${response.data}');
         throw Exception('Failed to send messages');

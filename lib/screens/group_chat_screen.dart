@@ -335,7 +335,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     try {
       bool success = await _messageService.sendFileToGroup(widget.groupId, filePath);
       if (success) {
-        print('File sent successfully');
         _reload();
       } else {
         print('Failed to send file');

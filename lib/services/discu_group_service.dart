@@ -178,7 +178,6 @@ List<dynamic> messagesJson = response.data;
       );
 
       if (response.statusCode == 201) {
-        print('File sent successfully: ${response.data}');
         return true;
       } else {
         print('Failed to send file: ${response.data}');

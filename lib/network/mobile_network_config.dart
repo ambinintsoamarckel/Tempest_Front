@@ -15,7 +15,6 @@ Dio getClient() {
         return handler.next(options);
       },
       onResponse: (response, handler) async {
-        print('Response plateforme android ${response.headers}');
         if (response.headers.map.containsKey(HttpHeaders.setCookieHeader)) {
           String rawCookie = response.headers[HttpHeaders.setCookieHeader]!.join('; ');
           await storage.write(key: 'authCookie', value: rawCookie);
