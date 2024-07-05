@@ -25,7 +25,7 @@ class DirectMessageWidget extends StatelessWidget {
     this.onSave,
   });
 
- @override
+  @override
   Widget build(BuildContext context) {
     final bool isContact = message.expediteur.id == contact.id;
     Widget messageContent;
@@ -48,6 +48,8 @@ class DirectMessageWidget extends StatelessWidget {
             style: TextStyle(
               color: isContact ? Colors.blue : Colors.black,
             ),
+            softWrap: true, // Permet le retour à la ligne automatique
+            overflow: TextOverflow.clip, // Assure que le texte ne déborde pas
           ),
         );
         break;
@@ -168,16 +170,18 @@ class DirectMessageWidget extends StatelessWidget {
                 backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
             SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-              children: <Widget>[
-                messageContent,
-                SizedBox(height: 5),
-                Text(
-                  message.dateEnvoi.toLocal().toString(),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            Flexible( // Utilisez Flexible pour permettre le retour à la ligne automatique
+              child: Column(
+                crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                children: <Widget>[
+                  messageContent,
+                  SizedBox(height: 5),
+                  Text(
+                    message.dateEnvoi.toLocal().toString(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -186,30 +190,28 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   Future<void> _saveFile(BuildContext context) async {
-      String type;
-      switch (message.contenu.type) {
-        case MessageType.image:
-          type = "image";
-          break;
-        case MessageType.audio:
-          type = "audio";
-          break;
-        case MessageType.video:
-         type = "video";
-          break;
-        case MessageType.fichier:
-       type = "file";
-          break;
-        default:
-          return;
-      }
-
-      final fileUrl = _getFileUrl();
-      downloadFile(context, fileUrl, type);
-     
-   
+    String type;
+    switch (message.contenu.type) {
+      case MessageType.image:
+        type = "image";
+        break;
+      case MessageType.audio:
+        type = "audio";
+        break;
+      case MessageType.video:
+        type = "video";
+        break;
+      case MessageType.fichier:
+        type = "file";
+        break;
+      default:
+        return;
     }
-  
+
+    final fileUrl = _getFileUrl();
+    downloadFile(context, fileUrl, type);
+  }
+
   String _getFileUrl() {
     switch (message.contenu.type) {
       case MessageType.image:

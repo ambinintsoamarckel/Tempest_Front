@@ -31,7 +31,7 @@ class GroupMessageWidget extends StatelessWidget {
     Widget messageContent;
 
     switch (message.contenu.type) {
-      case MessageType.texte:
+       case MessageType.texte:
         messageContent = Container(
           padding: EdgeInsets.all(10.0),
           decoration: BoxDecoration(
@@ -48,6 +48,8 @@ class GroupMessageWidget extends StatelessWidget {
             style: TextStyle(
               color: isCurrentUser ? Colors.blue : Colors.black,
             ),
+            softWrap: true, // Permet le retour à la ligne automatique
+            overflow: TextOverflow.clip, // Assure que le texte ne déborde pas
           ),
         );
         break;
@@ -158,22 +160,25 @@ class GroupMessageWidget extends StatelessWidget {
           }
         });
       },
-      child: Container(
+       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(
           mainAxisAlignment: isCurrentUser ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: <Widget>[
-            if (isCurrentUser) SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-              children: <Widget>[
-                messageContent,
-                SizedBox(height: 5),
-                Text(
-                  message.dateEnvoi.toLocal().toString(),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            if (isCurrentUser)
+            SizedBox(width: 10),
+            Flexible( // Utilisez Flexible pour permettre le retour à la ligne automatique
+              child: Column(
+                crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                children: <Widget>[
+                  messageContent,
+                  SizedBox(height: 5),
+                  Text(
+                    message.dateEnvoi.toLocal().toString(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
