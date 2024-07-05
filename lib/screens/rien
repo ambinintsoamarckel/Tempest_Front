@@ -1,0 +1,41 @@
+child: Container(
+  margin: const EdgeInsets.symmetric(vertical: 10.0),
+  child: Row(
+    mainAxisAlignment: !isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+    children: <Widget>[
+      if (isCurrentUser) ...[
+        CircleAvatar(
+          backgroundImage: message.expediteur.photo != null ? NetworkImage(message.expediteur.photo!) : null,
+        ),
+        SizedBox(width: 10),
+      ],
+      Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.5, // Limite la largeur à 50% de l'écran
+        ),
+        child: Column(
+          crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: <Widget>[
+            if (isCurrentUser)
+              Text(
+                message.expediteur.nom ?? 'Anonyme',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            Container(
+              margin: EdgeInsets.only(top: 5.0),
+              child: messageContent,
+            ),
+            SizedBox(height: 5),
+            Text(
+              message.dateEnvoi.toLocal().toString(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),

@@ -165,24 +165,30 @@ class DirectMessageWidget extends StatelessWidget {
         child: Row(
           mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: <Widget>[
-            if (isContact)
+            if (isContact)...[
               CircleAvatar(
                 backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
-            SizedBox(width: 10),
-            Flexible( // Utilisez Flexible pour permettre le retour à la ligne automatique
-              child: Column(
-                crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                children: <Widget>[
-                  messageContent,
-                  SizedBox(height: 5),
-                  Text(
-                    message.dateEnvoi.toLocal().toString(),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+              SizedBox(width: 10),
+              ],
+                Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
+        ),
+        child: Column(
+          crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+          children: <Widget>[
+            messageContent,
+            SizedBox(height: 5),
+            Text(
+              message.dateEnvoi.toLocal().toString(),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
+          ],
+        ),
+      ),
+            if (isContact)
+              SizedBox(width: 10),
           ],
         ),
       ),

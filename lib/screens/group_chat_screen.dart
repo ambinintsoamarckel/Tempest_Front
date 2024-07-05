@@ -236,8 +236,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 controller: _textController,
                 onSubmitted: (text) => _handleSubmitted(text),
                 decoration: InputDecoration.collapsed(
-                  hintText: "Send a message",
+                  hintText: "Envoyer un message",
                 ),
+                maxLines: null, // Permet un retour à la ligne automatique
+                minLines: 1, // Nombre minimum de lignes affichées
               ),
             ),
             Container(

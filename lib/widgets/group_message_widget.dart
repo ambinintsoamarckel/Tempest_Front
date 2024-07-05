@@ -171,30 +171,33 @@ class GroupMessageWidget extends StatelessWidget {
               ),
               SizedBox(width: 10),
             ],
-            Flexible(
-              child: Column(
-                crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (isCurrentUser)
-                    Text(
-                      message.expediteur.nom ?? 'Anonyme',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   Container(
-                    margin: EdgeInsets.only(top: 5.0),
-                    child: messageContent,
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    message.dateEnvoi.toLocal().toString(),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
+        ),
+        child: Column(
+          crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: <Widget>[
+            if (isCurrentUser)
+              Text(
+                message.expediteur.nom ?? 'Anonyme',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+            Container(
+              margin: EdgeInsets.only(top: 5.0),
+              child: messageContent,
             ),
+            SizedBox(height: 5),
+            Text(
+              message.dateEnvoi.toLocal().toString(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
             if (isCurrentUser)
               SizedBox(width: 10),
           ],

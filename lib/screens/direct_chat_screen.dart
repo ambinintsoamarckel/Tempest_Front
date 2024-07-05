@@ -224,8 +224,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                 decoration: InputDecoration.collapsed(
                   hintText: "Send a message",
                 ),
+                maxLines: null, // Permet au texte de se redimensionner automatiquement
+                minLines: 1, // Nombre minimum de lignes affichées
               ),
             ),
+
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
