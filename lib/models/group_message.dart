@@ -160,6 +160,9 @@ class GroupMessage {
       luPar: luParList,
     );
   }
+   bool isUserInGroup(String userId) {
+    return groupe.membres.any((membre) => membre.id == userId);
+  }
 
   Map<String, dynamic> toJson() {
     return {
