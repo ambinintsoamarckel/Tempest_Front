@@ -5,6 +5,7 @@ import 'messages_screen.dart';
 import 'stories_screen.dart';
 import 'account_screen.dart';
 import 'custom_search_delegate.dart';
+// Assurez-vous d'importer ce fichier
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -113,10 +114,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       body: _isOnline
           ? TabBarView(
         controller: _tabController,
-        children: const [
-
+        children:  [
           ContactScreen(),
-          ConversationListScreen(),
+          ConversationListScreen(), // Utilisez la clé ici
           StoryScreen(),
         ],
       )

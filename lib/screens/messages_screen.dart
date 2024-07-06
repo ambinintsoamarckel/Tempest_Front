@@ -5,14 +5,15 @@ import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../services/user_service.dart';
 import '../main.dart'; // Importez le fichier principal où le routeObserver est défini.
-
 class ConversationListScreen extends StatefulWidget {
-  const ConversationListScreen({Key? key}) : super(key: key);
+
   static final GlobalKey<_ConversationListScreenState> conversationListScreenKey = GlobalKey<_ConversationListScreenState>();
+  ConversationListScreen() : super(key: conversationListScreenKey);
 
   @override
   _ConversationListScreenState createState() => _ConversationListScreenState();
-   void reload() {
+
+  void reload() {
     final state = conversationListScreenKey.currentState;
     if (state != null) {
       state._loadConversations();
@@ -24,13 +25,15 @@ class _ConversationListScreenState extends State<ConversationListScreen> with Ro
   final MessageService _messageService = MessageService();
   final UserService _userService = UserService();
   late Future<List<Conversation>> _conversationsFuture;
-  final CurrentScreenManager screenManager=CurrentScreenManager();
+  final CurrentScreenManager screenManager = CurrentScreenManager();
+  
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
     screenManager.updateCurrentScreen('conversationList');
+    print('initialisation messgescreen');
   }
 
   @override
