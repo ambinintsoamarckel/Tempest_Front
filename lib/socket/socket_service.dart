@@ -80,12 +80,31 @@ class SocketService {
       }
     }});
 
-    socket!.on('message_lu_personne', (expediteur) async {
+    socket!.on('message_lu_personne', (data) async {
       String? user = await storage.read(key: 'user');
       if (user != null) {
         user = user.replaceAll('"', '');
-        if (user.trim() == expediteur.toString().trim()) {
+        print(data);
+        if (user.trim() == data['expediteur'].toString().trim()) {
           print('Matched!');
+            if (CurrentScreenManager.currentScreen == 'directChat') {
+            final state = DirectChatScreen.directChatScreenKey.currentState;
+
+            if (state != null) {
+            if(state.widget.id==data['destinataire'])
+                {
+                  state.widget.reload();    
+                }
+              
+            }
+          }
+          if(CurrentScreenManager.currentScreen == 'conversationList')
+          {
+            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            if (state != null) {
+              state.widget.reload();
+              }
+          }
         } else {
           print('Not matched');
         }
@@ -162,17 +181,39 @@ class SocketService {
       }
     });
 
-    socket!.on('message_lu_groupe', (groupMembers) async {
-      print('Membres du groupe reçus: $groupMembers');
+    socket!.on('message_lu_groupe', (data) async {
+      print('Membres du groupe reçus: $data');
 
       String? user = await storage.read(key: 'user');
       if (user != null) {
         user = user.replaceAll('"', '').trim();
-        bool isMember = groupMembers.contains(user);
+        bool isMember = data['membres'].contains(user);
 
         if (isMember) {
           print('Utilisateur est membre du groupe');
-        } else {
+          if(data['vu']==user)
+          {
+          if (CurrentScreenManager.currentScreen == 'groupChat') {
+            final state = GroupChatScreen.groupChatScreenKey.currentState;
+
+            if (state != null) {
+            if(state.widget.groupId==data['groupe'])
+                {
+                  state.widget.reload();    
+                }
+              
+            }
+          }
+          if(CurrentScreenManager.currentScreen == 'conversationList')
+          {
+            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            if (state != null) {
+              state.widget.reload();
+              }
+          }
+          }
+
+          }else {
           print('Utilisateur n\'est pas membre du groupe');
         }
       } else {
