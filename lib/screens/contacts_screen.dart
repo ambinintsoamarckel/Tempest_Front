@@ -5,10 +5,18 @@ import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
 
 class ContactScreen extends StatefulWidget {
-  const ContactScreen({Key? key}) : super(key: key);
-
+  static final GlobalKey<_ContactScreenState> contactScreenKey= GlobalKey<_ContactScreenState>();
+  ContactScreen() : super(key: contactScreenKey);
   @override
   _ContactScreenState createState() => _ContactScreenState();
+
+ void reload()
+ {
+     final state = contactScreenKey.currentState;
+    if (state != null) {
+      state._reload();
+    }
+ }
 }
 
 class _ContactScreenState extends State<ContactScreen> {

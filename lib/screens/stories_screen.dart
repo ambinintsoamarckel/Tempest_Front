@@ -5,10 +5,22 @@ import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
 
 class StoryScreen extends StatefulWidget {
-  const StoryScreen({super.key});
+  
+  static final GlobalKey<_StoryScreenState> storyScreenKey= GlobalKey<_StoryScreenState>();
+   StoryScreen():super(key: storyScreenKey);
+
+
 
   @override
   _StoryScreenState createState() => _StoryScreenState();
+
+     void reload()
+ {
+     final state =storyScreenKey.currentState;
+    if (state != null) {
+    /*   state._reload(); */
+    }
+ }
 }
 
 class _StoryScreenState extends State<StoryScreen> {

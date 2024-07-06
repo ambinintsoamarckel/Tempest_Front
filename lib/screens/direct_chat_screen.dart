@@ -266,7 +266,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   void _transferMessage(String messageId) async {
     final selectedContact = await Navigator.push<Contact>(
       context,
-      MaterialPageRoute(builder: (context) => const ContactScreen()),
+      MaterialPageRoute(builder: (context) =>  ContactScreen()),
     );
 
     if (selectedContact != null) {

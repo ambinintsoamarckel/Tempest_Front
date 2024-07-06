@@ -65,10 +65,18 @@ class GroupChatService {
   }
 
   // Method to transfer a group message
-  Future<void> transferMessage(String groupId, String messageId) async {
+  Future<void> transferMessage(String contactId, String messageId) async {
+    final response = await dio.post('/messages/personne/$contactId/$messageId');
+
+    if (response.statusCode != 201) {
+      print('Failed to transfer group message: ${response.data}');
+      throw Exception('Failed to transfer group message');
+    }
+  }
+    Future<void> transferMessageGroupe(String groupId, String messageId) async {
     final response = await dio.post('/messages/groupe/$groupId/$messageId');
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 201) {
       print('Failed to transfer group message: ${response.data}');
       throw Exception('Failed to transfer group message');
     }

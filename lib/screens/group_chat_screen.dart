@@ -15,11 +15,18 @@ import 'package:dio/dio.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
-
-  GroupChatScreen({required this.groupId});
+  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey= GlobalKey<_GroupChatScreenState>();
+  GroupChatScreen({required this.groupId}) : super(key: groupChatScreenKey);
 
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
+   void reload()
+ {
+     final state = groupChatScreenKey.currentState;
+    if (state != null) {
+      state._reload();
+    }
+ }
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
@@ -291,7 +298,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void _transferMessage(String messageId) async {
     final selectedContact = await Navigator.push<Contact>(
       context,
-      MaterialPageRoute(builder: (context) => const ContactScreen()),
+      MaterialPageRoute(builder: (context) =>  ContactScreen()),
     );
 
     if (selectedContact != null) {
