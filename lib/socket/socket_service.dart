@@ -56,9 +56,6 @@ class SocketService {
             'Nouveau message de ${message.expediteur.nom}',
             notificationContent,
           );
-          print('Eto le screen');
-          print(CurrentScreenManager.currentScreen);
-          print(CurrentScreenManager.currentScreen == 'conversationList');
           // Vérifier l'écran actuel en utilisant CurrentScreenManager
           if (CurrentScreenManager.currentScreen == 'directChat') {
             final state = DirectChatScreen.directChatScreenKey.currentState;
@@ -73,17 +70,11 @@ class SocketService {
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
-            
             final state = ConversationListScreen.conversationListScreenKey.currentState;
-            print(state);
-
-                      if (state != null) {
-                        print('appelreload');
-                   
-                            state.widget.reload();    
-                          
-                    }
-        }
+            if (state != null) {
+              state.widget.reload();
+              }
+          }
       }
     }});
 

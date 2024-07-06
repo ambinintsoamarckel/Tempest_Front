@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mini_social_network/models/contact.dart';
+import 'package:mini_social_network/screens/contacts_screen.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
@@ -30,7 +32,6 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
     final List<DirectMessage> _messagesSaved = [];
-  final List<DirectMessage> _messagesTransferred = [];
   final TextEditingController _textController = TextEditingController();
   final MessageService _messageService = MessageService();
   late Future<User> _contactFuture;
@@ -262,25 +263,22 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       _reload();
     });
   }
-
-  void _transferMessage(String messageId) {
-    DirectMessage messageToTransfer = _messages.firstWhere(
-      (message) => message.id == messageId,
-      orElse: () => DirectMessage(
-        id: '',
-        contenu: MessageContent(type: MessageType.texte, texte: ''),
-        expediteur: User(id: '', nom: '', email: ''),
-        destinataire: User(id: '', nom: '', email: ''),
-        dateEnvoi: DateTime.now(),
-        lu: false,
-      ),
+  void _transferMessage(String messageId) async {
+    final selectedContact = await Navigator.push<Contact>(
+      context,
+      MaterialPageRoute(builder: (context) => const ContactScreen()),
     );
-    setState(() {
-      _messages.removeWhere((message) => message.id == messageId);
-      _messagesTransferred.add(messageToTransfer);
-    });
-  }
 
+    if (selectedContact != null) {
+      try {
+        await _messageService.transferMessage(selectedContact.id, messageId);
+        print('Message transferred successfully');
+        _reload();
+      } catch (e) {
+        print('Failed to transfer message: $e');
+      }
+    }
+  }
   void _saveMessage() {
     DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
     if (lastMessage != null) {
