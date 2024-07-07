@@ -190,9 +190,10 @@ class SocketService {
         bool isMember = data['membres'].contains(user);
 
         if (isMember) {
-          print('Utilisateur est membre du groupe');
-          if(data['vu']==user)
+         
+          if(data['vu']!=user)
           {
+
           if (CurrentScreenManager.currentScreen == 'groupChat') {
             final state = GroupChatScreen.groupChatScreenKey.currentState;
 
@@ -206,6 +207,7 @@ class SocketService {
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
+            
             final state = ConversationListScreen.conversationListScreenKey.currentState;
             if (state != null) {
               state.widget.reload();

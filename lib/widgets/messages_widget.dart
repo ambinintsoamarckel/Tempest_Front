@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart'; // Pour la gestion des formats de date
 import '../models/messages.dart';
 import '../screens/direct_chat_screen.dart';
 import '../screens/group_chat_screen.dart';
@@ -56,13 +57,19 @@ class ConversationWidget extends StatelessWidget {
             ),
             title: Text(conversation.contact.nom),
             subtitle: isMessageSentByUser ? _buildSentMessage(userId) : _buildReceivedMessage(userId),
-            trailing: Text(
-              conversation.dernierMessage.dateEnvoi.toLocal().toString(),
-              style: TextStyle(
-                color: _isUnread(userId) ? Colors.blue : Colors.grey,
-                fontSize: 12,
-                fontWeight: _isUnread(userId) ? FontWeight.bold : FontWeight.normal,
-              ),
+            trailing: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatDate(conversation.dernierMessage.dateEnvoi),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (isMessageSentByUser) _buildReadStatus(userId),
+              ],
             ),
             onTap: () => _navigateToChatScreen(context),
             onLongPress: () => _showOptions(context),
@@ -77,14 +84,11 @@ class ConversationWidget extends StatelessWidget {
   Widget _buildSentMessage(String userId) {
     final message = conversation.dernierMessage;
     final content = _getContentSubtitle(message.contenu);
-    final isRead = message is DernierMessageUtilisateur
-        ? (message as DernierMessageUtilisateur).lu
-        : (message as DernierMessageGroupe).luPar.any((lecture) => lecture.utilisateurId == userId);
     return Text(
       'Vous: $content',
       style: TextStyle(
-        color: isRead ? Colors.grey : Colors.black,
-        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+        color: const Color.fromARGB(255, 80, 79, 79) ,
+        fontWeight:  FontWeight.normal,
       ),
     );
   }
@@ -98,7 +102,7 @@ class ConversationWidget extends StatelessWidget {
     return Text(
       content,
       style: TextStyle(
-        color: isRead ? Colors.grey : Colors.black,
+        color: isRead ?const Color.fromARGB(255, 80, 79, 79) : Colors.black,
         fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
       ),
     );
@@ -144,5 +148,36 @@ class ConversationWidget extends StatelessWidget {
       return message.expediteur != userId && !message.luPar.any((lecture) => lecture.utilisateurId == userId);
     }
     return false; // Par défaut, considéré comme lu si le type n'est pas reconnu
+  }
+
+  Widget _buildReadStatus(String userId) {
+    if (conversation.dernierMessage is DernierMessageGroupe) {
+      DernierMessageGroupe message = conversation.dernierMessage as DernierMessageGroupe;
+      if (message.luPar.isNotEmpty) {
+        return const Icon(Icons.done_all, color: Colors.blue);
+      } else {
+        return const Icon(Icons.done, color: Colors.grey);
+      }
+    } else if (conversation.dernierMessage is DernierMessageUtilisateur) {
+      DernierMessageUtilisateur message = conversation.dernierMessage as DernierMessageUtilisateur;
+      if (message.lu) {
+        return const Icon(Icons.done_all, color: Colors.blue);
+      } else {
+        return const Icon(Icons.done, color: Colors.grey);
+      }
+    }
+    return const SizedBox.shrink();
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    if (difference.inDays == 0) {
+      return DateFormat.Hm().format(date); // Heure si aujourd'hui
+    } else if (difference.inDays == 1) {
+      return 'Hier'; // Hier
+    } else {
+      return DateFormat('yyyy/MM/dd').format(date); // Date en format yyyy/MM/dd
+    }
   }
 }
