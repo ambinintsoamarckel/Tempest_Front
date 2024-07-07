@@ -4,11 +4,82 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
 import '../utils/downloader.dart';
+
+class DirectMessageScreen extends StatefulWidget {
+  final List<DirectMessage> messages;
+  final User contact;
+  final String currentUser;
+  final Function(String) onDelete;
+  final Function(String) onTransfer;
+  final VoidCallback? onSave;
+
+  DirectMessageScreen({
+    required this.messages,
+    required this.contact,
+    required this.currentUser,
+    required this.onDelete,
+    required this.onTransfer,
+    this.onSave,
+  });
+
+  @override
+  _DirectMessageScreenState createState() => _DirectMessageScreenState();
+}
+
+class _DirectMessageScreenState extends State<DirectMessageScreen> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToEnd();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToEnd() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.contact.nom ?? 'Chat'),
+      ),
+      body: ListView.builder(
+        controller: _scrollController,
+        itemCount: widget.messages.length,
+        itemBuilder: (context, index) {
+          return DirectMessageWidget(
+            message: widget.messages[index],
+            contact: widget.contact,
+            onDelete: widget.onDelete,
+            onTransfer: widget.onTransfer,
+            onSave: widget.onSave,
+          );
+        },
+      ),
+    );
+  }
+}
 
 class DirectMessageWidget extends StatelessWidget {
   final DirectMessage message;
@@ -175,23 +246,23 @@ class DirectMessageWidget extends StatelessWidget {
                 backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
               SizedBox(width: 10),
-              ],
-                Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
-        ),
-        child: Column(
-          crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-          children: <Widget>[
-            messageContent,
-            SizedBox(height: 5),
-            Text(
-              message.dateEnvoi.toLocal().toString(),
-              style: Theme.of(context).textTheme.bodySmall,
+            ],
+            Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
+              ),
+              child: Column(
+                crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                children: <Widget>[
+                  messageContent,
+                  SizedBox(height: 5),
+                  Text(
+                    message.dateEnvoi.toLocal().toString(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
             if (isContact)
               SizedBox(width: 10),
           ],
