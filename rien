@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
@@ -235,25 +234,3 @@ class DirectMessageWidget extends StatelessWidget {
         return message.contenu.fichier ?? '';
       default:
         return '';
-    }
-  }
-
-  void _openFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(),
-          body: Center(
-            child: PhotoView(
-              imageProvider: NetworkImage(imageUrl),
-              backgroundDecoration: BoxDecoration(
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import 'package:photo_view/photo_view.dart';
 import '../models/group_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
@@ -31,7 +32,7 @@ class GroupMessageWidget extends StatelessWidget {
     Widget messageContent;
 
     switch (message.contenu.type) {
-       case MessageType.texte:
+      case MessageType.texte:
         messageContent = Container(
           padding: EdgeInsets.all(10.0),
           decoration: BoxDecoration(
@@ -81,13 +82,16 @@ class GroupMessageWidget extends StatelessWidget {
         );
         break;
       case MessageType.image:
-        messageContent = ClipRRect(
-          borderRadius: BorderRadius.circular(10.0),
-          child: Image.network(
-            message.contenu.image ?? '',
-            width: 150,
-            height: 150,
-            fit: BoxFit.cover,
+        messageContent = GestureDetector(
+          onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10.0),
+            child: Image.network(
+              message.contenu.image ?? '',
+              width: 150,
+              height: 150,
+              fit: BoxFit.cover,
+            ),
           ),
         );
         break;
@@ -160,7 +164,7 @@ class GroupMessageWidget extends StatelessWidget {
           }
         });
       },
-       child: Container(
+      child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(
           mainAxisAlignment: !isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -171,36 +175,49 @@ class GroupMessageWidget extends StatelessWidget {
               ),
               SizedBox(width: 10),
             ],
-                  Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
-        ),
-        child: Column(
-          crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: <Widget>[
-            if (isCurrentUser)
-              Text(
-                message.expediteur.nom ?? 'Anonyme',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             Container(
-              margin: EdgeInsets.only(top: 5.0),
-              child: messageContent,
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
+              ),
+              child: Column(
+                crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (isCurrentUser)
+                    Text(
+                      message.expediteur.nom ?? 'Anonyme',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  Container(
+                    margin: EdgeInsets.only(top: 5.0),
+                    child: messageContent,
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    message.dateEnvoi.toLocal().toString(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 5),
-            Text(
-              message.dateEnvoi.toLocal().toString(),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            if (isCurrentUser) SizedBox(width: 10),
           ],
         ),
       ),
-            if (isCurrentUser)
-              SizedBox(width: 10),
-          ],
+    );
+  }
+
+  void _openFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(),
+          body: PhotoView(
+            imageProvider: NetworkImage(imageUrl),
+          ),
         ),
       ),
     );
