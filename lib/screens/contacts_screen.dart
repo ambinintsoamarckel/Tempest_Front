@@ -69,7 +69,7 @@ class _ContactScreenState extends State<ContactScreen> {
 
   void _filterContacts(String query) {
     List<Contact> filteredContacts = _contacts.where((contact) {
-      return contact.name.toLowerCase().contains(query.toLowerCase());
+      return contact.nom.toLowerCase().contains(query.toLowerCase());
     }).toList();
 
     setState(() {
