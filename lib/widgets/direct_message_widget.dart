@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-import 'package:photo_view/photo_view.dart';
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
@@ -105,73 +104,27 @@ class DirectMessageWidget extends StatelessWidget {
 
     switch (message.contenu.type) {
       case MessageType.texte:
-        messageContent = Container(
-          padding: EdgeInsets.all(10.0),
-          decoration: BoxDecoration(
-            color: isContact ? Colors.grey[300] : Colors.blue[100],
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10.0),
-              topRight: Radius.circular(10.0),
-              bottomRight: Radius.circular(10.0),
-              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
-            ),
-          ),
-          child: Text(
-            message.contenu.texte ?? '',
-            style: TextStyle(
-              color: isContact ? Colors.blue : Colors.black,
-            ),
-            softWrap: true, // Permet le retour à la ligne automatique
-            overflow: TextOverflow.clip, // Assure que le texte ne déborde pas
-          ),
-        );
+        messageContent = _buildTextMessage(context, isContact);
         break;
       case MessageType.fichier:
-        messageContent = Container(
-          padding: EdgeInsets.all(10.0),
-          decoration: BoxDecoration(
-            color: isContact ? Colors.grey[300] : Colors.blue[100],
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10.0),
-              topRight: Radius.circular(10.0),
-              bottomRight: Radius.circular(10.0),
-              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.attach_file),
-              SizedBox(height: 5),
-              Text(
-                message.contenu.fichier?.split('/').last ?? '',
-                style: TextStyle(
-                  color: isContact ? Colors.blue : Colors.black,
-                ),
-              ),
-            ],
-          ),
-        );
+        messageContent = _buildFileMessage(context, isContact);
         break;
       case MessageType.image:
-        messageContent = GestureDetector(
-          onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10.0),
-            child: Image.network(
-              message.contenu.image ?? '',
-              width: 150,
-              height: 150,
-              fit: BoxFit.cover,
-            ),
+        messageContent = ClipRRect(
+          borderRadius: BorderRadius.circular(10.0),
+          child: Image.network(
+            message.contenu.image ?? '',
+            width: 150,
+            height: 150,
+            fit: BoxFit.cover,
           ),
         );
         break;
       case MessageType.audio:
-        messageContent = AudioMessagePlayer(audioUrl: message.contenu.audio ?? '');
+        messageContent = _buildAudioMessage(context, isContact);
         break;
       case MessageType.video:
-        messageContent = VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
+        messageContent = _buildVideoMessage(context, isContact);
         break;
       default:
         messageContent = Text('Unsupported message type');
@@ -237,38 +190,122 @@ class DirectMessageWidget extends StatelessWidget {
         });
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10.0),
+        margin: const EdgeInsets.symmetric(vertical: 5.0),
         child: Row(
           mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
-          children: <Widget>[
+          crossAxisAlignment: CrossAxisAlignment.start,
+           children: <Widget>[
             if (isContact)...[
               CircleAvatar(
                 backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
-              SizedBox(width: 10),
+              SizedBox(width: 5),
             ],
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
-              ),
-              child: Column(
-                crossAxisAlignment: isContact ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                children: <Widget>[
-                  messageContent,
-                  SizedBox(height: 5),
-                  Text(
-                    message.dateEnvoi.toLocal().toString(),
-                    style: Theme.of(context).textTheme.bodySmall,
+ // Limite la largeur à 50% de l'écran
+          
+
+            Flexible(
+              
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                decoration: BoxDecoration(
+                  color:  Colors.grey[300] ,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10.0),
+                    topRight: Radius.circular(10.0),
+                    bottomRight: Radius.circular(10.0),
+                    bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
                   ),
-                ],
+                ),
+        child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    messageContent,
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatDate(message.dateEnvoi),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        SizedBox(width: 5),
+                        if (!isContact)_buildReadStatus(),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             if (isContact)
-              SizedBox(width: 10),
+              SizedBox(width: 5),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildTextMessage(BuildContext context, bool isContact) {
+    return Text(
+      message.contenu.texte ?? '',
+      style: TextStyle(
+        color:  Colors.black,
+      ),
+      softWrap: true,
+      overflow: TextOverflow.clip,
+    );
+  }
+Widget _buildFileMessage(BuildContext context, bool isContact) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.attach_file),
+      SizedBox(width: 5),
+      Text(
+        message.contenu.fichier?.split('/').last ?? '',
+        style: TextStyle(
+          color:  Colors.black,
+        ),
+      ),
+    ],
+  );
+}
+
+
+  Widget _buildImageMessage(BuildContext context, bool isContact) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10.0),
+      child: Image.network(
+        message.contenu.image ?? '',
+/*         width: 150,
+        height: 150, */
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  Widget _buildAudioMessage(BuildContext context, bool isContact) {
+    return AudioMessagePlayer(audioUrl: message.contenu.audio ?? '');
+  }
+
+  Widget _buildVideoMessage(BuildContext context, bool isContact) {
+    return VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    if (difference.inDays == 0) {
+      return DateFormat.Hm().format(date); // Heure si aujourd'hui
+    } else if (difference.inDays == 1) {
+      return 'Hier'; // Hier
+    } else {
+      return DateFormat('yyyy/MM/dd').format(date); // Date en format yyyy/MM/dd
+    }
+  }
+
+  Widget _buildReadStatus() {
+    return message.lu ? Icon(Icons.done_all, color: Colors.blue) : Icon(Icons.done, color: Colors.grey);
   }
 
   Future<void> _saveFile(BuildContext context) async {

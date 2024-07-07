@@ -83,48 +83,62 @@ class ConversationWidget extends StatelessWidget {
 
   Widget _buildSentMessage(String userId) {
     final message = conversation.dernierMessage;
-    final content = _getContentSubtitle(message.contenu);
+    final content = _getContentSubtitle(message.contenu, true);
     return Text(
-      'Vous: $content',
+      content,
       style: TextStyle(
-        color: const Color.fromARGB(255, 80, 79, 79) ,
-        fontWeight:  FontWeight.normal,
+        color: const Color.fromARGB(255, 80, 79, 79),
+        fontWeight: FontWeight.normal,
       ),
     );
   }
 
   Widget _buildReceivedMessage(String userId) {
     final message = conversation.dernierMessage;
-    final content = _getContentSubtitle(message.contenu);
+    final content = _getContentSubtitle(message.contenu, false);
     final isRead = message is DernierMessageUtilisateur
         ? (message as DernierMessageUtilisateur).lu
         : (message as DernierMessageGroupe).luPar.any((lecture) => lecture.utilisateurId == userId);
     return Text(
       content,
       style: TextStyle(
-        color: isRead ?const Color.fromARGB(255, 80, 79, 79) : Colors.black,
+        color: isRead ? const Color.fromARGB(255, 80, 79, 79) : Colors.black,
         fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
       ),
     );
   }
 
-  String _getContentSubtitle(Contenu contenu) {
-    switch (contenu.type) {
-      case 'texte':
-        return contenu.texte ?? '';
-      case 'image':
-        return 'a envoyé une photo';
-      case 'audio':
-        return 'a envoyé un audio';
-      case 'video':
-        return 'a envoyé une vidéo';
-      default:
-        return 'a envoyé une pièce jointe';
+  String _getContentSubtitle(Contenu contenu, bool isSentByUser) {
+    if (isSentByUser) {
+      switch (contenu.type) {
+        case 'texte':
+          return 'Vous: ${contenu.texte ?? ''}';
+        case 'image':
+          return 'Vous avez envoyé une photo';
+        case 'audio':
+          return 'Vous avez envoyé un audio';
+        case 'video':
+          return 'Vous avez envoyé une vidéo';
+        default:
+          return 'Vous avez envoyé une pièce jointe';
+      }
+    } else {
+      switch (contenu.type) {
+        case 'texte':
+          return contenu.texte ?? '';
+        case 'image':
+          return 'a envoyé une photo';
+        case 'audio':
+          return 'a envoyé un audio';
+        case 'video':
+          return 'a envoyé une vidéo';
+        default:
+          return 'a envoyé une pièce jointe';
+      }
     }
   }
 
   void _navigateToChatScreen(BuildContext context) {
-    print('object');
     if (conversation.contact.type == "groupe") {
       Navigator.push(
         context,
