@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Pour la gestion des formats de date
-
+import 'package:photo_view/photo_view.dart';
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
@@ -103,7 +103,7 @@ class DirectMessageWidget extends StatelessWidget {
     this.previousMessageDate,
   });
 
-  @override
+   @override
   Widget build(BuildContext context) {
     final bool isContact = message.expediteur.id == contact.id;
     Widget messageContent;
@@ -116,15 +116,8 @@ class DirectMessageWidget extends StatelessWidget {
         messageContent = _buildFileMessage(context, isContact);
         break;
       case MessageType.image:
-        messageContent = ClipRRect(
-          borderRadius: BorderRadius.circular(10.0),
-          child: Image.network(
-            message.contenu.image ?? '',
-            width: 150,
-            height: 150,
-            fit: BoxFit.cover,
-          ),
-        );
+      
+        messageContent = _buildImageMessage(context, isContact);
         break;
       case MessageType.audio:
         messageContent = _buildAudioMessage(context, isContact);
@@ -141,9 +134,9 @@ class DirectMessageWidget extends StatelessWidget {
       message.dateEnvoi.month,
       message.dateEnvoi.day,
     );
+
     return Column(
       children: [
-        
         GestureDetector(
           onLongPress: () {
             showModalBottomSheet(
@@ -199,55 +192,15 @@ class DirectMessageWidget extends StatelessWidget {
               },
             );
           },
-
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 5.0),
-        child: Row(
-          mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-
-          children: <Widget>[
-            if (isContact) ...[
-
-              CircleAvatar(
-                backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
-              ),
-              SizedBox(width: 5),
-            ],
- // Limite la largeur à 50% de l'écran
-          
-
-            Flexible(
-              
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                decoration: BoxDecoration(
-                  color:  Colors.grey[300] ,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10.0),
-                    topRight: Radius.circular(10.0),
-                    bottomRight: Radius.circular(10.0),
-                    bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
-                  ),
-                ),
-        child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    messageContent,
-                    SizedBox(height: 5),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _formatDate(message.dateEnvoi),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (!isContact) _buildReadStatus(),
-                      ],
-                    ),
-
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5.0),
+            child: Row(
+              mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (isContact) ...[
+                  CircleAvatar(
+                    backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
                   ),
                   SizedBox(width: 5),
                 ],
@@ -327,13 +280,16 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   Widget _buildImageMessage(BuildContext context, bool isContact) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10.0),
-      child: Image.network(
-        message.contenu.image ?? '',
-        fit: BoxFit.cover,
-      ),
-    );
+    return GestureDetector(
+          onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10.0),
+            child: Image.network(
+              message.contenu.image ?? '',
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
   }
 
   Widget _buildAudioMessage(BuildContext context, bool isContact) {
