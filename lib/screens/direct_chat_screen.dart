@@ -8,6 +8,8 @@ import 'package:flutter/services.dart'; // Added for Clipboard
 import '../models/direct_message.dart';
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../services/discu_message_service.dart';
 
 
@@ -36,6 +38,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   final MessageService _messageService = MessageService();
   late Future<User> _contactFuture;
   final CurrentScreenManager screenManager=CurrentScreenManager();
+  DateTime? _previousMessageDate;
 
   Future<void> _reload() async {
     try {
@@ -133,14 +136,43 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  bool _isLastReadMessageByCurrentUser(int index) {
-    if (_messages.isEmpty || index != _messages.length-1) return false;
+bool _isLastReadMessageByCurrentUser(int index) {
+    if (_messages.isEmpty || index != _messages.length - 1) return false;
     DirectMessage message = _messages[index];
     return message.destinataire.id == widget.id && message.lu;
   }
+    String _formatFullDate(DateTime date) {
+    final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
+    final now = DateTime.now();
+    final difference = now.difference(adjustedDate);
 
- 
-    @override
+    if (difference.inDays == 0) {
+      return 'Aujourd\'hui';
+    } else if (difference.inDays == 1) {
+      return 'Hier';
+    } else {
+      return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate); // Format en français
+    }
+  }
+
+
+  // Méthode pour formater la date en "Aujourd'hui", "Hier" ou format complet
+  String _formatMessageDate(DateTime messageDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+    if (messageDate.isAtSameMomentAs(today)) {
+      return 'Aujourd\'hui';
+    } else if (messageDate.isAtSameMomentAs(yesterday)) {
+      return 'Hier';
+    } else {
+      // Formater la date complète en utilisant votre méthode existante
+      return _formatFullDate(messageDate);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -173,9 +205,24 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     padding: EdgeInsets.all(8.0),
                     reverse: false,
                     itemBuilder: (_, int index) {
+                      DirectMessage message = _messages[index];
+                      bool showDate = _shouldShowDate(message.dateEnvoi);
+
+                      // Mettre à jour la date du message précédent après avoir affiché cette date
+                      _previousMessageDate = message.dateEnvoi;
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                            if(showDate)
+                            Container(  
+                            alignment: Alignment.center, // Alignement centré pour le conteneur de la date
+                            padding: const EdgeInsets.symmetric(vertical: 5.0),
+                            child: Text(
+                              _formatMessageDate(message.dateEnvoi),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                            ),
+                          ),
                           DirectMessageWidget(
                             message: _messages[index],
                             contact: contact,
@@ -183,6 +230,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             onTransfer: _transferMessage,
                             onCopy: _copyMessage,
                             onSave: _saveMessage,
+                            previousMessageDate: _previousMessageDate,
                           ),
                           if (_isLastReadMessageByCurrentUser(index))
                             Padding(
@@ -211,6 +259,18 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
+  // Vérifie si la date du message doit être affichée
+  bool _shouldShowDate(DateTime messageDate) {
+    if (_previousMessageDate == null) {
+      return true; // Afficher la date si c'est le premier message
+    }
+
+    // Comparer les dates sans tenir compte de l'heure
+    DateTime previousDate = DateTime(_previousMessageDate!.year, _previousMessageDate!.month, _previousMessageDate!.day);
+    DateTime currentDate = DateTime(messageDate.year, messageDate.month, messageDate.day);
+
+    return currentDate.difference(previousDate).inDays != 0;
+  }
 
   Widget _buildTextComposer(User contact) {
     return IconTheme(
