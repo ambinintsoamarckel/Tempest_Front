@@ -264,6 +264,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     });
   }
   void _transferMessage(String messageId) async {
+    print('messaage : $messageId');
     final selectedContact = await Navigator.push<Contact>(
       context,
       MaterialPageRoute(builder: (context) =>  ContactScreen()),
@@ -271,6 +272,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     if (selectedContact != null) {
       try {
+        print('id:${selectedContact.id} nom:${selectedContact.nom} nom:${selectedContact.type}');
         await _messageService.transferMessage(selectedContact.id, messageId);
         print('Message transferred successfully');
         _reload();

@@ -132,70 +132,69 @@ class DirectMessageWidget extends StatelessWidget {
 
     return GestureDetector(
       onLongPress: () {
-        final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
-        showMenu(
+        showModalBottomSheet(
           context: context,
-          position: RelativeRect.fromRect(
-            Rect.fromPoints(
-              Offset.zero,
-              Offset(overlay.size.width, overlay.size.height),
-            ),
-            Offset.zero & overlay.size,
-          ),
-          items: <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'copy',
-              child: ListTile(
-                leading: Icon(Icons.content_copy),
-                title: Text('Copier'),
+          builder: (BuildContext context) {
+            return Container(
+              child: Wrap(
+                children: <Widget>[
+                  ListTile(
+                    leading: Icon(Icons.content_copy),
+                    title: Text('Copier'),
+                    onTap: () {
+                      if (onCopy != null) {
+                        onCopy!();
+                      }
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.delete),
+                    title: Text('Supprimer'),
+                    onTap: () {
+                      onDelete(message.id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.forward),
+                    title: Text('Transférer'),
+                    onTap: () {
+                      String messageId=message.id;
+                      Navigator.of(context).pop();
+                      onTransfer(messageId);
+                     
+                    },
+                  ),
+                  if (message.contenu.type == MessageType.image ||
+                      message.contenu.type == MessageType.fichier ||
+                      message.contenu.type == MessageType.audio ||
+                      message.contenu.type == MessageType.video)
+                    ListTile(
+                      leading: Icon(Icons.save),
+                      title: Text('Enregistrer'),
+                      onTap: () {
+                        if (onSave != null) {
+                          _saveFile(context);
+                        }
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                ],
               ),
-            ),
-            PopupMenuItem<String>(
-              value: 'delete',
-              child: ListTile(
-                leading: Icon(Icons.delete),
-                title: Text('Supprimer'),
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'transfer',
-              child: ListTile(
-                leading: Icon(Icons.forward),
-                title: Text('Transférer'),
-              ),
-            ),
-            if (message.contenu.type == MessageType.image ||
-                message.contenu.type == MessageType.fichier ||
-                message.contenu.type == MessageType.audio ||
-                message.contenu.type == MessageType.video)
-              PopupMenuItem<String>(
-                value: 'save',
-                child: ListTile(
-                  leading: Icon(Icons.save),
-                  title: Text('Enregistrer'),
-                ),
-              ),
-          ],
-          elevation: 0.0,
-        ).then((value) {
-          if (value == 'copy' && onCopy != null) {
-            onCopy!();
-          } else if (value == 'delete') {
-            onDelete(message.id);
-          } else if (value == 'transfer') {
-            onTransfer(message.id);
-          } else if (value == 'save' && onSave != null) {
-            _saveFile(context);
-          }
-        });
+            );
+          },
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5.0),
         child: Row(
           mainAxisAlignment: isContact ? MainAxisAlignment.start : MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
-           children: <Widget>[
-            if (isContact)...[
+
+          children: <Widget>[
+            if (isContact) ...[
+
               CircleAvatar(
                 backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
               ),
@@ -229,7 +228,7 @@ class DirectMessageWidget extends StatelessWidget {
                           _formatDate(message.dateEnvoi),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (!isContact)_buildReadStatus(),
+                        if (!isContact) _buildReadStatus(),
                       ],
                     ),
                   ),
@@ -264,7 +263,7 @@ class DirectMessageWidget extends StatelessWidget {
         Text(
           message.contenu.fichier?.split('/').last ?? '',
           style: TextStyle(
-            color:  Colors.black,
+            color: Colors.black,
           ),
         ),
       ],
@@ -290,14 +289,15 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
+    final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
     final now = DateTime.now();
-    final difference = now.difference(date);
+    final difference = now.difference(adjustedDate);
     if (difference.inDays == 0) {
-      return DateFormat.Hm().format(date); // Heure si aujourd'hui
+      return DateFormat.Hm().format(adjustedDate); // Heure si aujourd'hui
     } else if (difference.inDays == 1) {
       return 'Hier'; // Hier
     } else {
-      return DateFormat('yyyy/MM/dd').format(date); // Date en format yyyy/MM/dd
+      return DateFormat('yyyy/MM/dd').format(adjustedDate); // Date en format yyyy/MM/dd
     }
   }
 

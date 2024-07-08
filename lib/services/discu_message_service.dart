@@ -128,14 +128,16 @@ class MessageService {
   // Méthode pour transférer un message
   Future<void> transferMessage(String contactId, String messageId) async {
     try {
+      print('message: $messageId');
+      print('contact: $contactId');
       final response = await dio.post('/messages/personne/$contactId/$messageId');
 
       if (response.statusCode != 200) {
         print('Failed to transfer message: ${response.data}');
-        throw Exception('Failed to transfer message');
+        /* throw Exception('Failed to transfer message'); */
       }
     } catch (e) {
-      print('Exception during message transfer: $e');
+      print('Exception during message transfer: $e ');
       rethrow;
     }
   }
