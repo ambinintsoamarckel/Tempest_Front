@@ -141,19 +141,23 @@ bool _isLastReadMessageByCurrentUser(int index) {
     DirectMessage message = _messages[index];
     return message.destinataire.id == widget.id && message.lu;
   }
-    String _formatFullDate(DateTime date) {
-    final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
-    final now = DateTime.now();
-    final difference = now.difference(adjustedDate);
+String _formatFullDate(DateTime date) {
+  final DateTime adjustedDate = date;
+  final now = DateTime.now();
 
-    if (difference.inDays == 0) {
-      return 'Aujourd\'hui';
-    } else if (difference.inDays == 1) {
-      return 'Hier';
-    } else {
-      return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate); // Format en français
-    }
+  final nowDate = DateTime(now.year, now.month, now.day);
+  final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+
+  final difference = nowDate.difference(messageDate).inDays;
+
+  if (difference == 0) {
+    return 'Aujourd\'hui';
+  } else if (difference == 1) {
+    return 'Hier';
+  } else {
+    return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
   }
+}
 
 
   // Méthode pour formater la date en "Aujourd'hui", "Hier" ou format complet
