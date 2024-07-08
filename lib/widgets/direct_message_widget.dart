@@ -176,7 +176,7 @@ class DirectMessageWidget extends StatelessWidget {
                 ),
               ),
           ],
-          elevation: 8.0,
+          elevation: 0.0,
         ).then((value) {
           if (value == 'copy' && onCopy != null) {
             onCopy!();
@@ -229,12 +229,11 @@ class DirectMessageWidget extends StatelessWidget {
                           _formatDate(message.dateEnvoi),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        SizedBox(width: 5),
                         if (!isContact)_buildReadStatus(),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             if (isContact)
@@ -249,36 +248,34 @@ class DirectMessageWidget extends StatelessWidget {
     return Text(
       message.contenu.texte ?? '',
       style: TextStyle(
-        color:  Colors.black,
+        color: Colors.black,
       ),
       softWrap: true,
       overflow: TextOverflow.clip,
     );
   }
-Widget _buildFileMessage(BuildContext context, bool isContact) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(Icons.attach_file),
-      SizedBox(width: 5),
-      Text(
-        message.contenu.fichier?.split('/').last ?? '',
-        style: TextStyle(
-          color:  Colors.black,
-        ),
-      ),
-    ],
-  );
-}
 
+  Widget _buildFileMessage(BuildContext context, bool isContact) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.attach_file),
+        SizedBox(width: 5),
+        Text(
+          message.contenu.fichier?.split('/').last ?? '',
+          style: TextStyle(
+            color:  Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildImageMessage(BuildContext context, bool isContact) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10.0),
       child: Image.network(
         message.contenu.image ?? '',
-/*         width: 150,
-        height: 150, */
         fit: BoxFit.cover,
       ),
     );
