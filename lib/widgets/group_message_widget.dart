@@ -177,7 +177,7 @@ class GroupMessageWidget extends StatelessWidget {
             ],
             Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7, // Limite la largeur à 50% de l'écran
+                maxWidth: MediaQuery.of(context).size.width * 0.7, 
               ),
               child: Column(
                 crossAxisAlignment: !isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,

@@ -103,7 +103,7 @@ class DirectMessageWidget extends StatelessWidget {
     this.previousMessageDate,
   });
 
-   @override
+  @override
   Widget build(BuildContext context) {
     final bool isContact = message.expediteur.id == contact.id;
     Widget messageContent;
@@ -116,7 +116,6 @@ class DirectMessageWidget extends StatelessWidget {
         messageContent = _buildFileMessage(context, isContact);
         break;
       case MessageType.image:
-      
         messageContent = _buildImageMessage(context, isContact);
         break;
       case MessageType.audio:
@@ -205,41 +204,46 @@ class DirectMessageWidget extends StatelessWidget {
                   SizedBox(width: 5),
                 ],
                 Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                        decoration: BoxDecoration(
-                          color: isContact ? Colors.grey[300] : Colors.green[100],
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10.0),
-                            topRight: Radius.circular(10.0),
-                            bottomRight: Radius.circular(10.0),
-                            bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                          decoration: BoxDecoration(
+                            color: isContact ? Colors.grey[300] : Colors.green[100],
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(10.0),
+                              topRight: Radius.circular(10.0),
+                              bottomRight: Radius.circular(10.0),
+                              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              messageContent,
+                            ],
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            messageContent,
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _formatDate(message.dateEnvoi),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              if (!isContact) _buildReadStatus(),
+                            ],
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatDate(message.dateEnvoi),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            if (!isContact) _buildReadStatus(),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 if (isContact)
@@ -281,15 +285,15 @@ class DirectMessageWidget extends StatelessWidget {
 
   Widget _buildImageMessage(BuildContext context, bool isContact) {
     return GestureDetector(
-          onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10.0),
-            child: Image.network(
-              message.contenu.image ?? '',
-              fit: BoxFit.cover,
-            ),
-          ),
-        );
+      onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.0),
+        child: Image.network(
+          message.contenu.image ?? '',
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
   }
 
   Widget _buildAudioMessage(BuildContext context, bool isContact) {
@@ -299,7 +303,6 @@ class DirectMessageWidget extends StatelessWidget {
   Widget _buildVideoMessage(BuildContext context, bool isContact) {
     return VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
   }
-
 
   String _formatDate(DateTime date) {
     final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
