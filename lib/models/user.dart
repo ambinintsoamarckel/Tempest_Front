@@ -1,22 +1,25 @@
 class UserModel {
   final String uid;
   final String email;
-  final String name;
-  final String photoUrl;
+  final String nom;
+  final String photo;
+  final String presence;
 
   UserModel({
     required this.uid,
     required this.email,
-    required this.name,
-    required this.photoUrl,
+    required this.nom,
+    required this.photo,
+    required this.presence,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       uid: json['_id'] ?? '',
       email: json['email'] ?? '',
-      name: json['nom'] ?? '',
-      photoUrl: json['photo'] ?? '',
+      nom: json['nom'] ?? '',
+      photo: json['photo'] ?? '',
+      presence: json['presence'] ?? '',
     );
   }
 
@@ -24,22 +27,25 @@ class UserModel {
     return {
       '_id': uid,
       'email': email,
-      'nom': name,
-      'photo': photoUrl,
+      'nom': nom,
+      'photo': photo,
+      'presence': presence,
     };
   }
 
   UserModel copyWith({
     String? uid,
     String? email,
-    String? name,
-    String? photoUrl,
+    String? nom,
+    String? photo,
+    String? presence,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
       email: email ?? this.email,
-      name: name ?? this.name,
-      photoUrl: photoUrl ?? this.photoUrl,
+      nom: nom ?? this.nom,
+      photo: photo ?? this.photo,
+      presence: presence ?? this.presence,
     );
   }
 }

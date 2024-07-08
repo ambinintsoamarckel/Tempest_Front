@@ -5,12 +5,12 @@ import 'screens/profile_screen.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
 import 'services/current_screen_manager.dart';
-import 'package:intl/intl.dart'; 
-import 'package:intl/date_symbol_data_local.dart';
+import 'screens/register_screen.dart';
+
+
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-void main() async {
-  await initializeDateFormatting('fr_FR', null);
+void main() {
   runApp(MyApp());
 }
 
@@ -47,7 +47,11 @@ class MyApp extends StatelessWidget {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
-        '/profile': (context) => ProfileScreen(user: ModalRoute.of(context)!.settings.arguments as UserModel),
+        '/profile': (context) {
+          final user = ModalRoute.of(context)!.settings.arguments as UserModel;
+          return ProfileScreen(user: user);
+        },
+        '/register': (context) => RegisterScreen(),
       },
     );
   }
@@ -83,3 +87,4 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+

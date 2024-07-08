@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'contacts_screen.dart';
 import 'messages_screen.dart';
 import 'stories_screen.dart';
-import 'account_screen.dart';
+import 'profile_screen.dart';
+import '../models/user.dart';
 import 'custom_search_delegate.dart';
-// Assurez-vous d'importer ce fichier
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+  //final user = ModalRoute.of(context)!.settings.arguments as UserModel;
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -81,10 +82,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              Navigator.push(
+              /* Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AccountScreen()),
-              );
+                MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
+              ); */
             },
           ),
         ]

@@ -13,15 +13,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _photoUrlController = TextEditingController();
+  final TextEditingController _photoController = TextEditingController();
   final UserService _userService = UserService();
 
   void _register() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
-    String name = _nameController.text.trim();
-    String photoUrl = _photoUrlController.text.trim();
-    UserModel? user = await _userService.createUserWithEmailAndPassword(email, password, name, photoUrl);
+    String nom = _nameController.text.trim();
+    String photo = _photoController.text.trim();
+    UserModel? user = await _userService.createUserWithEmailAndPassword(email, password, nom);
     if (user != null) {
       // Navigate to the main screen or home screen
       Navigator.pushReplacementNamed(context, '/profile', arguments: user);
@@ -52,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: const InputDecoration(labelText: 'Name'),
             ),
             TextField(
-              controller: _photoUrlController,
+              controller: _photoController,
               decoration: const InputDecoration(labelText: 'Photo URL'),
             ),
             const SizedBox(height: 20),
