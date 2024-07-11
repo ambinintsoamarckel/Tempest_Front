@@ -6,11 +6,13 @@ import 'models/user.dart';
 import 'services/user_service.dart';
 import 'services/current_screen_manager.dart';
 import 'screens/register_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-void main() {
+void main() async {
+    await initializeDateFormatting('fr_FR', null);
   runApp(MyApp());
 }
 

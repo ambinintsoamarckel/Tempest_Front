@@ -35,6 +35,13 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
         _isPlaying = s == PlayerState.playing;
       });
     });
+/*     
+    _audioPlayer.onError.listen((msg) {
+      print('Audio Player Error: $msg');
+      setState(() {
+        _isPlaying = false;
+      });
+    }); */
   }
 
   @override
