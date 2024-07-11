@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/models/contact.dart';
@@ -11,6 +12,10 @@ import '../utils/discu_file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../services/discu_message_service.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart'; // already included, no need to re-import
+
 
 
 class DirectChatScreen extends StatefulWidget {
@@ -19,8 +24,7 @@ class DirectChatScreen extends StatefulWidget {
 
   DirectChatScreen({required this.id}) : super(key: directChatScreenKey);
 
-
-   @override
+  @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
 
   void reload() {
@@ -33,12 +37,15 @@ class DirectChatScreen extends StatefulWidget {
 
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
-    final List<DirectMessage> _messagesSaved = [];
+  final List<DirectMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
   final MessageService _messageService = MessageService();
   late Future<User> _contactFuture;
-  final CurrentScreenManager screenManager=CurrentScreenManager();
+  final CurrentScreenManager screenManager = CurrentScreenManager();
   DateTime? _previousMessageDate;
+  FlutterSoundRecorder? _recorder;
+  bool _isRecording = false;
+  String? _audioPath;
 
   Future<void> _reload() async {
     try {
@@ -53,12 +60,14 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _contactFuture = _loadContact();
-    screenManager.updateCurrentScreen('directChat'); // Load contact during initialization
-  }
+ @override
+void initState() {
+  super.initState();
+  _contactFuture = _loadContact();
+  screenManager.updateCurrentScreen('directChat');
+  _initRecorder(); // Ajouter cette ligne
+}
+
 
   Future<User> _loadContact() async {
     try {
@@ -73,7 +82,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  // Request permissions
   Future<bool> _requestPermissions() async {
     final List<Permission> permissions = [Permission.camera, Permission.storage];
     Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
@@ -81,8 +89,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
+  Future<bool> _requestRecorderPermissions() async {
+  final List<Permission> permissions = [Permission.microphone, Permission.storage];
+  Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
+  return permissionStatus[Permission.microphone] == PermissionStatus.granted &&
+      permissionStatus[Permission.storage] == PermissionStatus.granted;
+}
 
-  // Pick image from gallery
   Future<void> _pickImage(User contact) async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
@@ -96,7 +109,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  // Fonction pour choisir et envoyer un fichier
   Future<void> _pickFileAndSend(User contact) async {
     try {
       String? filePath = await FilePickerUtil.pickFile();
@@ -108,7 +120,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  // Take photo with camera
   Future<void> _takePhoto(User contact) async {
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
@@ -122,12 +133,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  // Handle submitted text message
   void _handleSubmitted(String text) async {
     _textController.clear();
 
     try {
-      bool? createdMessage = await _messageService.createMessage(widget.id, {"texte":text});
+      bool? createdMessage = await _messageService.createMessage(widget.id, {"texte": text});
       if (createdMessage != null) {
         _reload();
       }
@@ -136,31 +146,30 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-bool _isLastReadMessageByCurrentUser(int index) {
+  bool _isLastReadMessageByCurrentUser(int index) {
     if (_messages.isEmpty || index != _messages.length - 1) return false;
     DirectMessage message = _messages[index];
     return message.destinataire.id == widget.id && message.lu;
   }
-String _formatFullDate(DateTime date) {
-  final DateTime adjustedDate = date;
-  final now = DateTime.now();
 
-  final nowDate = DateTime(now.year, now.month, now.day);
-  final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+  String _formatFullDate(DateTime date) {
+    final DateTime adjustedDate = date;
+    final now = DateTime.now();
 
-  final difference = nowDate.difference(messageDate).inDays;
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
 
-  if (difference == 0) {
-    return 'Aujourd\'hui';
-  } else if (difference == 1) {
-    return 'Hier';
-  } else {
-    return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
+    final difference = nowDate.difference(messageDate).inDays;
+
+    if (difference == 0) {
+      return 'Aujourd\'hui';
+    } else if (difference == 1) {
+      return 'Hier';
+    } else {
+      return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
+    }
   }
-}
 
-
-  // Méthode pour formater la date en "Aujourd'hui", "Hier" ou format complet
   String _formatMessageDate(DateTime messageDate) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -171,7 +180,6 @@ String _formatFullDate(DateTime date) {
     } else if (messageDate.isAtSameMomentAs(yesterday)) {
       return 'Hier';
     } else {
-      // Formater la date complète en utilisant votre méthode existante
       return _formatFullDate(messageDate);
     }
   }
@@ -212,21 +220,20 @@ String _formatFullDate(DateTime date) {
                       DirectMessage message = _messages[index];
                       bool showDate = _shouldShowDate(message.dateEnvoi);
 
-                      // Mettre à jour la date du message précédent après avoir affiché cette date
                       _previousMessageDate = message.dateEnvoi;
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                            if(showDate)
-                            Container(  
-                            alignment: Alignment.center, // Alignement centré pour le conteneur de la date
-                            padding: const EdgeInsets.symmetric(vertical: 5.0),
-                            child: Text(
-                              _formatMessageDate(message.dateEnvoi),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          if (showDate)
+                            Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 5.0),
+                              child: Text(
+                                _formatMessageDate(message.dateEnvoi),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
                             ),
-                          ),
                           DirectMessageWidget(
                             message: _messages[index],
                             contact: contact,
@@ -263,62 +270,59 @@ String _formatFullDate(DateTime date) {
     );
   }
 
-  // Vérifie si la date du message doit être affichée
   bool _shouldShowDate(DateTime messageDate) {
     if (_previousMessageDate == null) {
-      return true; // Afficher la date si c'est le premier message
+      return true;
     }
 
-    // Comparer les dates sans tenir compte de l'heure
     DateTime previousDate = DateTime(_previousMessageDate!.year, _previousMessageDate!.month, _previousMessageDate!.day);
     DateTime currentDate = DateTime(messageDate.year, messageDate.month, messageDate.day);
 
     return currentDate.difference(previousDate).inDays != 0;
   }
 
-  Widget _buildTextComposer(User contact) {
-    return IconTheme(
-      data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.photo_camera),
-              onPressed: () => _takePhoto(contact),
+ Widget _buildTextComposer(User contact) {
+  return IconTheme(
+    data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.photo_camera),
+            onPressed: () => _takePhoto(contact),
+          ),
+          IconButton(
+            icon: const Icon(Icons.image),
+            onPressed: () => _pickImage(contact),
+          ),
+          IconButton(
+            icon: const Icon(Icons.attach_file),
+            onPressed: () => _pickFileAndSend(contact),
+          ),
+          IconButton(
+            icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+            onPressed: _isRecording ? _stopRecording : _startRecording,
+          ),
+          Flexible(
+            child: TextField(
+              controller: _textController,
+              onSubmitted: _handleSubmitted,
+              decoration: const InputDecoration.collapsed(hintText: "Envoyer un message"),
             ),
-            IconButton(
-              icon: Icon(Icons.photo),
-              onPressed: () => _pickImage(contact),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: IconButton(
+              icon: const Icon(Icons.send),
+              onPressed: () => _handleSubmitted(_textController.text),
             ),
-            IconButton(
-              icon: Icon(Icons.attach_file),
-              onPressed: () => _pickFileAndSend(contact),
-            ),
-            Flexible(
-              child: TextField(
-                controller: _textController,
-                onSubmitted: (text) => _handleSubmitted(text),
-                decoration: InputDecoration.collapsed(
-                  hintText: "Send a message",
-                ),
-                maxLines: null, // Permet au texte de se redimensionner automatiquement
-                minLines: 1, // Nombre minimum de lignes affichées
-              ),
-            ),
-
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                icon: Icon(Icons.send),
-                onPressed: () => _handleSubmitted(_textController.text),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _deleteMessage(String messageId) async {
     await _messageService.deleteMessage(messageId).catchError((e) {
@@ -327,11 +331,12 @@ String _formatFullDate(DateTime date) {
       _reload();
     });
   }
+
   void _transferMessage(String messageId) async {
     print('messaage : $messageId');
     final selectedContact = await Navigator.push<Contact>(
       context,
-      MaterialPageRoute(builder: (context) =>  ContactScreen()),
+      MaterialPageRoute(builder: (context) => ContactScreen()),
     );
 
     if (selectedContact != null) {
@@ -345,6 +350,7 @@ String _formatFullDate(DateTime date) {
       }
     }
   }
+
   void _saveMessage() {
     DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
     if (lastMessage != null) {
@@ -375,8 +381,42 @@ String _formatFullDate(DateTime date) {
     }
   }
 
-  // Pick audio from local storage
   Future<void> _pickAudio(User contact) async {
-    // Implementation for picking audio
+    try {
+      String? filePath = await FilePickerUtil.pickAudio();
+      if (filePath != null) {
+        _sendFile(filePath);
+      }
+    } catch (e) {
+      print('Failed to pick and send audio: $e');
+    }
   }
+
+  Future<void> _initRecorder() async {
+  _recorder = FlutterSoundRecorder();
+  await _recorder!.openRecorder();
+  await _requestRecorderPermissions();
+}
+
+Future<void> _startRecording() async {
+  Directory tempDir = await getTemporaryDirectory();
+  _audioPath = '${tempDir.path}/temp_audio.aac';
+  await _recorder!.startRecorder(toFile: _audioPath);
+  setState(() {
+    _isRecording = true;
+  });
+}
+
+Future<void> _stopRecording() async {
+  await _recorder!.stopRecorder();
+  setState(() {
+    _isRecording = false;
+  });
+  if (_audioPath != null) {
+    _sendFile(_audioPath!);
+  }
+}
+
+
+
 }

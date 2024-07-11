@@ -15,6 +15,16 @@ class FilePickerUtil {
     return null;
   }
 
+  static Future<String?> pickAudio() async {
+    if (await _requestPermission(Permission.storage)) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
+      if (result != null) {
+        return result.files.single.path;
+      }
+    }
+    return null;
+  }
+
   static Future<String?> saveFile(String filePath) async {
     if (await _requestPermission(Permission.storage)) {
       try {
