@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isOnline = true;
+  
+  get user => null;
 
   @override
   void initState() {
@@ -82,10 +84,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              /* Navigator.push(
+              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
-              ); */
+              );
             },
           ),
         ]

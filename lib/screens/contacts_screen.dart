@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/contact.dart';
-import '../widgets/contact_avatar_widget.dart';
+import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
+import '../screens/direct_chat_screen.dart';
 
 class ContactScreen extends StatefulWidget {
   static final GlobalKey<_ContactScreenState> contactScreenKey= GlobalKey<_ContactScreenState>();
@@ -113,7 +114,7 @@ class _ContactScreenState extends State<ContactScreen> {
               margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
               child: Padding(
                 padding: EdgeInsets.all(10.0),
-                child: ContactAvatarWidget(contact: _filteredContacts[index]),
+                child: ContactWidget(contact: _filteredContacts[index]),
               ),
             ),
           );

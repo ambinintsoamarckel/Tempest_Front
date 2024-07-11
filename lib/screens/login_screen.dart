@@ -52,6 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _navigateToRegister() {
+    Navigator.pushNamed(context, '/register');
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -126,6 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Text('Login'),
                     ),
+                    TextButton(
+                onPressed: _navigateToRegister,
+                child: Text('Create an account'),
+              ),
             ],
           ),
         ),

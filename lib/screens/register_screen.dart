@@ -51,10 +51,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
             ),
-            TextField(
-              controller: _photoController,
-              decoration: const InputDecoration(labelText: 'Photo URL'),
-            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _register,
