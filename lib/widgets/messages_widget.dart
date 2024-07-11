@@ -109,33 +109,50 @@ class ConversationWidget extends StatelessWidget {
   }
 
   String _getContentSubtitle(Contenu contenu, bool isSentByUser) {
+    const int maxLength = 25; // Limite du nombre de caractères
+    String text;
+
     if (isSentByUser) {
       switch (contenu.type) {
         case 'texte':
-          return 'Vous: ${contenu.texte ?? ''}';
+          text = 'Vous: ${contenu.texte ?? ''}';
+          break;
         case 'image':
-          return 'Vous avez envoyé une photo';
+          text = 'Vous avez envoyé une photo';
+          break;
         case 'audio':
-          return 'Vous avez envoyé un audio';
+          text = 'Vous avez envoyé un audio';
+          break;
         case 'video':
-          return 'Vous avez envoyé une vidéo';
+          text = 'Vous avez envoyé une vidéo';
+          break;
         default:
-          return 'Vous avez envoyé une pièce jointe';
+          text = 'Vous avez envoyé une pièce jointe';
       }
     } else {
       switch (contenu.type) {
         case 'texte':
-          return contenu.texte ?? '';
+          text = contenu.texte ?? '';
+          break;
         case 'image':
-          return 'a envoyé une photo';
+          text = 'a envoyé une photo';
+          break;
         case 'audio':
-          return 'a envoyé un audio';
+          text = 'a envoyé un audio';
+          break;
         case 'video':
-          return 'a envoyé une vidéo';
+          text = 'a envoyé une vidéo';
+          break;
         default:
-          return 'a envoyé une pièce jointe';
+          text = 'a envoyé une pièce jointe';
       }
     }
+
+    if (text.length > maxLength) {
+      text = text.substring(0, maxLength) + '...';
+    }
+
+    return text;
   }
 
   void _navigateToChatScreen(BuildContext context) {
