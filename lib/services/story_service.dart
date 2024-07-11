@@ -16,7 +16,7 @@ class StoryService {
     final token = await _getToken();
     try {
       final response = await dio.post(
-        '/stories',
+        '/me/addStory',
         data: FormData.fromMap(storyData),
         options: Options(
           headers: {
