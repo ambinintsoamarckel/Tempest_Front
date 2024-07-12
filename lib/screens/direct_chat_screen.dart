@@ -215,7 +215,7 @@ void initState() {
                 Flexible(
                   child: ListView.builder(
                     padding: EdgeInsets.all(8.0),
-                    reverse: false,
+                    reverse: true,
                     itemBuilder: (_, int index) {
                       DirectMessage message = _messages[index];
                       bool showDate = _shouldShowDate(message.dateEnvoi);
