@@ -25,6 +25,8 @@ class _ProfileScreenWidgetState extends State<ProfileScreenWidget> {
     _photoController.text = widget.user.photo;
   }
 
+  
+
   void _updateProfile() async {
     String email = _emailController.text.trim();
     String nom = _nomController.text.trim();

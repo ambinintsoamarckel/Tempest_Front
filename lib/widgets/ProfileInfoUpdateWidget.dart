@@ -1,96 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/user.dart';
-import '../../services/user_service.dart';
+import '../models/user.dart';
+import '../services/user_service.dart';
 
 class ProfileInfoUpdateWidget extends StatefulWidget {
   final UserModel user;
 
-  ProfileInfoUpdateWidget({required this.user});
+  const ProfileInfoUpdateWidget({Key? key, required this.user}) : super(key: key);
 
   @override
   _ProfileInfoUpdateWidgetState createState() => _ProfileInfoUpdateWidgetState();
 }
 
 class _ProfileInfoUpdateWidgetState extends State<ProfileInfoUpdateWidget> {
-  final _formKey = GlobalKey<FormState>();
-  late String _username;
-  late String _email;
-  late String _password;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nomController = TextEditingController();
+  final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
-    _username = widget.user.nom;
-    _email = widget.user.email;
+    _emailController.text = widget.user.email;
+    _nomController.text = widget.user.nom;
   }
 
-  Future<void> _updateProfile() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+  void _updateProfile() async {
+    String email = _emailController.text.trim();
+    String nom = _nomController.text.trim();
 
-      try {
-        await Provider.of<UserService>(context, listen: false).updateUserProfile(
-          _username,
-          _email,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profil mis à jour avec succès')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur lors de la mise à jour du profil')));
-      }
+    try {
+      UserModel updatedUser = widget.user.copyWith(email: email, nom: nom);
+      await _userService.updateUser(updatedUser);
+      Navigator.pop(context, updatedUser);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la mise à jour du profil')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextFormField(
-            initialValue: _username,
-            decoration: InputDecoration(labelText: 'Nom d\'utilisateur'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Veuillez entrer un nom d\'utilisateur';
-              }
-              return null;
-            },
-            onSaved: (value) {
-              _username = value!;
-            },
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
           ),
-          TextFormField(
-            initialValue: _email,
-            decoration: InputDecoration(labelText: 'Email'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Veuillez entrer un email';
-              }
-              return null;
-            },
-            onSaved: (value) {
-              _email = value!;
-            },
+          TextField(
+            controller: _nomController,
+            decoration: const InputDecoration(labelText: 'Nom'),
           ),
-          TextFormField(
-            decoration: InputDecoration(labelText: 'Mot de passe actuel'),
-            obscureText: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Veuillez entrer votre mot de passe actuel';
-              }
-              return null;
-            },
-            onSaved: (value) {
-              _password = value!;
-            },
-          ),
-          SizedBox(height: 20),
+          SizedBox(height: 24),
           ElevatedButton(
             onPressed: _updateProfile,
-            child: Text('Mettre à jour le profil'),
+            child: Text('Mettre à jour'),
           ),
         ],
       ),

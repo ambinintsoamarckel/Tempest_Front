@@ -2,7 +2,7 @@ class UserModel {
   final String uid;
   final String email;
   final String nom;
-  final String photo;
+  late final String photo;
   final String presence;
 
   UserModel({

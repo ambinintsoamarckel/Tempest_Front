@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 import '../widgets/PasswordChangeWidget.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,53 +15,81 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nomController = TextEditingController();
-  final TextEditingController _photoController = TextEditingController();
   final UserService _userService = UserService();
+  late UserModel _user;
 
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.user.email;
-    _nomController.text = widget.user.nom;
-    _photoController.text = widget.user.photo;
+    _user = widget.user;
   }
 
-  void _updateProfile() async {
-    String email = _emailController.text.trim();
-    String nom = _nomController.text.trim();
-    String photo = _photoController.text.trim();
-
-    UserModel updatedUser = widget.user.copyWith(
-      email: email,
-      nom: nom,
-      photo: photo,
-    );
-
-    await _userService.updateUser(updatedUser);
-
-    Navigator.pop(context, updatedUser);
-  }
-
-  /* void _showProfileInfoUpdateWidget() {
-    showModalBottomSheet(
+  void _showProfileInfoUpdateWidget() async {
+    UserModel? updatedUser = await showModalBottomSheet<UserModel>(
       context: context,
-      builder: (context) => ProfileInfoUpdateWidget(user: ,),
+      builder: (context) => ProfileInfoUpdateWidget(user: _user),
     );
-  } */
+
+    if (updatedUser != null) {
+      setState(() {
+        _user = updatedUser;
+      });
+    }
+  }
 
   void _showPasswordChangeWidget() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => PasswordChangeWidget(),
+      builder: (context) => PasswordChangeWidget(user: _user),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      bool? confirm = await _showConfirmationDialog();
+      if (confirm == true) {
+        bool success = await _userService.updateProfilePhoto(pickedImage.path);
+        if (success) {
+          setState(() {
+            widget.user.photo = pickedImage.path;
+          });
+        }
+      }
+    }
+  }
+
+  Future<bool?> _showConfirmationDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmer'),
+          content: Text('Voulez-vous vraiment changer votre photo de profil ?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Non'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text('Oui'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
   void _logout(BuildContext context) async {
-    bool deconected=await _userService.logout();
-    if (deconected) {
-          Navigator.pushReplacementNamed(context, '/login');
+    bool deconnected = await _userService.logout();
+    if (deconnected) {
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -72,19 +101,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: widget.user.photo != null
+              ? NetworkImage(widget.user.photo!)
+              : null,
+              child: IconButton(
+                icon: Icon(Icons.camera_alt),
+                onPressed: _pickImage,
+              ),
             ),
-            TextField(
-              controller: _nomController,
-              decoration: const InputDecoration(labelText: 'nom'),
+            SizedBox(height: 16),
+            Text(
+              _user.nom,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              _user.email,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             SizedBox(height: 24),
-            /* ElevatedButton(
+            ElevatedButton(
               onPressed: _showProfileInfoUpdateWidget,
               child: Text('Modifier les informations du profil'),
-            ), */
+            ),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _showPasswordChangeWidget,
@@ -92,9 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
-                _logout(context);
-              },
+              onPressed: () => _logout(context),
               child: Text('Déconnexion'),
             ),
           ],
