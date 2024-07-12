@@ -46,6 +46,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;
   String? _audioPath;
+  final ScrollController _scrollController = ScrollController();
 
   Future<void> _reload() async {
     try {
@@ -54,6 +55,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         _messages.clear();
         _messages.addAll(messages);
       });
+      _scrollToEnd();
     } catch (e) {
       print('Failed to load messages: $e');
       rethrow;
@@ -72,15 +74,10 @@ void initState() {
   Future<User> _loadContact() async {
     try {
       List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
-      if (messages.isNotEmpty) {
-        setState(() {
-          _messages.addAll(messages);
-        });
-        return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
-      } else {
-        // Placeholder User object if there are no messages yet
-        return User(id: widget.id, nom: "Nouveau contact", email: "email@example.com", photo: null);
-      }
+      setState(() {
+        _messages.addAll(messages);
+      });
+      return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
     } catch (e) {
       print('Failed to load messages: $e');
       // Placeholder User object in case of error
@@ -159,6 +156,18 @@ void initState() {
     return message.destinataire.id == widget.id && message.lu;
   }
 
+   void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   String _formatFullDate(DateTime date) {
     final DateTime adjustedDate = date;
     final now = DateTime.now();
@@ -222,7 +231,7 @@ void initState() {
                 Flexible(
                   child: ListView.builder(
                     padding: EdgeInsets.all(8.0),
-                    reverse: false,
+                    controller: _scrollController,
                     itemBuilder: (_, int index) {
                       DirectMessage message = _messages[index];
                       bool showDate = _shouldShowDate(message.dateEnvoi);
