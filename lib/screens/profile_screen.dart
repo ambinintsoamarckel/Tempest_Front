@@ -4,6 +4,7 @@ import '../widgets/PasswordChangeWidget.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   final UserModel user;

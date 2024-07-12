@@ -1,57 +1,49 @@
+// models/user.dart
+class User {
+  final String id;
+  final String name;
+  final String email;
+
+  User({required this.id, required this.name, required this.email});
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['_id'],
+      name: json['nom'],
+      email: json['email'],
+    );
+  }
+}
+
+// models/story.dart
 class Story {
   final String id;
-  final String utilisateur;
-  final String typeContenu;
-  final String? texte;
-  final String? image;
-  final String? video;
-  final DateTime dateCreation;
-  final DateTime dateExpiration;
-  final List<String> vues;
-  final bool active;
+  final String type;
+  final String content;
+  final DateTime creationDate;
+  final DateTime expirationDate;
+  final List<dynamic> vues;
+  final User user;
 
   Story({
     required this.id,
-    required this.utilisateur,
-    required this.typeContenu,
-    this.texte,
-    this.image,
-    this.video,
-    required this.dateCreation,
-    required this.dateExpiration,
+    required this.type,
+    required this.content,
+    required this.creationDate,
+    required this.expirationDate,
     required this.vues,
-    required this.active,
+    required this.user,
   });
 
-  factory Story.fromJson(Map<String, dynamic> json) {
+  factory Story.fromJson(Map<String, dynamic> json, User user) {
     return Story(
       id: json['_id'],
-      utilisateur: json['utilisateur'],
-      typeContenu: json['contenu']['type'],
-      texte: json['contenu']['texte'],
-      image: json['contenu']['image'],
-      video: json['contenu']['video'],
-      dateCreation: DateTime.parse(json['dateCreation']),
-      dateExpiration: DateTime.parse(json['dateExpiration']),
-      vues: List<String>.from(json['vues']),
-      active: json['active'],
+      type: json['contenu']['type'],
+      content: json['contenu']['texte'],
+      creationDate: DateTime.parse(json['dateCreation']),
+      expirationDate: DateTime.parse(json['dateExpiration']),
+      vues: json['vues'],
+      user: user,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'utilisateur': utilisateur,
-      'contenu': {
-        'type': typeContenu,
-        'texte': texte,
-        'image': image,
-        'video': video,
-      },
-      'dateCreation': dateCreation.toIso8601String(),
-      'dateExpiration': dateExpiration.toIso8601String(),
-      'vues': vues,
-      'active': active,
-    };
   }
 }

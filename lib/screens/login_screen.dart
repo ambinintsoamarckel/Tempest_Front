@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
-                child: Image.asset('assets/manga_transparent.png', height: 250),
+                child: Image.asset('manga_transparent.png', height: 250),
               ),
               Text(
                 'Welcome Back!',

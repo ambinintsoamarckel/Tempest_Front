@@ -44,7 +44,9 @@ class StoryService {
       );
 
       if (response.statusCode == 200) {
-        return Story.fromJson(response.data);
+        final userJson = response.data['utilisateur'];
+        User user = User.fromJson(userJson);
+        return Story.fromJson(response.data['story'], user);
       } else {
         throw Exception('Failed to load story');
       }
@@ -64,9 +66,10 @@ class StoryService {
       if (response.statusCode == 200) {
         List<Story> stories = [];
         for (var userStories in response.data) {
-          var user = userStories['utilisateur'];
+          User user = User.fromJson(userStories['utilisateur']);
           for (var storyJson in userStories['stories']) {
-            stories.add(Story.fromJson(storyJson));
+            Story story = Story.fromJson(storyJson, user);
+            stories.add(story);
           }
         }
         return stories;
