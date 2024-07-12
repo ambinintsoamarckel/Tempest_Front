@@ -45,9 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool deconected=await _userService.logout();
     if (deconected) {
           Navigator.pushReplacementNamed(context, '/login');
-      
     }
-
   }
 
   @override

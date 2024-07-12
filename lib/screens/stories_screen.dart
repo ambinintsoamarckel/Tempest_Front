@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/stories.dart';
 import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class StoryScreen extends StatefulWidget {
   static final GlobalKey<_StoryScreenState> storyScreenKey = GlobalKey<_StoryScreenState>();
@@ -25,13 +25,14 @@ class StoryScreen extends StatefulWidget {
 class _StoryScreenState extends State<StoryScreen> {
   final List<Story> _stories = [];
   final StoryService _storyService = StoryService();
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final CurrentScreenManager screenManager = CurrentScreenManager();
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadStories();
+    screenManager.updateCurrentScreen('story');
   }
 
   Future<void> _loadStories() async {
@@ -186,7 +187,6 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
             } else if ((_storyType == 'image' || _storyType == 'video') && _selectedMedia != null) {
               Navigator.pop(context, {'type': _storyType, 'file': _selectedMedia});
             } else {
-              // Show error message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Please fill in the required fields')),
               );

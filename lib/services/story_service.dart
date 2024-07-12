@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/stories.dart';
@@ -12,7 +11,7 @@ class StoryService {
     return await storage.read(key: 'auth_token');
   }
 
-  Future<Story?> createStory(Map<String, dynamic> storyData) async {
+  Future<void> createStory(Map<String, dynamic> storyData) async {
     final token = await _getToken();
     try {
       final response = await dio.post(
@@ -20,14 +19,14 @@ class StoryService {
         data: FormData.fromMap(storyData),
         options: Options(
           headers: {
-            'Content-Type': 'multipart/form-data',
             'Authorization': 'Bearer $token',
           },
         ),
       );
 
       if (response.statusCode == 201) {
-        return Story.fromJson(response.data);
+        // Pas besoin de retourner l'objet Story ici car le serveur ne renvoie probablement pas l'objet complet après la création.
+        // Vous pouvez ajouter des vérifications supplémentaires si nécessaire.
       } else {
         throw Exception('Failed to create story');
       }
@@ -63,7 +62,13 @@ class StoryService {
       );
 
       if (response.statusCode == 200) {
-        List<Story> stories = (response.data as List).map((i) => Story.fromJson(i)).toList();
+        List<Story> stories = [];
+        for (var userStories in response.data) {
+          var user = userStories['utilisateur'];
+          for (var storyJson in userStories['stories']) {
+            stories.add(Story.fromJson(storyJson));
+          }
+        }
         return stories;
       } else {
         throw Exception('Failed to load stories');

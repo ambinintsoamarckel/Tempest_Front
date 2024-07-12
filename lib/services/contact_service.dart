@@ -19,4 +19,18 @@ class ContactService {
       throw Exception('Network error: $e');
     }
   }
+
+  Future<void> createGroup(List<String> userIds, String nom) async {
+    try {
+      final response = await dio.post('/groupes', data: {
+        'membres': userIds,
+        'nom': nom,
+      });
+      if (response.statusCode != 201) {
+        throw Exception('Failed to create group');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }
