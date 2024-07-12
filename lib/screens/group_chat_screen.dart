@@ -179,7 +179,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       } else {
                         return ListView.builder(
                           padding: EdgeInsets.all(8.0),
-                          reverse: true,
+                          reverse: false,
                           itemBuilder: (_, int index) {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
