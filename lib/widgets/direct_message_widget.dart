@@ -333,6 +333,7 @@ class DirectMessageWidget extends StatelessWidget {
     }
 
     final fileUrl = _getFileUrl();
+    print('$fileUrl $type');
     downloadFile(context, fileUrl, type);
   }
 
