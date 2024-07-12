@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart'; // Pour la gestion des formats de date
 import 'package:photo_view/photo_view.dart';
@@ -11,80 +10,7 @@ import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
 import '../utils/downloader.dart';
-
-class DirectMessageScreen extends StatefulWidget {
-  final List<DirectMessage> messages;
-  final User contact;
-  final String currentUser;
-  final Function(String) onDelete;
-  final Function(String) onTransfer;
-  final VoidCallback? onSave;
-
-  DirectMessageScreen({
-    required this.messages,
-    required this.contact,
-    required this.currentUser,
-    required this.onDelete,
-    required this.onTransfer,
-    this.onSave,
-  });
-
-  @override
-  _DirectMessageScreenState createState() => _DirectMessageScreenState();
-}
-
-class _DirectMessageScreenState extends State<DirectMessageScreen> {
-  late ScrollController _scrollController;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToEnd();
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _scrollToEnd() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.contact.nom ?? 'Chat'),
-      ),
-      body: ListView.builder(
-        controller: _scrollController,
-        itemCount: widget.messages.length,
-        itemBuilder: (context, index) {
-          return DirectMessageWidget(
-            message: widget.messages[index],
-            contact: widget.contact,
-            onDelete: widget.onDelete,
-            onTransfer: widget.onTransfer,
-            onSave: widget.onSave,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class DirectMessageWidget extends StatelessWidget {
+class DirectMessageWidget extends StatefulWidget {
   final DirectMessage message;
   final User contact;
   final VoidCallback? onCopy;
@@ -104,11 +30,24 @@ class DirectMessageWidget extends StatelessWidget {
   });
 
   @override
+  _DirectMessageWidgetState createState() => _DirectMessageWidgetState();
+}
+
+class _DirectMessageWidgetState extends State<DirectMessageWidget> {
+  ScaffoldMessengerState? _scaffoldMessenger;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scaffoldMessenger = ScaffoldMessenger.of(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isContact = message.expediteur.id == contact.id;
+    final bool isContact = widget.message.expediteur.id == widget.contact.id;
     Widget messageContent;
 
-    switch (message.contenu.type) {
+    switch (widget.message.contenu.type) {
       case MessageType.texte:
         messageContent = _buildTextMessage(context, isContact);
         break;
@@ -129,9 +68,9 @@ class DirectMessageWidget extends StatelessWidget {
     }
 
     final messageDate = DateTime(
-      message.dateEnvoi.year,
-      message.dateEnvoi.month,
-      message.dateEnvoi.day,
+      widget.message.dateEnvoi.year,
+      widget.message.dateEnvoi.month,
+      widget.message.dateEnvoi.day,
     );
 
     return Column(
@@ -148,8 +87,8 @@ class DirectMessageWidget extends StatelessWidget {
                         leading: Icon(Icons.content_copy),
                         title: Text('Copier'),
                         onTap: () {
-                          if (onCopy != null) {
-                            onCopy!();
+                          if (widget.onCopy != null) {
+                            widget.onCopy!();
                           }
                           Navigator.of(context).pop();
                         },
@@ -158,7 +97,7 @@ class DirectMessageWidget extends StatelessWidget {
                         leading: Icon(Icons.delete),
                         title: Text('Supprimer'),
                         onTap: () {
-                          onDelete(message.id);
+                          widget.onDelete(widget.message.id);
                           Navigator.of(context).pop();
                         },
                       ),
@@ -166,20 +105,20 @@ class DirectMessageWidget extends StatelessWidget {
                         leading: Icon(Icons.forward),
                         title: Text('Transférer'),
                         onTap: () {
-                          String messageId = message.id;
+                          String messageId = widget.message.id;
                           Navigator.of(context).pop();
-                          onTransfer(messageId);
+                          widget.onTransfer(messageId);
                         },
                       ),
-                      if (message.contenu.type == MessageType.image ||
-                          message.contenu.type == MessageType.fichier ||
-                          message.contenu.type == MessageType.audio ||
-                          message.contenu.type == MessageType.video)
+                      if (widget.message.contenu.type == MessageType.image ||
+                          widget.message.contenu.type == MessageType.fichier ||
+                          widget.message.contenu.type == MessageType.audio ||
+                          widget.message.contenu.type == MessageType.video)
                         ListTile(
                           leading: Icon(Icons.save),
                           title: Text('Enregistrer'),
                           onTap: () {
-                            if (onSave != null) {
+                            if (widget.onSave != null) {
                               _saveFile(context);
                             }
                             Navigator.of(context).pop();
@@ -199,7 +138,7 @@ class DirectMessageWidget extends StatelessWidget {
               children: <Widget>[
                 if (isContact) ...[
                   CircleAvatar(
-                    backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
+                    backgroundImage: widget.contact.photo != null ? NetworkImage(widget.contact.photo!) : null,
                   ),
                   SizedBox(width: 5),
                 ],
@@ -235,7 +174,7 @@ class DirectMessageWidget extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _formatDate(message.dateEnvoi),
+                                _formatDate(widget.message.dateEnvoi),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               if (!isContact) _buildReadStatus(),
@@ -258,7 +197,7 @@ class DirectMessageWidget extends StatelessWidget {
 
   Widget _buildTextMessage(BuildContext context, bool isContact) {
     return Text(
-      message.contenu.texte ?? '',
+      widget.message.contenu.texte ?? '',
       style: TextStyle(
         color: Colors.black,
       ),
@@ -274,7 +213,7 @@ class DirectMessageWidget extends StatelessWidget {
         Icon(Icons.attach_file),
         SizedBox(width: 5),
         Text(
-          message.contenu.fichier?.split('/').last ?? '',
+          widget.message.contenu.fichier?.split('/').last ?? '',
           style: TextStyle(
             color: Colors.black,
           ),
@@ -285,11 +224,11 @@ class DirectMessageWidget extends StatelessWidget {
 
   Widget _buildImageMessage(BuildContext context, bool isContact) {
     return GestureDetector(
-      onTap: () => _openFullScreenImage(context, message.contenu.image ?? ''),
+      onTap: () => _openFullScreenImage(context, widget.message.contenu.image ?? ''),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10.0),
         child: Image.network(
-          message.contenu.image ?? '',
+          widget.message.contenu.image ?? '',
           fit: BoxFit.cover,
         ),
       ),
@@ -297,11 +236,11 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   Widget _buildAudioMessage(BuildContext context, bool isContact) {
-    return AudioMessagePlayer(audioUrl: message.contenu.audio ?? '');
+    return AudioMessagePlayer(audioUrl: widget.message.contenu.audio ?? '');
   }
 
   Widget _buildVideoMessage(BuildContext context, bool isContact) {
-    return VideoMessagePlayer(videoUrl: message.contenu.video ?? '');
+    return VideoMessagePlayer(videoUrl: widget.message.contenu.video ?? '');
   }
 
   String _formatDate(DateTime date) {
@@ -310,12 +249,12 @@ class DirectMessageWidget extends StatelessWidget {
   }
 
   Widget _buildReadStatus() {
-    return message.lu ? Icon(Icons.done_all, color: Colors.blue) : Icon(Icons.done, color: Colors.grey);
+    return widget.message.lu ? Icon(Icons.done_all, color: Colors.blue) : Icon(Icons.done, color: Colors.grey);
   }
 
   Future<void> _saveFile(BuildContext context) async {
     String type;
-    switch (message.contenu.type) {
+    switch (widget.message.contenu.type) {
       case MessageType.image:
         type = "image";
         break;
@@ -334,19 +273,19 @@ class DirectMessageWidget extends StatelessWidget {
 
     final fileUrl = _getFileUrl();
     print('$fileUrl $type');
-    downloadFile(context, fileUrl, type);
+    await downloadFile(_scaffoldMessenger!, fileUrl, type);
   }
 
   String _getFileUrl() {
-    switch (message.contenu.type) {
+    switch (widget.message.contenu.type) {
       case MessageType.image:
-        return message.contenu.image ?? '';
+        return widget.message.contenu.image ?? '';
       case MessageType.audio:
-        return message.contenu.audio ?? '';
+        return widget.message.contenu.audio ?? '';
       case MessageType.video:
-        return message.contenu.video ?? '';
+        return widget.message.contenu.video ?? '';
       case MessageType.fichier:
-        return message.contenu.fichier ?? '';
+        return widget.message.contenu.fichier ?? '';
       default:
         return '';
     }

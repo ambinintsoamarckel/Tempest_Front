@@ -243,7 +243,7 @@ class GroupMessageWidget extends StatelessWidget {
     }
 
     final fileUrl = _getFileUrl();
-    downloadFile(context, fileUrl, type);
+/*     downloadFile(context, fileUrl, type); */
   }
 
   String _getFileUrl() {

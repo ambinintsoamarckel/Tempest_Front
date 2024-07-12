@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 
-Future<void> downloadFile(BuildContext context, String url, String type) async {
+Future<void> downloadFile(ScaffoldMessengerState scaffoldMessenger, String url, String type) async {
   // Demande la permission de stockage
   var status = await Permission.storage.status;
   if (!status.isGranted) {
@@ -34,22 +34,22 @@ Future<void> downloadFile(BuildContext context, String url, String type) async {
 
         print('Fichier téléchargé à: ${file.path}');
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('$type téléchargé sous le nom $fileName dans ${downloadDirectory.path}')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('Échec du téléchargement de $type')),
         );
       }
     } catch (e) {
       print('Erreur lors du téléchargement : $e');
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(content: Text('Erreur lors du téléchargement : $e')),
       );
     }
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
+    scaffoldMessenger.showSnackBar(
       SnackBar(content: Text('Permission de stockage refusée')),
     );
   }
