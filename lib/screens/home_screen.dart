@@ -9,7 +9,6 @@ import 'custom_search_delegate.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-  //final user = ModalRoute.of(context)!.settings.arguments as UserModel;
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -18,8 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isOnline = true;
-  
-  get user => null;
+  late UserModel user;
 
   @override
   void initState() {
@@ -47,6 +45,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)!.settings.arguments;
+    if (args != null && args is UserModel) {
+      user = args;
+    } else {
+      // Handle the case where arguments are missing or not the expected type
+      Navigator.of(context).pop(); // Go back if no valid user is provided
+    }
+  }
+
+  @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
@@ -56,73 +66,71 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: _isOnline
-            ? const Text('HOUATSAPPY')
-            : const Text('Offline'),
+        title: _isOnline ? const Text('HOUATSAPPY') : const Text('Offline'),
         actions: _isOnline
             ? [
-          if (_tabController.index == 1)
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: CustomSearchDelegate(),
-                );
-              },
-            ),
-          if (_tabController.index == 2)
-            IconButton(
-              icon: const Icon(Icons.camera_alt),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CameraScreen()),
-                );
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
-              );
-            },
-          ),
-        ]
+                if (_tabController.index == 1)
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      showSearch(
+                        context: context,
+                        delegate: CustomSearchDelegate(),
+                      );
+                    },
+                  ),
+                if (_tabController.index == 2)
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CameraScreen()),
+                      );
+                    },
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
+                    );
+                  },
+                ),
+              ]
             : null,
         bottom: _isOnline
             ? PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight),
-          child: Column(
-            children: [
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(Icons.contacts), text: 'Contacts'),
-                  Tab(icon: Icon(Icons.message), text: 'Messages'),
-                  Tab(icon: Icon(Icons.photo), text: 'Stories'),
-                ],
-              ),
-              Divider(
-                height: 1,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-        )
+                preferredSize: Size.fromHeight(kToolbarHeight),
+                child: Column(
+                  children: [
+                    TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(icon: Icon(Icons.contacts), text: 'Contacts'),
+                        Tab(icon: Icon(Icons.message), text: 'Messages'),
+                        Tab(icon: Icon(Icons.photo), text: 'Stories'),
+                      ],
+                    ),
+                    Divider(
+                      height: 1,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              )
             : null,
       ),
       body: _isOnline
           ? TabBarView(
-        controller: _tabController,
-        children:  [
-          ContactScreen(),
-          ConversationListScreen(), // Utilisez la clé ici
-          StoryScreen(),
-        ],
-      )
+              controller: _tabController,
+              children: [
+                ContactScreen(),
+                ConversationListScreen(), // Utilisez la clé ici
+                StoryScreen(),
+              ],
+            )
           : const Center(child: Text('No internet connection')),
       floatingActionButton: _isOnline ? _buildFloatingActionButton() : null,
     );

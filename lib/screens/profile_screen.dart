@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
+import '../widgets/PasswordChangeWidget.dart';
+import '../widgets/ProfileInfoUpdateWidget.dart';
 import '../models/user.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -41,6 +43,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.pop(context, updatedUser);
   }
 
+  /* void _showProfileInfoUpdateWidget() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => ProfileInfoUpdateWidget(user: ,),
+    );
+  } */
+
+  void _showPasswordChangeWidget() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => PasswordChangeWidget(),
+    );
+  }
+
   void _logout(BuildContext context) async {
     bool deconected=await _userService.logout();
     if (deconected) {
@@ -64,14 +80,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: _nomController,
               decoration: const InputDecoration(labelText: 'nom'),
             ),
-            TextField(
-              controller: _photoController,
-              decoration: const InputDecoration(labelText: 'Photo URL'),
-            ),
-            const SizedBox(height: 20),
+            SizedBox(height: 24),
+            /* ElevatedButton(
+              onPressed: _showProfileInfoUpdateWidget,
+              child: Text('Modifier les informations du profil'),
+            ), */
+            SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _updateProfile,
-              child: const Text('Update Profile'),
+              onPressed: _showPasswordChangeWidget,
+              child: Text('Modifier le mot de passe'),
             ),
             SizedBox(height: 10),
             ElevatedButton(

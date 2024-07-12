@@ -72,15 +72,22 @@ void initState() {
   Future<User> _loadContact() async {
     try {
       List<DirectMessage> messages = await _messageService.receiveMessagesFromUrl(widget.id);
-      setState(() {
-        _messages.addAll(messages);
-      });
-      return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
+      if (messages.isNotEmpty) {
+        setState(() {
+          _messages.addAll(messages);
+        });
+        return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
+      } else {
+        // Placeholder User object if there are no messages yet
+        return User(id: widget.id, nom: "Nouveau contact", email: "email@example.com", photo: null);
+      }
     } catch (e) {
       print('Failed to load messages: $e');
-      rethrow;
+      // Placeholder User object in case of error
+      return User(id: widget.id, nom: "Nouveau contact", email: "email@example.com", photo: null);
     }
   }
+
 
   Future<bool> _requestPermissions() async {
     final List<Permission> permissions = [Permission.camera, Permission.storage];
