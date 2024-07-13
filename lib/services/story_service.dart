@@ -17,11 +17,25 @@ class StoryService {
       final response = await dio.post(
         '/me/addStory',
         data: FormData.fromMap(storyData),
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
+      );
+
+      if (response.statusCode == 201) {
+        // Pas besoin de retourner l'objet Story ici car le serveur ne renvoie probablement pas l'objet complet après la création.
+        // Vous pouvez ajouter des vérifications supplémentaires si nécessaire.
+      } else {
+        throw Exception('Failed to create story');
+      }
+    } catch (e) {
+      throw Exception('Failed to create story: $e');
+    }
+  }
+
+  Future<void> createStoryFile(Map<String, dynamic> storyData) async {
+    final token = await _getToken();
+    try {
+      final response = await dio.post(
+        '/me/addStory',
+        data: []
       );
 
       if (response.statusCode == 201) {
