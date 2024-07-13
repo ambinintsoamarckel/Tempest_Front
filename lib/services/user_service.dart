@@ -67,18 +67,22 @@ class UserService {
       throw Exception('Erreur lors de la connexion $e');
     }
   }
-
-  Future<bool> checkSession() async {
+  Future<UserModel> checkSession() async {
     try {
       final response = await dio.get('/session');
-      if(response.statusCode == 200) {
-        socketService.initializeSocket(response.data['id']);
-        return true;
-      }
-      return false;
+     if (response.statusCode == 200) {
+      final data = response.data;
+      final user = UserModel.fromJson(data);
+      
+      await storage.write(key: 'user', value: jsonEncode(user.toJson()));
+      return user;
+    } else {
+      throw Exception('Erreur lors de la création de l\'utilisateur');
+    }
     } catch (e) {
       print('Session check error: $e');
-      return false;
+      rethrow;
+    
     }
   }
 

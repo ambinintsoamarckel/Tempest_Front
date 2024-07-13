@@ -7,12 +7,8 @@ class StoryService {
   final Dio dio = NetworkConfig().client;
   final storage = FlutterSecureStorage();
 
-  Future<String?> _getToken() async {
-    return await storage.read(key: 'auth_token');
-  }
-
   Future<void> createStory(Map<String, dynamic> storyData) async {
-    final token = await _getToken();
+
     try {
       final response = await dio.post(
         '/me/addStory',
@@ -31,7 +27,7 @@ class StoryService {
   }
 
   Future<void> createStoryFile(Map<String, dynamic> storyData) async {
-    final token = await _getToken();
+
     try {
       final response = await dio.post(
         '/me/addStory',
@@ -50,11 +46,11 @@ class StoryService {
   }
 
   Future<Story?> getStoryById(String id) async {
-    final token = await _getToken();
+
     try {
       final response = await dio.get(
         '/stories/$id',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+
       );
 
       if (response.statusCode == 200) {
@@ -70,11 +66,11 @@ class StoryService {
   }
 
   Future<List<Story>> getStories() async {
-    final token = await _getToken();
+
     try {
       final response = await dio.get(
         '/stories',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+
       );
 
       if (response.statusCode == 200) {
@@ -96,11 +92,10 @@ class StoryService {
   }
 
   Future<void> deleteStory(String id) async {
-    final token = await _getToken();
+
     try {
       final response = await dio.delete(
         '/stories/$id',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
       if (response.statusCode != 204) {

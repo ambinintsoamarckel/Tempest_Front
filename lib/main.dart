@@ -74,13 +74,23 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _checkSession() async {
-    bool isValidSession = await _userService.checkSession();
-    if (isValidSession) {
-      Navigator.pushReplacementNamed(context, '/home');
+    try {
+       UserModel isValidSession = await _userService.checkSession();
+    if (isValidSession!=null) {
+      Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
+      
+    catch (e) {
+      Navigator.pushReplacementNamed(context, '/login');
+      throw(e);
+      
+    }
+     }
+
+   
 
   @override
   Widget build(BuildContext context) {
