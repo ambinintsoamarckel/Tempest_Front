@@ -55,7 +55,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         _messages.clear();
         _messages.addAll(messages);
       });
-      _scrollToEnd();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToEnd();
+      });
     } catch (e) {
       print('Failed to load messages: $e');
       rethrow;
@@ -77,6 +79,7 @@ void initState() {
       setState(() {
         _messages.addAll(messages);
       });
+      _scrollToEnd();
       return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
     } catch (e) {
       print('Failed to load messages: $e');
@@ -110,6 +113,8 @@ void initState() {
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       _sendFile(pickedImage.path);
+
+       _scrollToEnd();
     }
   }
 
@@ -118,6 +123,8 @@ void initState() {
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
         _sendFile(filePath);
+
+        _scrollToEnd();
       }
     } catch (e) {
       print('Failed to pick and send file: $e');
@@ -134,16 +141,22 @@ void initState() {
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
       _sendFile(pickedImage.path);
+
+      _scrollToEnd();
     }
   }
 
   void _handleSubmitted(String text) async {
     _textController.clear();
 
+    FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
+
     try {
       bool? createdMessage = await _messageService.createMessage(widget.id, {"texte": text});
       if (createdMessage != null) {
         _reload();
+
+        _scrollToEnd();
       }
     } catch (e) {
       print('Failed to send message: $e');
@@ -161,9 +174,12 @@ void initState() {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
+          duration: Duration(milliseconds: 1),
           curve: Curves.easeOut,
         );
+
+        //_scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+
       }
     });
   }

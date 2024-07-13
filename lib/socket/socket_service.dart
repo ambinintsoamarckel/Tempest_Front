@@ -224,7 +224,17 @@ class SocketService {
     });
 
     socket!.on('utilisateur_cree', (message) {
-      print('eto ary $message');
+     /* if (CurrentScreenManager.currentScreen == 'contact') {
+            final state = ContactScreen.contactScreenKey.currentState;
+
+            if (state != null) {
+            if(state.widget.contact==message['groupe'])
+                {
+                  state.widget.reload();    
+                }
+              
+            }
+          }*/
     });
 
     socket!.on('utilisateur_modifie', (message) {
