@@ -61,12 +61,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
   @override
   Widget build(BuildContext context) {
     final progress = _position.inMilliseconds / (_duration.inMilliseconds + 1);
-    int barCount;
-    if (_duration.inMinutes < 1) {
-      barCount = (_duration.inSeconds / 5).ceil();
-    } else {
-      barCount = (_duration.inMinutes * 6).ceil();
-    }
+    int barCount = 15;  // Fixed number of bars
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
