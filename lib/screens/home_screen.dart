@@ -11,14 +11,16 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isOnline = true;
   late UserModel user;
-
+  static  GlobalKey<StoryScreenState> storyScreenKey = GlobalKey<StoryScreenState>();
+  static  GlobalKey<ConversationListScreenState> conversationListScreen = GlobalKey<ConversationListScreenState>();
+  static  GlobalKey<ContactScreenState> contactScreenState = GlobalKey<ContactScreenState>();
   @override
   void initState() {
     super.initState();
@@ -126,9 +128,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ? TabBarView(
               controller: _tabController,
               children: [
-                ContactScreen(),
-                ConversationListScreen(), // Utilisez la clé ici
-                StoryScreen(),
+                ContactScreen(contactScreenKey: contactScreenState),
+                ConversationListScreen(conversationListScreenKey:  conversationListScreen), // Utilisez la clé ici
+                StoryScreen(storyScreenKey: storyScreenKey),
               ],
             )
           : const Center(child: Text('No internet connection')),

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mini_social_network/screens/contacts_screen.dart';
+import 'package:mini_social_network/screens/home_screen.dart';
+import 'package:mini_social_network/screens/messages_screen.dart';
+import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
 import '../widgets/PasswordChangeWidget.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
@@ -92,7 +96,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _logout(BuildContext context) async {
     bool deconnected = await _userService.logout();
     if (deconnected) {
- 
+      HomeScreenState.contactScreenState=GlobalKey<ContactScreenState>();
+      HomeScreenState.conversationListScreen=GlobalKey<ConversationListScreenState>();
+      HomeScreenState.storyScreenKey=GlobalKey<StoryScreenState>();
+      
       Navigator.pushReplacementNamed(context, '/');
       socketService.disconnect();
     }

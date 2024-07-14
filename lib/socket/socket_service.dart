@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/direct_message.dart' as direct;
 import 'package:mini_social_network/models/group_message.dart' as group;
 import 'package:mini_social_network/screens/group_chat_screen.dart';
+import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mini_social_network/screens/direct_chat_screen.dart';
 import 'package:mini_social_network/screens/messages_screen.dart';
@@ -72,11 +73,12 @@ class SocketService {
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
-            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
               }
           }
+          
       }
     }});
 
@@ -100,7 +102,7 @@ class SocketService {
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
-            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
               }
@@ -166,7 +168,7 @@ class SocketService {
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
-            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
               }
@@ -208,7 +210,7 @@ class SocketService {
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
             
-            final state = ConversationListScreen.conversationListScreenKey.currentState;
+            final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
               }

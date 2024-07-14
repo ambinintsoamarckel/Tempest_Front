@@ -6,10 +6,10 @@ import '../services/contact_service.dart';
 import '../screens/direct_chat_screen.dart';
 
 class ContactScreen extends StatefulWidget {
-  static final GlobalKey<_ContactScreenState> contactScreenKey = GlobalKey<_ContactScreenState>();
-  ContactScreen() : super(key: contactScreenKey);
+  final GlobalKey<ContactScreenState> contactScreenKey ;
+  ContactScreen({required this.contactScreenKey}) : super(key: contactScreenKey);
   @override
-  _ContactScreenState createState() => _ContactScreenState();
+  ContactScreenState createState() => ContactScreenState();
 
   void reload() {
     final state = contactScreenKey.currentState;
@@ -19,7 +19,7 @@ class ContactScreen extends StatefulWidget {
   }
 }
 
-class _ContactScreenState extends State<ContactScreen> {
+class ContactScreenState extends State<ContactScreen> {
   final ContactService _contactService = ContactService();
   final List<Contact> _contacts = [];
   final List<Contact> _filteredContacts = [];

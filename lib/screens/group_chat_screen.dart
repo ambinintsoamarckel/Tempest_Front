@@ -296,7 +296,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _transferMessage(String messageId) async {
-    final selectedContact = await Navigator.push<Contact>(
+   /*  final selectedContact = await Navigator.push<Contact>(
       context,
       MaterialPageRoute(builder: (context) =>  ContactScreen()),
     );
@@ -324,7 +324,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
         );
       }
-    }
+    } */
   }
 
   void _saveMessage() {

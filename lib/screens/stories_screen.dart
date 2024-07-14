@@ -9,12 +9,12 @@ import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
 
 class StoryScreen extends StatefulWidget {
-  static final GlobalKey<_StoryScreenState> storyScreenKey = GlobalKey<_StoryScreenState>();
+  final GlobalKey<StoryScreenState> storyScreenKey ;
 
-  StoryScreen() : super(key: storyScreenKey);
+  StoryScreen({required this.storyScreenKey}) : super(key: storyScreenKey);
 
   @override
-  _StoryScreenState createState() => _StoryScreenState();
+  StoryScreenState createState() => StoryScreenState();
 
   void reload() {
     final state = storyScreenKey.currentState;
@@ -24,7 +24,7 @@ class StoryScreen extends StatefulWidget {
   }
 }
 
-class _StoryScreenState extends State<StoryScreen> {
+class StoryScreenState extends State<StoryScreen> {
   final List<Story> _stories = [];
   final StoryService _storyService = StoryService();
   final CurrentScreenManager screenManager = CurrentScreenManager();
@@ -36,7 +36,6 @@ class _StoryScreenState extends State<StoryScreen> {
     _loadStories();
     screenManager.updateCurrentScreen('story');
   }
-
   Future<void> _loadStories() async {
     try {
       final stories = await _storyService.getStories();

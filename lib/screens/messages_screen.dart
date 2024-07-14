@@ -6,11 +6,11 @@ import '../widgets/messages_widget.dart';
 import '../main.dart';
 
 class ConversationListScreen extends StatefulWidget {
-  static final GlobalKey<_ConversationListScreenState> conversationListScreenKey = GlobalKey<_ConversationListScreenState>();
-  ConversationListScreen() : super(key: conversationListScreenKey);
+final GlobalKey<ConversationListScreenState> conversationListScreenKey ;
+  ConversationListScreen({required this.conversationListScreenKey}) : super(key: conversationListScreenKey);
 
   @override
-  _ConversationListScreenState createState() => _ConversationListScreenState();
+  ConversationListScreenState createState() => ConversationListScreenState();
 
   void reload() {
     final state = conversationListScreenKey.currentState;
@@ -20,7 +20,7 @@ class ConversationListScreen extends StatefulWidget {
   }
 }
 
-class _ConversationListScreenState extends State<ConversationListScreen> with RouteAware{
+class ConversationListScreenState extends State<ConversationListScreen> with RouteAware{
   final List<Conversation> _conversations = [];
   final MessageService _messageService = MessageService();
     final CurrentScreenManager screenManager = CurrentScreenManager();
