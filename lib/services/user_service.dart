@@ -24,7 +24,7 @@ class UserService {
       final data = response.data['user'];
       final user = UserModel.fromJson(data);
       
-      await storage.write(key: 'user', value: jsonEncode(user.toJson()));
+      await storage.write(key: 'user', value: jsonEncode(user.uid));
       return user;
     } else {
       throw Exception('Erreur lors de la création de l\'utilisateur');
@@ -74,7 +74,7 @@ class UserService {
       final data = response.data;
       final user = UserModel.fromJson(data);
       
-      await storage.write(key: 'user', value: jsonEncode(user.toJson()));
+      await storage.write(key: 'user', value: jsonEncode(user.uid));
       return user;
     } else {
       throw Exception('Erreur lors de la création de l\'utilisateur');

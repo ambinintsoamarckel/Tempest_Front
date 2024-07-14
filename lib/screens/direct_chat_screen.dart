@@ -5,7 +5,7 @@ import 'package:mini_social_network/models/contact.dart';
 import 'package:mini_social_network/screens/contacts_screen.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart'; // Added for Clipboard
+import 'package:flutter/services.dart';
 import '../models/direct_message.dart';
 import '../widgets/direct_message_widget.dart';
 import '../utils/discu_file_picker.dart';
@@ -14,9 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../services/discu_message_service.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart'; // already included, no need to re-import
-
-
+import '../utils/audio_message_player.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String id;
@@ -37,7 +35,6 @@ class DirectChatScreen extends StatefulWidget {
 
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final List<DirectMessage> _messages = [];
-  final List<DirectMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
   final MessageService _messageService = MessageService();
   late Future<User> _contactFuture;
@@ -47,6 +44,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   bool _isRecording = false;
   String? _audioPath;
   final ScrollController _scrollController = ScrollController();
+  File? _previewFile;
+  String? _previewType; // 'image', 'audio', or 'file'
 
   Future<void> _reload() async {
     try {
@@ -64,14 +63,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
- @override
-void initState() {
-  super.initState();
-  _contactFuture = _loadContact();
-  screenManager.updateCurrentScreen('directChat');
-  _initRecorder(); // Ajouter cette ligne
-}
-
+  @override
+  void initState() {
+    super.initState();
+    _contactFuture = _loadContact();
+    screenManager.updateCurrentScreen('directChat');
+    _initRecorder();
+  }
 
   Future<User> _loadContact() async {
     try {
@@ -83,11 +81,9 @@ void initState() {
       return messages[0].expediteur.id == widget.id ? messages[0].expediteur : messages[0].destinataire;
     } catch (e) {
       print('Failed to load messages: $e');
-      // Placeholder User object in case of error
       return User(id: widget.id, nom: "Nouveau contact", email: "email@example.com", photo: null);
     }
   }
-
 
   Future<bool> _requestPermissions() async {
     final List<Permission> permissions = [Permission.camera, Permission.storage];
@@ -96,12 +92,13 @@ void initState() {
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
+
   Future<bool> _requestRecorderPermissions() async {
-  final List<Permission> permissions = [Permission.microphone, Permission.storage];
-  Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
-  return permissionStatus[Permission.microphone] == PermissionStatus.granted &&
-      permissionStatus[Permission.storage] == PermissionStatus.granted;
-}
+    final List<Permission> permissions = [Permission.microphone, Permission.storage];
+    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
+    return permissionStatus[Permission.microphone] == PermissionStatus.granted &&
+        permissionStatus[Permission.storage] == PermissionStatus.granted;
+  }
 
   Future<void> _pickImage(User contact) async {
     final bool hasPermission = await _requestPermissions();
@@ -112,19 +109,27 @@ void initState() {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      _sendFile(pickedImage.path);
 
-       _scrollToEnd();
-    }
+      setState(() {
+        _previewFile = File(pickedImage.path);
+        _previewType = 'image';
+      });
+     _scrollToEnd();    
+     }
   }
 
   Future<void> _pickFileAndSend(User contact) async {
     try {
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
-        _sendFile(filePath);
 
+
+        setState(() {
+          _previewFile = File(filePath);
+          _previewType = 'file';
+        });
         _scrollToEnd();
+
       }
     } catch (e) {
       print('Failed to pick and send file: $e');
@@ -140,8 +145,10 @@ void initState() {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      _sendFile(pickedImage.path);
-
+      setState(() {
+        _previewFile = File(pickedImage.path);
+        _previewType = 'image';
+      });
       _scrollToEnd();
     }
   }
@@ -169,7 +176,7 @@ void initState() {
     return message.destinataire.id == widget.id && message.lu;
   }
 
-   void _scrollToEnd() {
+  void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -186,20 +193,7 @@ void initState() {
 
   String _formatFullDate(DateTime date) {
     final DateTime adjustedDate = date;
-    final now = DateTime.now();
-
-    final nowDate = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
-
-    final difference = nowDate.difference(messageDate).inDays;
-
-    if (difference == 0) {
-      return 'Aujourd\'hui';
-    } else if (difference == 1) {
-      return 'Hier';
-    } else {
-      return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
-    }
+    return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
   }
 
   String _formatMessageDate(DateTime messageDate) {
@@ -289,6 +283,40 @@ void initState() {
                     itemCount: _messages.length,
                   ),
                 ),
+                if (_previewFile != null)
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Column(
+                      children: [
+                        if (_previewType == 'image')
+                          Image.file(
+                            _previewFile!,
+                            height: 100,
+                            width: 100,
+                          ),
+                        if (_previewType == 'audio')
+                        AudioMessagePlayer(audioUrl: _previewFile!.path ?? ''),
+                        if (_previewType == 'file') Text(_previewFile!.path.split('/').last),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.cancel),
+                              onPressed: _cancelPreview,
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.send),
+                              onPressed: () => _sendPreview(contact),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
@@ -302,59 +330,132 @@ void initState() {
     );
   }
 
-  bool _shouldShowDate(DateTime messageDate) {
-    if (_previousMessageDate == null) {
-      return true;
-    }
-
-    DateTime previousDate = DateTime(_previousMessageDate!.year, _previousMessageDate!.month, _previousMessageDate!.day);
-    DateTime currentDate = DateTime(messageDate.year, messageDate.month, messageDate.day);
-
-    return currentDate.difference(previousDate).inDays != 0;
-  }
-
  Widget _buildTextComposer(User contact) {
-  return IconTheme(
-    data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
-    child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.photo_camera),
-            onPressed: () => _takePhoto(contact),
-          ),
-          IconButton(
-            icon: const Icon(Icons.image),
-            onPressed: () => _pickImage(contact),
-          ),
-          IconButton(
-            icon: const Icon(Icons.attach_file),
-            onPressed: () => _pickFileAndSend(contact),
-          ),
-          IconButton(
-            icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-            onPressed: _isRecording ? _stopRecording : _startRecording,
-          ),
-          Flexible(
-            child: TextField(
-              controller: _textController,
-              onSubmitted: _handleSubmitted,
-              decoration: const InputDecoration.collapsed(hintText: "Envoyer un message"),
+    return IconTheme(
+      data: IconThemeData(color: Theme.of(context).primaryColor),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.photo),
+              onPressed: () => _pickImage(contact),
             ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: IconButton(
-              icon: const Icon(Icons.send),
+            IconButton(
+              icon: Icon(Icons.attach_file),
+              onPressed: () => _pickFileAndSend(contact),
+            ),
+            IconButton(
+              icon: Icon(_isRecording ? Icons.mic : Icons.mic_none),
+              onPressed: _isRecording ? _stopRecording : () => _startRecording(),
+            ),
+            Flexible(
+              child: TextField(
+                controller: _textController,
+                onSubmitted: (text) => _handleSubmitted(text),
+                decoration: InputDecoration.collapsed(hintText: 'Envoyer un message'),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.send),
               onPressed: () => _handleSubmitted(_textController.text),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+
+  bool _shouldShowDate(DateTime messageDate) {
+    if (_previousMessageDate == null) return true;
+
+    final currentDate = DateTime(messageDate.year, messageDate.month, messageDate.day);
+    final previousDate = DateTime(_previousMessageDate!.year, _previousMessageDate!.month, _previousMessageDate!.day);
+
+    return currentDate != previousDate;
+  }
+
+  Future<void> _initRecorder() async {
+    _recorder = FlutterSoundRecorder();
+    await _recorder!.openRecorder();
+  }
+
+  Future<void> _startRecording() async {
+    final bool hasPermission = await _requestRecorderPermissions();
+    if (!hasPermission) {
+      print('Permissions not granted');
+      return;
+    }
+
+    Directory tempDir = await getTemporaryDirectory();
+    String filePath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
+
+    await _recorder!.startRecorder(
+      toFile: filePath,
+      codec: Codec.aacADTS,
+    );
+
+    setState(() {
+      _isRecording = true;
+      _audioPath = filePath;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (_isRecording) {
+      await _recorder!.stopRecorder();
+      setState(() {
+        _isRecording = false;
+      });
+
+      if (_audioPath != null) {
+        setState(() {
+          _previewFile = File(_audioPath!);
+          _previewType = 'audio';
+        });
+      }
+    }
+  }
+
+  Future<Duration> _getAudioDuration(File audioFile) async {
+    FlutterSoundHelper helper = FlutterSoundHelper();
+  
+    return Duration.zero;
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  void _cancelPreview() {
+    setState(() {
+      _previewFile = null;
+      _previewType = null;
+    });
+  }
+
+  Future<void> _sendPreview(User contact) async {
+    if (_previewFile == null) return;
+
+    if (_previewType == 'image') {
+      await _messageService.sendFileToPerson(contact.id, _previewFile!.path);
+    } else if (_previewType == 'audio') {
+      await _messageService.sendFileToPerson(contact.id, _previewFile!.path);
+    } else if (_previewType == 'file') {
+      await _messageService.sendFileToPerson(contact.id, _previewFile!.path);
+    }
+
+    setState(() {
+      _previewFile = null;
+      _previewType = null;
+    });
+
+    _reload();
+  }
 
   void _deleteMessage(String messageId) async {
     await _messageService.deleteMessage(messageId).catchError((e) {
@@ -387,7 +488,7 @@ void initState() {
     DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
     if (lastMessage != null) {
       setState(() {
-        _messagesSaved.add(lastMessage);
+/*         _messagesSaved.add(lastMessage); */
       });
     }
   }
@@ -398,57 +499,4 @@ void initState() {
       Clipboard.setData(ClipboardData(text: lastMessage.contenu.texte ?? ''));
     }
   }
-
-  void _sendFile(String filePath) async {
-    try {
-      bool success = await _messageService.sendFileToPerson(widget.id, filePath);
-      if (success) {
-        print('File sent successfully');
-        _reload();
-      } else {
-        print('Failed to send file');
-      }
-    } catch (e) {
-      print('Exception during file sending: $e');
-    }
-  }
-
-  Future<void> _pickAudio(User contact) async {
-    try {
-      String? filePath = await FilePickerUtil.pickAudio();
-      if (filePath != null) {
-        _sendFile(filePath);
-      }
-    } catch (e) {
-      print('Failed to pick and send audio: $e');
-    }
-  }
-
-  Future<void> _initRecorder() async {
-  _recorder = FlutterSoundRecorder();
-  await _recorder!.openRecorder();
-  await _requestRecorderPermissions();
-}
-
-Future<void> _startRecording() async {
-  Directory tempDir = await getTemporaryDirectory();
-  _audioPath = '${tempDir.path}/temp_audio.aac';
-  await _recorder!.startRecorder(toFile: _audioPath);
-  setState(() {
-    _isRecording = true;
-  });
-}
-
-Future<void> _stopRecording() async {
-  await _recorder!.stopRecorder();
-  setState(() {
-    _isRecording = false;
-  });
-  if (_audioPath != null) {
-    _sendFile(_audioPath!);
-  }
-}
-
-
-
 }

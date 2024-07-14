@@ -5,6 +5,7 @@ import '../widgets/ProfileInfoUpdateWidget.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 import 'dart:io';
+import '../socket/socket_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -18,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   late UserModel _user;
+  final SocketService socketService=SocketService();
 
   @override
   void initState() {
@@ -90,7 +92,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _logout(BuildContext context) async {
     bool deconnected = await _userService.logout();
     if (deconnected) {
-      Navigator.pushReplacementNamed(context, '/login');
+ 
+      Navigator.pushReplacementNamed(context, '/');
+      socketService.disconnect();
     }
   }
 

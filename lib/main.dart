@@ -6,6 +6,7 @@ import 'models/user.dart';
 import 'services/user_service.dart';
 import 'services/current_screen_manager.dart';
 import 'screens/register_screen.dart';
+import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 
@@ -17,6 +18,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,13 +62,14 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatefulWidget {
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
   final UserService _userService = UserService();
-
+  final socketService = SocketService();
   @override
   void initState() {
     super.initState();
@@ -77,6 +80,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
        UserModel isValidSession = await _userService.checkSession();
     if (isValidSession!=null) {
+      socketService.initializeSocket(isValidSession.uid);
       Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
     } else {
       Navigator.pushReplacementNamed(context, '/login');
