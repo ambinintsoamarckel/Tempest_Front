@@ -110,27 +110,23 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-
       setState(() {
         _previewFile = File(pickedImage.path);
         _previewType = 'image';
       });
-     _scrollToEnd();    
-     }
+      _scrollToEnd();
+    }
   }
 
   Future<void> _pickFileAndSend(User contact) async {
     try {
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
-
-
         setState(() {
           _previewFile = File(filePath);
           _previewType = 'file';
         });
         _scrollToEnd();
-
       }
     } catch (e) {
       print('Failed to pick and send file: $e');
@@ -154,34 +150,33 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-void _handleSubmitted(String text) async {
-  if (text.isEmpty) return;
+  void _handleSubmitted(String text) async {
+    if (text.isEmpty) return;
 
-  _textController.clear();
-  FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
+    _textController.clear();
+    FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
 
-  try {
+    try {
       bool? createdMessage = await _messageService.createMessage(widget.id, {"texte": text});
       if (createdMessage != null) {
         _reload();
-      _scrollToEnd();
-    } else {
-      _showErrorSnackBar('Échec de l\'envoi du message.');
+        _scrollToEnd();
+      } else {
+        _showErrorSnackBar('Échec de l\'envoi du message.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Échec de l\'envoi du message : $e');
     }
-  } catch (e) {
-    _showErrorSnackBar('Échec de l\'envoi du message : $e');
   }
-}
 
-void _showErrorSnackBar(String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-    ),
-  );
-}
-
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   bool _isLastReadMessageByCurrentUser(int index) {
     if (_messages.isEmpty || index != _messages.length - 1) return false;
@@ -197,9 +192,6 @@ void _showErrorSnackBar(String message) {
           duration: Duration(milliseconds: _messages.length),
           curve: Curves.easeOut,
         );
-
-        //_scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-
       }
     });
   }
@@ -209,7 +201,7 @@ void _showErrorSnackBar(String message) {
     return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
   }
 
-   String _formatMessageDate(DateTime date) {
+  String _formatMessageDate(DateTime date) {
     final DateTime adjustedDate = date;
     final now = DateTime.now();
 
@@ -219,12 +211,11 @@ void _showErrorSnackBar(String message) {
     final difference = nowDate.difference(messageDate).inDays;
 
     if (difference == 0) {
-      return 'Aujourd\'hui'; 
+      return 'Aujourd\'hui';
     } else if (difference == 1) {
       return 'Hier';
     } else {
-  return _formatFullDate(messageDate);
-    
+      return _formatFullDate(messageDate);
     }
   }
 
@@ -287,11 +278,12 @@ void _showErrorSnackBar(String message) {
                             previousMessageDate: _previousMessageDate,
                           ),
                           if (_isLastReadMessageByCurrentUser(index))
-                            Padding(
-                              padding: const EdgeInsets.only(top: 5.0, right: 10.0),
-                              child: CircleAvatar(
-                                radius: 10,
-                                backgroundImage: NetworkImage(contact.photo ?? ''),
+                            Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: Text(
+                                "Lu",
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                               ),
                             ),
                         ],
@@ -302,34 +294,53 @@ void _showErrorSnackBar(String message) {
                 ),
                 if (_previewFile != null)
                   Container(
-                    padding: const EdgeInsets.all(8.0),
+                    margin: EdgeInsets.all(10.0),
+                    padding: EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(5.0),
                     ),
-                    child: Column(
+                    child: Row(
                       children: [
-                        if (_previewType == 'image')
+                        if (_previewType == 'image') ...[
                           Image.file(
                             _previewFile!,
-                            height: 100,
                             width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
                           ),
-                        if (_previewType == 'audio')
-                        AudioMessagePlayer(audioUrl: _previewFile!.path ?? ''),
-                        if (_previewType == 'file') Text(_previewFile!.path.split('/').last),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.cancel),
-                              onPressed: _cancelPreview,
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.send),
-                              onPressed: () => _sendPreview(contact),
-                            ),
-                          ],
+                          SizedBox(width: 10),
+                        ] else if (_previewType == 'audio') ...[
+                          Icon(Icons.audiotrack, size: 100),
+                          SizedBox(width: 10),
+                        ] else if (_previewType == 'file') ...[
+                          Icon(Icons.insert_drive_file, size: 100),
+                          SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_previewFile!.path.split('/').last),
+                              SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () => _sendPreview(contact),
+                                    child: Text('Envoyer'),
+                                  ),
+                                  SizedBox(width: 5),
+                                  ElevatedButton(
+                                    onPressed: _clearPreview,
+                                    child: Text('Annuler'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -347,72 +358,20 @@ void _showErrorSnackBar(String message) {
     );
   }
 
- Widget _buildTextComposer(User contact) {
-    return IconTheme(
-      data: IconThemeData(color: Theme.of(context).primaryColor),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.photo),
-              onPressed: () => _pickImage(contact),
-            ),
-            IconButton(
-              icon: Icon(Icons.attach_file),
-              onPressed: () => _pickFileAndSend(contact),
-            ),
-            IconButton(
-              icon: Icon(_isRecording ? Icons.mic : Icons.mic_none),
-              onPressed: _isRecording ? _stopRecording : () => _startRecording(),
-            ),
-            Flexible(
-              child: TextField(
-                controller: _textController,
-                onSubmitted: (text) => _handleSubmitted(text),
-                decoration: InputDecoration.collapsed(hintText: 'Envoyer un message'),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.send),
-              onPressed: () => _handleSubmitted(_textController.text),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  bool _shouldShowDate(DateTime messageDate) {
-    if (_previousMessageDate == null) return true;
-
-    final currentDate = DateTime(messageDate.year, messageDate.month, messageDate.day);
-    final previousDate = DateTime(_previousMessageDate!.year, _previousMessageDate!.month, _previousMessageDate!.day);
-
-    return currentDate != previousDate;
-  }
-
   Future<void> _initRecorder() async {
     _recorder = FlutterSoundRecorder();
     await _recorder!.openRecorder();
   }
 
   Future<void> _startRecording() async {
-    final bool hasPermission = await _requestRecorderPermissions();
-    if (!hasPermission) {
+    if (!await _requestRecorderPermissions()) {
       print('Permissions not granted');
       return;
     }
 
-    Directory tempDir = await getTemporaryDirectory();
-    String filePath = '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
-
-    await _recorder!.startRecorder(
-      toFile: filePath,
-      codec: Codec.aacADTS,
-    );
-
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final String filePath = '${appDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    await _recorder!.startRecorder(toFile: filePath);
     setState(() {
       _isRecording = true;
       _audioPath = filePath;
@@ -420,35 +379,21 @@ void _showErrorSnackBar(String message) {
   }
 
   Future<void> _stopRecording() async {
-    if (_isRecording) {
-      await _recorder!.stopRecorder();
-      setState(() {
-        _isRecording = false;
-      });
+    await _recorder!.stopRecorder();
+    setState(() {
+      _isRecording = false;
+    });
 
-      if (_audioPath != null) {
-        setState(() {
-          _previewFile = File(_audioPath!);
-          _previewType = 'audio';
-        });
-      }
+    if (_audioPath != null) {
+      setState(() {
+        _previewFile = File(_audioPath!);
+        _previewType = 'audio';
+      });
+      _scrollToEnd();
     }
   }
 
-  Future<Duration> _getAudioDuration(File audioFile) async {
-    FlutterSoundHelper helper = FlutterSoundHelper();
-  
-    return Duration.zero;
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
-  }
-
-  void _cancelPreview() {
+  void _clearPreview() {
     setState(() {
       _previewFile = null;
       _previewType = null;
@@ -482,6 +427,7 @@ Future<void> _sendPreview(User contact) async {
   }
 }
 
+
 void _showProgressDialog() {
   showDialog(
     context: context,
@@ -513,31 +459,81 @@ void _showProgressDialog() {
     });
   }
 
-
   void _transferMessage(String messageId) async {
-      print('messaage : $messageId');
-       Navigator.push<Contact>(
-        context,
-        MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),
-      );
+    // Implémentez ici la logique de transfert de message
+    print('Message $messageId transféré.');
+  }
 
-          _reload();
+  Future<void> _copyMessage(int index) async {
+    DirectMessage message = _messages[index];
+    String messageContent = message.contenu.texte ?? '';
 
-    }
-
-
-void _copyMessage(int index) {
-  final text = _messages[index].contenu.texte;
-  if (text != null) {
-    Clipboard.setData(ClipboardData(text: text));
+    await Clipboard.setData(ClipboardData(text: messageContent));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Message copié dans le presse-papiers')),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Aucun texte à copier')),
+      SnackBar(
+        content: Text('Message copié dans le presse-papiers'),
+      ),
     );
   }
-}
 
+  bool _shouldShowDate(DateTime currentMessageDate) {
+    if (_previousMessageDate == null) return true;
+
+    final DateTime previousDate = DateTime(
+      _previousMessageDate!.year,
+      _previousMessageDate!.month,
+      _previousMessageDate!.day,
+    );
+    final DateTime currentDate = DateTime(
+      currentMessageDate.year,
+      currentMessageDate.month,
+      currentMessageDate.day,
+    );
+
+    return currentDate.isAfter(previousDate);
+  }
+
+  Widget _buildTextComposer(User contact) {
+    return IconTheme(
+      data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.photo),
+              onPressed: () => _pickImage(contact),
+            ),
+            IconButton(
+              icon: Icon(Icons.camera_alt),
+              onPressed: () => _takePhoto(contact),
+            ),
+            IconButton(
+              icon: Icon(Icons.insert_drive_file),
+              onPressed: () => _pickFileAndSend(contact),
+            ),
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                onSubmitted: _handleSubmitted,
+                decoration: InputDecoration.collapsed(hintText: 'Envoyer un message'),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.send),
+              onPressed: () => _handleSubmitted(_textController.text),
+            ),
+            GestureDetector(
+              onLongPressStart: (_) => _startRecording(),
+              onLongPressEnd: (_) => _stopRecording(),
+              child: Icon(
+                _isRecording ? Icons.mic_off : Icons.mic,
+                color: _isRecording ? Colors.red : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

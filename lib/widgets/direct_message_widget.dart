@@ -10,6 +10,7 @@ import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
 import '../utils/video_message_player.dart';
 import '../utils/downloader.dart';
+
 class DirectMessageWidget extends StatefulWidget {
   final DirectMessage message;
   final User contact;
@@ -75,63 +76,8 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
       children: [
         GestureDetector(
           onLongPress: () {
-          showModalBottomSheet(
-            context: context,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(20.0),
-              ),
-            ),
-            builder: (BuildContext context) {
-              return Container(
-                padding: EdgeInsets.all(10.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (widget.message.contenu.type == MessageType.texte)
-                      ListTile(
-                        leading: Icon(Icons.copy, color: Colors.blueAccent),
-                        title: Text('Copier'),
-                        onTap: () {
-                          widget.onCopy();
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ListTile(
-                      leading: Icon(Icons.delete, color: Colors.redAccent),
-                      title: Text('Supprimer'),
-                      onTap: () {
-                        widget.onDelete(widget.message.id);
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.forward, color: Colors.greenAccent),
-                      title: Text('Transférer'),
-                      onTap: () {
-                        String messageId = widget.message.id;
-                        Navigator.of(context).pop();
-                        widget.onTransfer(messageId);
-                      },
-                    ),
-                    if (widget.message.contenu.type == MessageType.image ||
-                        widget.message.contenu.type == MessageType.fichier ||
-                        widget.message.contenu.type == MessageType.audio ||
-                        widget.message.contenu.type == MessageType.video)
-                      ListTile(
-                        leading: Icon(Icons.download, color: Colors.orangeAccent),
-                        title: Text('Enregistrer'),
-                        onTap: () {
-                          _saveFile(context);  
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+            _showMessageOptions(context);
+          },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5.0),
             child: Row(
@@ -309,6 +255,65 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showMessageOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(10.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (widget.message.contenu.type == MessageType.texte)
+                ListTile(
+                  leading: Icon(Icons.copy, color: Colors.blueAccent),
+                  title: Text('Copier'),
+                  onTap: () {
+                    widget.onCopy();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.redAccent),
+                title: Text('Supprimer'),
+                onTap: () {
+                  widget.onDelete(widget.message.id);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.forward, color: Colors.greenAccent),
+                title: Text('Transférer'),
+                onTap: () {
+                  String messageId = widget.message.id;
+                  Navigator.of(context).pop();
+                  widget.onTransfer(messageId);
+                },
+              ),
+              if (widget.message.contenu.type == MessageType.image ||
+                  widget.message.contenu.type == MessageType.fichier ||
+                  widget.message.contenu.type == MessageType.audio ||
+                  widget.message.contenu.type == MessageType.video)
+                ListTile(
+                  leading: Icon(Icons.download, color: Colors.orangeAccent),
+                  title: Text('Enregistrer'),
+                  onTap: () {
+                    _saveFile(context);  
+                    Navigator.of(context).pop();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

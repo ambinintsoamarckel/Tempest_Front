@@ -14,21 +14,26 @@ import '../models/contact.dart';
 import 'package:dio/dio.dart';
 import 'ctt_screen.dart';
 import '../models/contact.dart';
-
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
+import '../utils/audio_message_player.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
-  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey= GlobalKey<_GroupChatScreenState>();
+  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey = GlobalKey<_GroupChatScreenState>();
+
   GroupChatScreen({required this.groupId}) : super(key: groupChatScreenKey);
 
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
-   void reload()
- {
-     final state = groupChatScreenKey.currentState;
+
+  void reload() {
+    final state = groupChatScreenKey.currentState;
     if (state != null) {
       state._reload();
     }
- }
+  }
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
@@ -39,14 +44,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   late Future<Group> _groupFuture;
   final storage = FlutterSecureStorage();
   late Future<String> _currentUser;
-  final CurrentScreenManager screenManager=CurrentScreenManager();
+  final CurrentScreenManager screenManager = CurrentScreenManager();
+  DateTime? _previousMessageDate;
+  FlutterSoundRecorder? _recorder;
+  bool _isRecording = false;
+  String? _audioPath;
+  final ScrollController _scrollController = ScrollController();
+  File? _previewFile;
+  String? _previewType; // 'image', 'audio', or 'file'
 
   @override
   void initState() {
     super.initState();
-    _groupFuture = _loadGroup();
+  
     _currentUser = _loadCurrentUser();
+      _groupFuture = _loadGroup();
+    
     screenManager.updateCurrentScreen('groupChat');
+        _initRecorder();
+        
+
   }
 
   Future<String> _loadCurrentUser() async {
@@ -61,6 +78,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       setState(() {
         _messages.addAll(messages);
       });
+           WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToEnd();
+      });
       return messages[0].groupe;
     } catch (e) {
       print('Failed to load messages: $e');
@@ -68,12 +88,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  Future _reload() async {
+  Future<void> _reload() async {
     try {
       List<GroupMessage> messages = await _messageService.receiveGroupMessages(widget.groupId);
       setState(() {
         _messages.clear();
         _messages.addAll(messages);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToEnd();
       });
     } catch (e) {
       print('Failed to load messages: $e');
@@ -84,11 +107,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Future<bool> _requestPermissions() async {
     final List<Permission> permissions = [Permission.camera, Permission.storage];
     Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
+
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
+  Future<bool> _requestRecorderPermissions() async {
+    final List<Permission> permissions = [Permission.microphone, Permission.storage];
+    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
+    return permissionStatus[Permission.microphone] == PermissionStatus.granted &&
+        permissionStatus[Permission.storage] == PermissionStatus.granted;
+  }
+
   Future<void> _pickImage() async {
+    print('lancement');
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
       print('Permissions not granted');
@@ -97,15 +129,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      _sendFile(pickedImage.path);
+      setState(() {
+        _previewFile = File(pickedImage.path);
+        _previewType = 'image';
+      });
+      _scrollToEnd();
     }
   }
 
   Future<void> _pickFileAndSend() async {
     try {
+        print('lancement');
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
-        _sendFile(filePath);
+        setState(() {
+          _previewFile = File(filePath);
+          _previewType = 'file';
+        });
+        _scrollToEnd();
       }
     } catch (e) {
       print('Failed to pick and send file: $e');
@@ -113,6 +154,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _takePhoto() async {
+      print('lancement');
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
       print('Permissions not granted');
@@ -121,29 +163,83 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      _sendFile(pickedImage.path);
+      setState(() {
+        _previewFile = File(pickedImage.path);
+        _previewType = 'image';
+      });
+      _scrollToEnd();
     }
   }
 
-  void _handleSubmitted(String text) async {
+ void _handleSubmitted(String text) async {
+    if (text.isEmpty) return;
+
     _textController.clear();
+    FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
+
     try {
       bool? createdMessage = await _messageService.createMessage(widget.groupId, {"texte": text});
       if (createdMessage != null) {
         _reload();
+        _scrollToEnd();
+      } else {
+        _showErrorSnackBar('Échec de l\'envoi du message.');
       }
     } catch (e) {
-      print('Failed to send message: $e');
+      _showErrorSnackBar('Échec de l\'envoi du message : $e');
     }
   }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: _messages.length),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  String _formatFullDate(DateTime date) {
+    final DateTime adjustedDate = date;
+    return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
+  }
+
+  String _formatMessageDate(DateTime date) {
+    final DateTime adjustedDate = date;
+    final now = DateTime.now();
+
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+
+    final difference = nowDate.difference(messageDate).inDays;
+
+    if (difference == 0) {
+      return 'Aujourd\'hui';
+    } else if (difference == 1) {
+      return 'Hier';
+    } else {
+      return _formatFullDate(messageDate);
+    }
+  }
+
 
   bool _isLastReadMessageByCurrentUser(int index) {
     if (_messages.isEmpty || index != _messages.length - 1) return false;
     GroupMessage message = _messages[index];
     return message.luPar!.contains(widget.groupId);
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -180,42 +276,111 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         return Center(child: Text('Failed to load user'));
                       } else {
                         return ListView.builder(
-                          padding: EdgeInsets.all(8.0),
-                          reverse: false,
-                          itemBuilder: (_, int index) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                GroupMessageWidget(
-                                  message: _messages[index],
-                                  currentUser: userSnapshot.data!,
-                                  onDelete: (messageId) => _deleteMessage(messageId, widget.groupId),
-                                  onTransfer: _transferMessage,
-                                  onCopy: _copyMessage,
-                                  onSave: _saveMessage,
-                                ),
-                                if (_isLastReadMessageByCurrentUser(index))
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 5.0, right: 10.0),
-                                    child: CircleAvatar(
-                                      radius: 10,
-                                      backgroundImage: NetworkImage(snapshot.data!.membres.firstWhere((member) => member.id == widget.groupId).photo ?? ''),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                          itemCount: _messages.length,
-                        );
-                      }
+                    padding: EdgeInsets.all(8.0),
+                    controller: _scrollController,
+                    itemBuilder: (_, int index) {
+                      GroupMessage message = _messages[index];
+                      bool showDate = _shouldShowDate(message.dateEnvoi);
+
+                      _previousMessageDate = message.dateEnvoi;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (showDate)
+                            Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 5.0),
+                              child: Text(
+                                _formatMessageDate(message.dateEnvoi),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
+                            ),
+                          GroupMessageWidget(
+                            message: _messages[index],
+                            currentUser: userSnapshot.data!,
+                            onDelete: (messageId) => _deleteMessage(messageId, widget.groupId),
+                            onTransfer: _transferMessage,
+                            onCopy: () => _copyMessage(index),
+                          ),
+                          if (_isLastReadMessageByCurrentUser(index))
+                            Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: Text(
+                                "Lu",
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
+                            ),
+                        ],
+                      );
                     },
+                    itemCount: _messages.length,
+                  );
+                }
+              },
                   ),
                 ),
-                Divider(height: 1.0),
+              
+                if (_previewFile != null)
+                  Container(
+                    margin: EdgeInsets.all(10.0),
+                    padding: EdgeInsets.all(10.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(5.0),
+                    ),
+                    child: Row(
+                      children: [
+                        if (_previewType == 'image') ...[
+                          Image.file(
+                            _previewFile!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                          SizedBox(width: 10),
+                        ] else if (_previewType == 'audio') ...[
+                          Icon(Icons.audiotrack, size: 100),
+                          SizedBox(width: 10),
+                        ] else if (_previewType == 'file') ...[
+                          Icon(Icons.insert_drive_file, size: 100),
+                          SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_previewFile!.path.split('/').last),
+                              SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () => _sendPreview(),
+                                    child: Text('Envoyer'),
+                                  ),
+                                  SizedBox(width: 5),
+                                  ElevatedButton(
+                                    onPressed: _clearPreview,
+                                    child: Text('Annuler'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Divider(height: 1.0),  
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
-                  child: _buildTextComposer(snapshot.data!),
+                  child: _buildTextComposer(),
                 ),
+           
               ],
             );
           }
@@ -224,41 +389,44 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  Widget _buildTextComposer(Group group) {
+
+ 
+  Widget _buildTextComposer() {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        margin: EdgeInsets.symmetric(horizontal: 8.0),
         child: Row(
           children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.photo_camera),
-              onPressed: () => _takePhoto(),
-            ),
             IconButton(
               icon: Icon(Icons.photo),
               onPressed: () => _pickImage(),
             ),
             IconButton(
-              icon: Icon(Icons.attach_file),
+              icon: Icon(Icons.camera_alt),
+              onPressed: () => _takePhoto(),
+            ),
+            IconButton(
+              icon: Icon(Icons.insert_drive_file),
               onPressed: () => _pickFileAndSend(),
             ),
-            Flexible(
+            Expanded(
               child: TextField(
                 controller: _textController,
-                onSubmitted: (text) => _handleSubmitted(text),
-                decoration: InputDecoration.collapsed(
-                  hintText: "Envoyer un message",
-                ),
-                maxLines: null, // Permet un retour à la ligne automatique
-                minLines: 1, // Nombre minimum de lignes affichées
+                onSubmitted: _handleSubmitted,
+                decoration: InputDecoration.collapsed(hintText: 'Envoyer un message'),
               ),
             ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                icon: Icon(Icons.send),
-                onPressed: () => _handleSubmitted(_textController.text),
+            IconButton(
+              icon: Icon(Icons.send),
+              onPressed: () => _handleSubmitted(_textController.text),
+            ),
+            GestureDetector(
+              onLongPressStart: (_) => _startRecording(),
+              onLongPressEnd: (_) => _stopRecording(),
+              child: Icon(
+                _isRecording ? Icons.mic_off : Icons.mic,
+                color: _isRecording ? Colors.red : null,
               ),
             ),
           ],
@@ -266,6 +434,97 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       ),
     );
   }
+  Future<void> _initRecorder() async {
+    _recorder = FlutterSoundRecorder();
+    await _recorder!.openRecorder();
+  }
+
+  Future<void> _startRecording() async {
+    if (!await _requestRecorderPermissions()) {
+      print('Permissions not granted');
+      return;
+    }
+
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final String filePath = '${appDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    await _recorder!.startRecorder(toFile: filePath);
+    setState(() {
+      _isRecording = true;
+      _audioPath = filePath;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    await _recorder!.stopRecorder();
+    setState(() {
+      _isRecording = false;
+    });
+
+    if (_audioPath != null) {
+      setState(() {
+        _previewFile = File(_audioPath!);
+        _previewType = 'audio';
+      });
+      _scrollToEnd();
+    }
+  }
+
+  void _clearPreview() {
+    setState(() {
+      _previewFile = null;
+      _previewType = null;
+    });
+  }
+
+Future<void> _sendPreview() async {
+  if (_previewFile == null) return;
+
+  _showProgressDialog();
+
+  try {
+    if (_previewType == 'image') {
+      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
+    } else if (_previewType == 'audio') {
+      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
+    } else if (_previewType == 'file') {
+      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
+    }
+
+    setState(() {
+      _previewFile = null;
+      _previewType = null;
+    });
+
+    _reload();
+  } catch (e) {
+    _showErrorSnackBar('Échec de l\'envoi du fichier : $e');
+  } finally {
+    Navigator.of(context).pop(); // Ferme la boîte de dialogue de progression
+  }
+}
+
+
+void _showProgressDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Envoi en cours..."),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 
   void _deleteMessage(String messageId, String groupId) async {
     try {
@@ -276,132 +535,69 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (e.response != null && e.response!.statusCode == 404) {
         print('Message not found or already deleted');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Le message est introuvable ou a déjà été supprimé.')),
-        );
-      } else if (e.response != null) {
-        print('Failed to delete message: ${e.response!.statusCode} - ${e.response!.statusMessage}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de suppression: ${e.response!.statusCode} ${e.response!.statusMessage}')),
+          SnackBar(
+            content: Text('Message not found or already deleted'),
+          ),
         );
       } else {
-        print('Unexpected error: $e');
+        print('Error deleting message: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
+          SnackBar(
+            content: Text('Error deleting message'),
+          ),
         );
       }
-    } catch (e) {
-      print('Failed to delete message: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
-      );
     }
   }
 
-    void _transferMessage(String messageId) async {
-    final selectedContact = await Navigator.push<Contact>(
-      context,
-      MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id:messageId)), // Passe le paramètre isTransferMode
+ 
+  void _transferMessage(String messageId) async {
+      print('messaage : $messageId');
+       Navigator.push<Contact>(
+        context,
+        MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),
+      );
+
+          _reload();
+
+    }
+
+
+void _copyMessage(int index) {
+  final text = _messages[index].contenu.texte;
+  if (text != null) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Message copié dans le presse-papiers')),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Aucun texte à copier')),
+    );
+  }
+
+}
+
+  bool _shouldShowDate(DateTime currentMessageDate) {
+    if (_previousMessageDate == null) return true;
+
+    final DateTime previousDate = DateTime(
+      _previousMessageDate!.year,
+      _previousMessageDate!.month,
+      _previousMessageDate!.day,
+    );
+    final DateTime currentDate = DateTime(
+      currentMessageDate.year,
+      currentMessageDate.month,
+      currentMessageDate.day,
     );
 
-    if (selectedContact != null) {
-      try {
-        await _messageService.transferMessage(selectedContact.id, messageId);
-        print('Message transferred successfully');
-        _reload();
-      } on DioError catch (e) {
-        if (e.response != null) {
-          print('Erreur de réponse du serveur ${e.response!.statusCode}: ${e.response!.statusMessage}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur du serveur: ${e.response!.statusCode} ${e.response!.statusMessage}')),
-          );
-        } else {
-          print('Erreur inattendue: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
-          );
-        }
-      } catch (e) {
-        print('Failed to transfer message: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
-        );
-      }
-    }
+    return currentDate.isAfter(previousDate);
   }
 
 
-  void _saveMessage() {
-    GroupMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
-    if (lastMessage != null) {
-      setState(() {
-        _messagesSaved.add(lastMessage);
-      });
-    }
-  }
 
-  void _copyMessage() {
-    GroupMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
-    if (lastMessage != null) {
-      Clipboard.setData(ClipboardData(text: lastMessage.contenu.texte ?? ''));
-    }
-  }
 
-  void _sendFile(String filePath) async {
-    try {
-      bool success = await _messageService.sendFileToGroup(widget.groupId, filePath);
-      if (success) {
-        _reload();
-      } else {
-        print('Failed to send file');
-      }
-    } catch (e) {
-      print('Exception during file sending: $e');
-    }
-  }
 
- /* Future<void> _addMember(String utilisateurId) async {
-    try {
-      bool success = await _messageService.addMemberToGroup(widget.groupId, utilisateurId);
-      if (success) {
-        print('Member added successfully');
-        _reload(); // Recharge les informations du groupe après l'ajout réussi
-      } else {
-        print('Failed to add member');
-      }
-    } catch (e) {
-      print('Failed to add member: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'ajout du membre, veuillez réessayer.')),
-      );
-    }
-  }
-
-  Future<void> _removeMember(String utilisateurId) async {
-    try {
-      bool success = await _messageService.removeMemberFromGroup(widget.groupId, utilisateurId);
-      if (success) {
-        print('Member removed successfully');
-        _reload(); // Recharge les informations du groupe après la suppression réussie
-      } else {
-        print('Failed to remove member');
-      }
-    } catch (e) {
-      print('Failed to remove member: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la suppression du membre, veuillez réessayer.')),
-      );
-    }
-  }
-*/
-
-  Future<void> _pickAudio() async {
-    // Implementation for picking audio
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
 }
 

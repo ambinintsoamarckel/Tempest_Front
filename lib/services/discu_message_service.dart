@@ -132,10 +132,25 @@ class MessageService {
       print('contact: $contactId');
       final response = await dio.post('/messages/personne/$contactId/$messageId');
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 201) {
         print('Failed to transfer message: ${response.data}');
-        /* throw Exception('Failed to transfer message'); */
+        throw Exception('Failed to transfer message');
       }
+    } catch (e) {
+      print('Exception during message transfer: $e ');
+      rethrow;
+    }
+  }
+      Future<void> transferMessageGroupe(String groupId, String messageId) async {
+
+        try {
+    final response = await dio.post('/messages/groupe/$groupId/$messageId');
+
+    if (response.statusCode != 201) {
+      print('Failed to transfer group message: ${response.data}');
+      throw Exception('Failed to transfer group message');
+    }
+ 
     } catch (e) {
       print('Exception during message transfer: $e ');
       rethrow;

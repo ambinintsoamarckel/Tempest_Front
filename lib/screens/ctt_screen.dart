@@ -63,12 +63,24 @@ class _ContaScreenState extends State<ContaScreen> {
     });
 
     try {
-      await _messageService.transferMessage(contact.id, widget.id);
+      if (contact.type=='groupe') {
+      await _messageService.transferMessageGroupe(contact.id, widget.id);
       setState(() {
         _sentContacts.add(contact);
         _isSending = false;
         _selectedContact = null;
       });
+        
+      }
+      else{
+     await _messageService.transferMessage(contact.id, widget.id);
+      setState(() {
+        _sentContacts.add(contact);
+        _isSending = false;
+        _selectedContact = null;
+      });
+      }
+ 
     } catch (e) {
       print('Failed to send message: $e');
       setState(() {

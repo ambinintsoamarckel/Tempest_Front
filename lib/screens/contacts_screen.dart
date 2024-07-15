@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mini_social_network/screens/group_chat_screen.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';
@@ -74,12 +75,26 @@ class ContactScreenState extends State<ContactScreen> {
   }
 
   void _navigateToChat(Contact contact) {
-    Navigator.push(
+    if(contact.type=='groupe')
+    {
+          Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GroupChatScreen(groupId:  contact.id),
+      ),
+    );
+
+    }
+    else{
+          Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DirectChatScreen(id: contact.id),
       ),
     );
+
+    }
+
   }
 
   void _viewStory(Contact contact) {
