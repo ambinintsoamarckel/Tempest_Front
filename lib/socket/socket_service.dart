@@ -58,7 +58,9 @@ class SocketService {
             0,
             'Nouveau message de ${message.expediteur.nom}',
             notificationContent,
+            'direct|${message.expediteur.id}', // Payload format: 'type|id'
           );
+
           // Vérifier l'écran actuel en utilisant CurrentScreenManager
           if (CurrentScreenManager.currentScreen == 'directChat') {
             final state = DirectChatScreen.directChatScreenKey.currentState;
@@ -153,6 +155,7 @@ class SocketService {
             0,
             'Nouveau message de ${message.expediteur.nom}',
             notificationContent,
+            'group|${message.groupe.id}', // Payload format: 'type|id'
           );
           // Vérifier l'écran actuel en utilisant CurrentScreenManager
           if (CurrentScreenManager.currentScreen == 'groupChat') {

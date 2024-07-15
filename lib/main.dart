@@ -8,20 +8,26 @@ import 'services/current_screen_manager.dart';
 import 'screens/register_screen.dart';
 import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
-
+import './socket/notification_service.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-    await initializeDateFormatting('fr_FR', null);
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
+    final notificationService = NotificationService();
+    notificationService.setNavigatorKey(navigatorKey);
+    notificationService.init(context);
+
     return MaterialApp(
+      navigatorKey: navigatorKey,
       navigatorObservers: [routeObserver],
       title: 'Houatsappy',
       debugShowCheckedModeBanner: false, // Désactive le ruban "Debug"
@@ -62,7 +68,6 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatefulWidget {
-
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -70,6 +75,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final UserService _userService = UserService();
   final socketService = SocketService();
+
   @override
   void initState() {
     super.initState();
@@ -78,23 +84,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _checkSession() async {
     try {
-       UserModel isValidSession = await _userService.checkSession();
-    if (isValidSession!=null) {
-      socketService.initializeSocket(isValidSession.uid);
-      Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
-    } else {
+      UserModel isValidSession = await _userService.checkSession();
+      if (isValidSession != null) {
+        socketService.initializeSocket(isValidSession.uid);
+        Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } catch (e) {
       Navigator.pushReplacementNamed(context, '/login');
+      throw (e);
     }
   }
-      
-    catch (e) {
-      Navigator.pushReplacementNamed(context, '/login');
-      throw(e);
-      
-    }
-     }
-
-   
 
   @override
   Widget build(BuildContext context) {
@@ -103,4 +104,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

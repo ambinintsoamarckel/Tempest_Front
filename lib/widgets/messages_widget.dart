@@ -199,16 +199,23 @@ class ConversationWidget extends StatelessWidget {
     }
     return const SizedBox.shrink();
   }
-
   String _formatDate(DateTime date) {
+    final DateTime adjustedDate = date;
     final now = DateTime.now();
-    final difference = now.difference(date);
-    if (difference.inDays == 0) {
-      return DateFormat.Hm().format(date); // Heure si aujourd'hui
-    } else if (difference.inDays == 1) {
-      return 'Hier'; // Hier
+
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+
+    final difference = nowDate.difference(messageDate).inDays;
+
+    if (difference == 0) {
+  final DateTime adjustedDat = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
+    return DateFormat.Hm().format(adjustedDat); 
+    } else if (difference == 1) {
+      return 'Hier';
     } else {
-      return DateFormat('yyyy/MM/dd').format(date); // Date en format yyyy/MM/dd
+  return DateFormat('yyyy/MM/dd').format(messageDate); 
+    
     }
   }
 }

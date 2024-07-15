@@ -181,7 +181,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 1),
+          duration: Duration(milliseconds: _messages.length),
           curve: Curves.easeOut,
         );
 
@@ -196,17 +196,22 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     return DateFormat('EEEE d MMMM y', 'fr_FR').format(adjustedDate);
   }
 
-  String _formatMessageDate(DateTime messageDate) {
+   String _formatMessageDate(DateTime date) {
+    final DateTime adjustedDate = date;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = DateTime(now.year, now.month, now.day - 1);
 
-    if (messageDate.isAtSameMomentAs(today)) {
-      return 'Aujourd\'hui';
-    } else if (messageDate.isAtSameMomentAs(yesterday)) {
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+
+    final difference = nowDate.difference(messageDate).inDays;
+
+    if (difference == 0) {
+      return 'Aujourd\'hui'; 
+    } else if (difference == 1) {
       return 'Hier';
     } else {
-      return _formatFullDate(messageDate);
+  return _formatFullDate(messageDate);
+    
     }
   }
 
