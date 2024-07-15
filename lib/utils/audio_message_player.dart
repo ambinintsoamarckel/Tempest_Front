@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'audio_player_manager.dart';
 
 class AudioMessagePlayer extends StatefulWidget {
   final String audioUrl;
@@ -50,7 +51,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
     if (_isPlaying) {
       _audioPlayer.pause();
     } else {
-      _audioPlayer.play(UrlSource(widget.audioUrl));
+      AudioPlayerManager().play(_audioPlayer, widget.audioUrl);
     }
   }
 
@@ -76,7 +77,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
   @override
   Widget build(BuildContext context) {
     final progress = _position.inMilliseconds / (_duration.inMilliseconds + 1);
-    int barCount = 15;  // Fixed number of bars
+    int barCount = 15;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
