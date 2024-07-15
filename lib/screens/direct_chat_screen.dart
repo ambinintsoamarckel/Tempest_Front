@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/models/contact.dart';
 import 'package:mini_social_network/screens/contacts_screen.dart';
+import 'package:mini_social_network/screens/ctt_screen.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
@@ -470,24 +471,17 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     });
   }
 
-  void _transferMessage(String messageId) async {
-    print('messaage : $messageId');
-/*     final selectedContact = await Navigator.push<Contact>(
-      context,
-      MaterialPageRoute(builder: (context) => ContactScreen()),
-    );
 
-    if (selectedContact != null) {
-      try {
-        print('id:${selectedContact.id} nom:${selectedContact.nom} nom:${selectedContact.type}');
-        await _messageService.transferMessage(selectedContact.id, messageId);
-        print('Message transferred successfully');
-        _reload();
-      } catch (e) {
-        print('Failed to transfer message: $e');
-      }
-    } */
-  }
+  void _transferMessage(String messageId) async {
+      print('messaage : $messageId');
+       Navigator.push<Contact>(
+        context,
+        MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),
+      );
+
+          _reload();
+
+    }
 
   void _saveMessage() {
     DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
