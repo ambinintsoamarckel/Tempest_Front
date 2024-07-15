@@ -13,6 +13,7 @@ class AudioMessagePlayer extends StatefulWidget {
 class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  bool _isSeeking = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
@@ -27,7 +28,9 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
     });
     _audioPlayer.onPositionChanged.listen((Duration p) {
       setState(() {
-        _position = p;
+        if (!_isSeeking) {
+          _position = p;
+        }
       });
     });
     _audioPlayer.onPlayerStateChanged.listen((PlayerState s) {
@@ -49,6 +52,18 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
     } else {
       _audioPlayer.play(UrlSource(widget.audioUrl));
     }
+  }
+
+  void _seekToPosition(double progress) async {
+    setState(() {
+      _isSeeking = true;
+    });
+    final position = Duration(milliseconds: (progress * _duration.inMilliseconds).round());
+    await _audioPlayer.seek(position);
+    setState(() {
+      _isSeeking = false;
+      _position = position;
+    });
   }
 
   String _formatDuration(Duration duration) {
@@ -77,9 +92,23 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
             onPressed: _togglePlayPause,
           ),
           Expanded(
-            child: Waveform(
-              progress: progress,
-              barCount: barCount,
+            child: GestureDetector(
+              onHorizontalDragUpdate: (details) {
+                RenderBox box = context.findRenderObject() as RenderBox;
+                final localPosition = box.globalToLocal(details.globalPosition);
+                final progress = localPosition.dx / box.size.width;
+                _seekToPosition(progress);
+              },
+              onTapUp: (details) {
+                RenderBox box = context.findRenderObject() as RenderBox;
+                final localPosition = box.globalToLocal(details.globalPosition);
+                final progress = localPosition.dx / box.size.width;
+                _seekToPosition(progress);
+              },
+              child: Waveform(
+                progress: progress,
+                barCount: barCount,
+              ),
             ),
           ),
           Text(
