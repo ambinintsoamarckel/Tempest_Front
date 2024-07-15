@@ -229,45 +229,91 @@ class SocketService {
     });
 
     socket!.on('utilisateur_cree', (message) {
-     /* if (CurrentScreenManager.currentScreen == 'contact') {
-            final state = ContactScreen.contactScreenKey.currentState;
-
-            if (state != null) {
-            if(state.widget.contact==message['groupe'])
-                {
-                  state.widget.reload();    
-                }
-              
-            }
-          }*/
+     if (CurrentScreenManager.currentScreen == 'contact') {
+        final state = HomeScreenState.contactScreenState.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    if(CurrentScreenManager.currentScreen == 'conversationList')
+    {
+      
+      final state = HomeScreenState.conversationListScreen.currentState;
+      if (state != null) {
+        state.widget.reload();
+        }
+    }
     });
 
+
     socket!.on('utilisateur_modifie', (message) {
-      print('eto ary $message');
+     if (CurrentScreenManager.currentScreen == 'contact') {
+        final state = HomeScreenState.contactScreenState.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    if(CurrentScreenManager.currentScreen == 'conversationList')
+    {
+      
+      final state = HomeScreenState.conversationListScreen.currentState;
+      if (state != null) {
+        state.widget.reload();
+        }
+    }
     });
 
     socket!.on('utilisateur_supprime', (message) {
-      print('eto ary $message');
+     if (CurrentScreenManager.currentScreen == 'contact') {
+        final state = HomeScreenState.contactScreenState.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    if(CurrentScreenManager.currentScreen == 'conversationList')
+    {
+      
+      final state = HomeScreenState.conversationListScreen.currentState;
+      if (state != null) {
+        state.widget.reload();
+        }
+    }
     });
 
     socket!.on('story_ajoutee', (message) {
-      print('eto ary $message');
+     if (CurrentScreenManager.currentScreen == 'story') {
+        final state = HomeScreenState.storyScreenKey.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
     });
 
     socket!.on('photo_changee', (message) {
-      print('eto ary $message');
-    });
-
-    socket!.on('groupe_quitte', (message) {
-      print('eto ary $message');
-    });
-
-    socket!.on('groupe_cree', (message) {
-      print('eto ary $message');
+     if (CurrentScreenManager.currentScreen == 'contact') {
+        final state = HomeScreenState.contactScreenState.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    if(CurrentScreenManager.currentScreen == 'conversationList')
+    {
+      
+      final state = HomeScreenState.conversationListScreen.currentState;
+      if (state != null) {
+        state.widget.reload();
+        }
+    }
     });
 
     socket!.on('story_supprimee', (message) {
-      print('eto ary $message');
+     if (CurrentScreenManager.currentScreen == 'story') {
+        final state = HomeScreenState.storyScreenKey.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+
     });
 
     socket!.on('story_vue', (viewers) async {
@@ -284,13 +330,24 @@ class SocketService {
       }
     });
 
-    socket!.on('groupe_supprime', (message) {
-      print('eto ary $message');
-    });
+/*     socket!.on('groupe_supprime', (message) {
+     if (CurrentScreenManager.currentScreen == 'contact') {
+        final state = HomeScreenState.contactScreenState.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    if(CurrentScreenManager.currentScreen == 'conversationList')
+    {
+      
+      final state = HomeScreenState.conversationListScreen.currentState;
+      if (state != null) {
+        state.widget.reload();
+        }
+    }
+    }); */
 
-    socket!.on('photo_groupe_changee', (message) {
-      print('eto ary $message');
-    });
+
 
     socket!.on('membre_ajoute', (message) {
       print('eto ary $message');
