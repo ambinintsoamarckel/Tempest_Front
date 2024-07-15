@@ -19,6 +19,7 @@ import 'package:path_provider/path_provider.dart';
 import '../utils/audio_message_player.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'group_settings.dart';
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
   static final GlobalKey<_GroupChatScreenState> groupChatScreenKey = GlobalKey<_GroupChatScreenState>();
@@ -255,6 +256,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             }
           },
         ),
+         actions: [
+          PopupMenuButton<String>(
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'parametregroup',
+                child: Text('Paramètres du groupe'),
+              ),
+            ],
+            onSelected: (String value) async {
+              switch (value) {
+                case 'parametregroup':
+                  Group group = await _groupFuture;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupSettingsScreen(groupe: group), // Pass group object
+                    ),
+                  );
+                  break;
+              }
+            },
+          ),
+
+        ],
       ),
       body: FutureBuilder<Group>(
         future: _groupFuture,

@@ -44,6 +44,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
   @override
   Widget build(BuildContext context) {
     final bool isCurrentUser = widget.message.expediteur.id != widget.currentUser;
+    final bool isNotification = widget.message.notification;
     Widget messageContent;
 
     switch (widget.message.contenu.type) {
@@ -72,7 +73,9 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5.0),
-        child: Row(
+        child: isNotification
+            ? Center(child: _buildNotificationMessage(context, !isCurrentUser))
+            : Row(
           mainAxisAlignment: !isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -146,6 +149,21 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       overflow: TextOverflow.clip,
     );
   }
+    Widget _buildNotificationMessage(BuildContext context, bool isCurrentUser) {
+    final content = widget.message.contenu.texte ?? '';
+    final displayContent = isCurrentUser
+        ? 'Vous avez $content'
+        : '${widget.message.expediteur.nom} a $content';
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+      child: Text(
+        displayContent,
+        style: TextStyle(color: Colors.black),
+      ),
+    );
+  }
+
 
   Widget _buildFileMessage(BuildContext context, bool isCurrentUser) {
     return Row(
