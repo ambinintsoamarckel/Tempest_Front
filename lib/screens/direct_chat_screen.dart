@@ -455,9 +455,12 @@ void _showErrorSnackBar(String message) {
     });
   }
 
-  Future<void> _sendPreview(User contact) async {
-    if (_previewFile == null) return;
+Future<void> _sendPreview(User contact) async {
+  if (_previewFile == null) return;
 
+  _showProgressDialog();
+
+  try {
     if (_previewType == 'image') {
       await _messageService.sendFileToPerson(contact.id, _previewFile!.path);
     } else if (_previewType == 'audio') {
@@ -472,7 +475,35 @@ void _showErrorSnackBar(String message) {
     });
 
     _reload();
+  } catch (e) {
+    _showErrorSnackBar('Échec de l\'envoi du fichier : $e');
+  } finally {
+    Navigator.of(context).pop(); // Ferme la boîte de dialogue de progression
   }
+}
+
+void _showProgressDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Envoi en cours..."),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 
   void _deleteMessage(String messageId) async {
     await _messageService.deleteMessage(messageId).catchError((e) {

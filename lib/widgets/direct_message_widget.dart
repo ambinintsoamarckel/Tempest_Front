@@ -75,58 +75,63 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
       children: [
         GestureDetector(
           onLongPress: () {
-            showModalBottomSheet(
-              context: context,
-              builder: (BuildContext context) {
-                return Container(
-                  child: Wrap(
-                    children: <Widget>[
-                      if (widget.message.contenu.type == MessageType.texte)
+          showModalBottomSheet(
+            context: context,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(20.0),
+              ),
+            ),
+            builder: (BuildContext context) {
+              return Container(
+                padding: EdgeInsets.all(10.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (widget.message.contenu.type == MessageType.texte)
                       ListTile(
-                        leading: Icon(Icons.content_copy),
+                        leading: Icon(Icons.copy, color: Colors.blueAccent),
                         title: Text('Copier'),
                         onTap: () {
-
-                            widget.onCopy();
-                          
+                          widget.onCopy();
                           Navigator.of(context).pop();
                         },
                       ),
+                    ListTile(
+                      leading: Icon(Icons.delete, color: Colors.redAccent),
+                      title: Text('Supprimer'),
+                      onTap: () {
+                        widget.onDelete(widget.message.id);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.forward, color: Colors.greenAccent),
+                      title: Text('Transférer'),
+                      onTap: () {
+                        String messageId = widget.message.id;
+                        Navigator.of(context).pop();
+                        widget.onTransfer(messageId);
+                      },
+                    ),
+                    if (widget.message.contenu.type == MessageType.image ||
+                        widget.message.contenu.type == MessageType.fichier ||
+                        widget.message.contenu.type == MessageType.audio ||
+                        widget.message.contenu.type == MessageType.video)
                       ListTile(
-                        leading: Icon(Icons.delete),
-                        title: Text('Supprimer'),
+                        leading: Icon(Icons.download, color: Colors.orangeAccent),
+                        title: Text('Enregistrer'),
                         onTap: () {
-                          widget.onDelete(widget.message.id);
+                          _saveFile(context);  
                           Navigator.of(context).pop();
                         },
                       ),
-                      ListTile(
-                        leading: Icon(Icons.forward),
-                        title: Text('Transférer'),
-                        onTap: () {
-                          String messageId = widget.message.id;
-                          Navigator.of(context).pop();
-                          widget.onTransfer(messageId);
-                        },
-                      ),
-                      if (widget.message.contenu.type == MessageType.image ||
-                          widget.message.contenu.type == MessageType.fichier ||
-                          widget.message.contenu.type == MessageType.audio ||
-                          widget.message.contenu.type == MessageType.video)
-                        ListTile(
-                          leading: Icon(Icons.save),
-                          title: Text('Enregistrer'),
-                          onTap: () {
-                              _saveFile(context);  
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          );
+        },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5.0),
             child: Row(
