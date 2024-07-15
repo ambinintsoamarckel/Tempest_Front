@@ -154,22 +154,34 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
-  void _handleSubmitted(String text) async {
-    _textController.clear();
+void _handleSubmitted(String text) async {
+  if (text.isEmpty) return;
 
-    FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
+  _textController.clear();
+  FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
 
-    try {
+  try {
       bool? createdMessage = await _messageService.createMessage(widget.id, {"texte": text});
       if (createdMessage != null) {
         _reload();
-
-        _scrollToEnd();
-      }
-    } catch (e) {
-      print('Failed to send message: $e');
+      _scrollToEnd();
+    } else {
+      _showErrorSnackBar('Échec de l\'envoi du message.');
     }
+  } catch (e) {
+    _showErrorSnackBar('Échec de l\'envoi du message : $e');
   }
+}
+
+void _showErrorSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
+
 
   bool _isLastReadMessageByCurrentUser(int index) {
     if (_messages.isEmpty || index != _messages.length - 1) return false;
@@ -271,8 +283,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             contact: contact,
                             onDelete: _deleteMessage,
                             onTransfer: _transferMessage,
-                            onCopy: _copyMessage,
-                            onSave: _saveMessage,
+                            onCopy: () => _copyMessage(index),
                             previousMessageDate: _previousMessageDate,
                           ),
                           if (_isLastReadMessageByCurrentUser(index))
@@ -483,19 +494,19 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     }
 
-  void _saveMessage() {
-    DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
-    if (lastMessage != null) {
-      setState(() {
-/*         _messagesSaved.add(lastMessage); */
-      });
-    }
-  }
 
-  void _copyMessage() {
-    DirectMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;
-    if (lastMessage != null) {
-      Clipboard.setData(ClipboardData(text: lastMessage.contenu.texte ?? ''));
-    }
+void _copyMessage(int index) {
+  final text = _messages[index].contenu.texte;
+  if (text != null) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Message copié dans le presse-papiers')),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Aucun texte à copier')),
+    );
   }
+}
+
 }

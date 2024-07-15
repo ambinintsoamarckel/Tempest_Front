@@ -12,6 +12,8 @@ import 'contacts_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/contact.dart';
 import 'package:dio/dio.dart';
+import 'ctt_screen.dart';
+import '../models/contact.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
@@ -295,10 +297,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  void _transferMessage(String messageId) async {
-   /*  final selectedContact = await Navigator.push<Contact>(
+    void _transferMessage(String messageId) async {
+    final selectedContact = await Navigator.push<Contact>(
       context,
-      MaterialPageRoute(builder: (context) =>  ContactScreen()),
+      MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id:messageId)), // Passe le paramètre isTransferMode
     );
 
     if (selectedContact != null) {
@@ -324,8 +326,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           SnackBar(content: Text('Erreur inattendue, veuillez réessayer.')),
         );
       }
-    } */
+    }
   }
+
 
   void _saveMessage() {
     GroupMessage? lastMessage = _messages.isNotEmpty ? _messages.first : null;

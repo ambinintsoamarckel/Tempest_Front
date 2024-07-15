@@ -13,19 +13,17 @@ import '../utils/downloader.dart';
 class DirectMessageWidget extends StatefulWidget {
   final DirectMessage message;
   final User contact;
-  final VoidCallback? onCopy;
+  final VoidCallback onCopy;
   final Function(String) onDelete;
   final Function(String) onTransfer;
-  final VoidCallback? onSave;
   final DateTime? previousMessageDate;
 
   DirectMessageWidget({
     required this.message,
     required this.contact,
-    this.onCopy,
+    required this.onCopy,
     required this.onDelete,
     required this.onTransfer,
-    this.onSave,
     this.previousMessageDate,
   });
 
@@ -83,13 +81,14 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                 return Container(
                   child: Wrap(
                     children: <Widget>[
+                      if (widget.message.contenu.type == MessageType.texte)
                       ListTile(
                         leading: Icon(Icons.content_copy),
                         title: Text('Copier'),
                         onTap: () {
-                          if (widget.onCopy != null) {
-                            widget.onCopy!();
-                          }
+
+                            widget.onCopy();
+                          
                           Navigator.of(context).pop();
                         },
                       ),
@@ -118,9 +117,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                           leading: Icon(Icons.save),
                           title: Text('Enregistrer'),
                           onTap: () {
-                            if (widget.onSave != null) {
-                              _saveFile(context);
-                            }
+                              _saveFile(context);  
                             Navigator.of(context).pop();
                           },
                         ),
