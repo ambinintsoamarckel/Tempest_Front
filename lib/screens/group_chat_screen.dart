@@ -20,6 +20,7 @@ import '../utils/audio_message_player.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'group_settings.dart';
+import '../main.dart';
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
   static final GlobalKey<_GroupChatScreenState> groupChatScreenKey = GlobalKey<_GroupChatScreenState>();
@@ -37,7 +38,7 @@ class GroupChatScreen extends StatefulWidget {
   }
 }
 
-class _GroupChatScreenState extends State<GroupChatScreen> {
+class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
   final List<GroupMessage> _messages = [];
   final List<GroupMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
@@ -171,7 +172,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       _scrollToEnd();
     }
   }
-
+@override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute? route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+    @override
+  void didPopNext() {
+    super.didPopNext();
+    setState(() {
+      _messages.clear();
+      _groupFuture = _loadGroup();
+      
+    });
+      
+  }
  void _handleSubmitted(String text) async {
     if (text.isEmpty) return;
 

@@ -39,19 +39,26 @@ class GroupChatService {
   }
 
   // Method to update a group message
-  Future<GroupMessage?> updateGroupMessage(String groupId, String messageId, Map<String, dynamic> messageData) async {
-    final response = await dio.put(
-      '/messages/groupe/$groupId/$messageId',
-      data: jsonEncode(messageData),
+  Future<Group> updateGroup(String groupId, Map<String, dynamic> data) async {
+try {
+      final response = await dio.put(
+      '/groupes/$groupId',
+      data: jsonEncode(data),
       options: Options(headers: {'Content-Type': 'application/json'}),
     );
 
     if (response.statusCode == 200) {
-      return GroupMessage.fromJson(response.data);
+      return Group.fromJson(response.data);
     } else {
       print('Failed to update group message: ${response.data}');
       throw Exception('Failed to update group message');
     }
+  
+} catch (e) {
+          print('Failed to update user: $e');
+        rethrow;
+  
+}
   }
 
   // Method to delete a group message
@@ -140,7 +147,9 @@ List<dynamic> messagesJson = response.data;
   }
 
   // Method to add a member to a group
-  Future<void> addMemberToGroup(String id, String utilisateurId, Map<String, dynamic> memberData) async {
+  Future<Group> addMemberToGroup(String id, String utilisateurId, Map<String, dynamic> memberData) async {
+    try {
+
     final response = await dio.post(
       '/groupes/$id/membres/$utilisateurId',
       data: jsonEncode(memberData),
@@ -151,15 +160,47 @@ List<dynamic> messagesJson = response.data;
       print('Failed to add member to group: ${response.data}');
       throw Exception('Failed to add member to group');
     }
+    return Group.fromJson(response.data);      
+    } catch (e) {
+        print('Failed to add user: $e');
+        rethrow;
+      
+    }
   }
+  Future<Group> quitGroup(String id) async {
+    try {
 
-  // Method to remove a member from a group
-  Future<void> removeMemberFromGroup(String id, String utilisateurId) async {
-    final response = await dio.delete('/groupes/$id/membres/$utilisateurId');
+    final response = await dio.delete('/me/quitGroup/$id');
 
     if (response.statusCode != 204) {
       print('Failed to remove member from group: ${response.data}');
       throw Exception('Failed to remove member from group');
+    }
+    return Group.fromJson(response.data);
+      
+    } catch (e) {
+        print('Failed to remove user: $e');
+        rethrow;
+      
+    }
+  }
+
+  // Method to remove a member from a group
+  Future<Group> removeMemberFromGroup(String id, String utilisateurId) async {
+    try {
+
+    final response = await dio.delete('/groupes/$id/membres/$utilisateurId');
+
+    if (response.statusCode != 200) {
+      print('Failed to remove member from group: ${response.data}');
+      throw Exception('Failed to remove member from group');
+    }
+    return Group.fromJson(response.data);
+      
+    } catch (e) {
+        print('Failed to remove user: $e');
+        rethrow;
+      
     }
   }
     Future<bool> sendFileToGroup(String groupId, String filePath) async {
@@ -204,10 +245,20 @@ List<dynamic> messagesJson = response.data;
   }
 
   // Method to change group photo
-  Future<void> changeGroupPhoto(String id, File newPhoto) async {
-    FormData formData = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(newPhoto.path, filename: newPhoto.path.split('/').last),
-    });
+  Future<Group> changeGroupPhoto(String id, String newPhoto) async {
+    try {
+        final mimeType = lookupMimeType(newPhoto) ?? 'application/octet-stream';
+      
+      // Créer un MultipartFile avec le type MIME correct
+      MultipartFile file = await MultipartFile.fromFile(
+        newPhoto,
+        contentType: MediaType.parse(mimeType),
+      );
+      
+      // Créer FormData
+      FormData formData = FormData.fromMap({
+        'photo': file,
+      });
 
     final response = await dio.put(
       '/groupes/$id/changePhoto',
@@ -219,5 +270,15 @@ List<dynamic> messagesJson = response.data;
       print('Failed to change group photo: ${response.data}');
       throw Exception('Failed to change group photo');
     }
+    return Group.fromJson(response.data);
+  
+      
+    } catch (e) {
+            print('Exception during file sending: $e');
+      rethrow;
+      
+    }
+      // Déterminer le type MIME
   }
+    
 }

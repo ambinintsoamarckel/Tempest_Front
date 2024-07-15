@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../network/network_config.dart';
 import '../socket/socket_service.dart';
-
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 class UserService {
   final storage = FlutterSecureStorage();
   final Dio dio = NetworkConfig().client;
@@ -108,19 +109,14 @@ class UserService {
     }
   }
 
-  Future<bool> updateUserProfile(String name, String email) async {
-    String? token = await storage.read(key: 'token');
+  Future<bool> updateUserProfile( Map<String, dynamic> data) async {
+
     try {
       final response = await dio.put(
         '/me',
-        data: jsonEncode({
-          'name': name,
-          'email': email,
-        }),
+        data: jsonEncode(data),
         options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
+    
         ),
       );
 
@@ -132,7 +128,6 @@ class UserService {
   }
 
   Future<bool> updatePassword(String oldPassword, newPassword) async {
-    String? token = await storage.read(key: 'token');
     try {
       final response = await dio.put(
         '/me/changePassword',
@@ -141,9 +136,7 @@ class UserService {
           'newPassword': newPassword,
         }),
         options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
+
         ),
       );
 
@@ -155,18 +148,23 @@ class UserService {
   }
 
   Future<bool> updateProfilePhoto(String filePath) async {
-    String? token = await storage.read(key: 'token');
     try {
+            // Déterminer le type MIME
+      final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+        MultipartFile file = await MultipartFile.fromFile(
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      );
+      
       FormData formData = FormData.fromMap({
-        'photo': await MultipartFile.fromFile(filePath),
+        'photo': file,
       });
 
       final response = await dio.put(
         '/me/changePhoto',
-        data: formData,
+         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token',
             'Content-Type': 'multipart/form-data',
           },
         ),
