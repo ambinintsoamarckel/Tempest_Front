@@ -65,13 +65,13 @@ class _RecordingWidgetState extends State<RecordingWidget>
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Recording...',
-                style: TextStyle(color: Colors.white, fontSize: 20),
+              Icon(
+                Icons.mic, // Remplacez par l'icône que vous souhaitez
+                color: Colors.white,
+                size: 30,
               ),
-              SizedBox(width: 10),
               Text(
                 _recordingTime,
                 style: TextStyle(color: Colors.white, fontSize: 20),
