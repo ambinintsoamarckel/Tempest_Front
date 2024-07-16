@@ -16,6 +16,7 @@ import '../services/discu_message_service.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import '../utils/audio_message_player.dart';
+import '../widgets/RecordingWidget.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String id;
@@ -366,17 +367,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                   ),
               
                 if (_isRecording)
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Recording...',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    ),
-                  ),
+                  RecordingWidget(),
+          
                 Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
