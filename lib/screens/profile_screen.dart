@@ -5,7 +5,6 @@ import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:mini_social_network/screens/messages_screen.dart';
 import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
-import '../widgets/PasswordChangeWidget.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
@@ -28,6 +27,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  bool _showPasswordFields = false;
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   void initState() {
@@ -51,24 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _loadUser();
   }
 
-/*   void _showProfileInfoUpdateWidget() async {
-    UserModel? updatedUser = await showModalBottomSheet<UserModel>(
-      context: context,
-      builder: (context) => ProfileInfoUpdateWidget(user: _user),
-    );
-
-    if (updatedUser != null) {
-      await _reloadUser();
-    }
-  } */
-
-  void _showPasswordChangeWidget() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => PasswordChangeWidget(),
-    );
-  }
-
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
@@ -82,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
               Navigator.of(context).pop();
               if (pickedImage != null) {
-                bool? confirm = await _showConfirmationDialog();
+                bool? confirm = await _showConfirmationDialog('Voulez-vous vraiment changer votre photo de profil ?');
                 if (confirm == true) {
                   bool success = await _userService.updateProfilePhoto(pickedImage.path);
                   if (success) {
@@ -99,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final XFile? pickedImage = await _picker.pickImage(source: ImageSource.camera);
               Navigator.of(context).pop();
               if (pickedImage != null) {
-                bool? confirm = await _showConfirmationDialog();
+                bool? confirm = await _showConfirmationDialog('Voulez-vous vraiment changer votre photo de profil ?');
                 if (confirm == true) {
                   bool success = await _userService.updateProfilePhoto(pickedImage.path);
                   if (success) {
@@ -114,13 +99,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<bool?> _showConfirmationDialog() {
+  Future<bool?> _showConfirmationDialog(String message) {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Confirmer'),
-          content: Text('Voulez-vous vraiment changer votre photo de profil ?'),
+          content: Text(message),
           actions: <Widget>[
             TextButton(
               child: Text('Non'),
@@ -141,14 +126,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _logout(BuildContext context) async {
-    bool deconnected = await _userService.logout();
-    if (deconnected) {
-      HomeScreenState.contactScreenState = GlobalKey<ContactScreenState>();
-      HomeScreenState.conversationListScreen = GlobalKey<ConversationListScreenState>();
-      HomeScreenState.storyScreenKey = GlobalKey<StoryScreenState>();
+    bool? confirm = await _showConfirmationDialog('Voulez-vous vraiment vous déconnecter ?');
+    if (confirm == true) {
+      bool deconnected = await _userService.logout();
+      if (deconnected) {
+        HomeScreenState.contactScreenState = GlobalKey<ContactScreenState>();
+        HomeScreenState.conversationListScreen = GlobalKey<ConversationListScreenState>();
+        HomeScreenState.storyScreenKey = GlobalKey<StoryScreenState>();
 
-      Navigator.pushReplacementNamed(context, '/');
-      socketService.disconnect();
+        Navigator.pushReplacementNamed(context, '/');
+        socketService.disconnect();
+      }
+    }
+  }
+
+  void _deleteAccount(BuildContext context) async {
+    bool? confirm = await _showConfirmationDialog('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.');
+    if (confirm == true) {
+      bool success = await _userService.delete();
+      if (success) {
+        HomeScreenState.contactScreenState = GlobalKey<ContactScreenState>();
+        HomeScreenState.conversationListScreen = GlobalKey<ConversationListScreenState>();
+        HomeScreenState.storyScreenKey = GlobalKey<StoryScreenState>();
+
+        Navigator.pushReplacementNamed(context, '/');
+        socketService.disconnect();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression du compte')),
+        );
+      }
     }
   }
 
@@ -206,57 +213,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStoryList() {
+  Widget _buildPasswordFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Stories',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        TextField(
+          controller: _oldPasswordController,
+          decoration: const InputDecoration(labelText: 'Ancien mot de passe'),
+          obscureText: true,
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: _user.stories.length,
-          itemBuilder: (context, index) {
-            final story = _user.stories[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: story.type == 'image' ? NetworkImage(story.content) : null,
-                child: story.type == 'text' ? Icon(Icons.text_fields) : null,
-              ),
-              title: Text(story.type),
-              subtitle: Text(story.content),
-            );
-          },
+        TextField(
+          controller: _newPasswordController,
+          decoration: const InputDecoration(labelText: 'Nouveau mot de passe'),
+          obscureText: true,
+        ),
+        TextField(
+          controller: _confirmPasswordController,
+          decoration: const InputDecoration(labelText: 'Confirmer le nouveau mot de passe'),
+          obscureText: true,
+        ),
+        SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: _changePassword,
+          child: Text('Changer le mot de passe'),
         ),
       ],
     );
   }
 
-  Widget _buildArchiveList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Archives',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: _user.archives.length,
-          itemBuilder: (context, index) {
-            final archive = _user.archives[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: archive.type == 'image' ? NetworkImage(archive.content) : null,
-                child: archive.type == 'text' ? Icon(Icons.text_fields) : null,
-              ),
-              title: Text(archive.type),
-              subtitle: Text(archive.content),
-            );
-          },
-        ),
-      ],
+  void _changePassword() async {
+    String oldPassword = _oldPasswordController.text.trim();
+    String newPassword = _newPasswordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
+
+    if (newPassword != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
+      );
+      return;
+    }
+
+    try {
+      bool success = await _userService.updatePassword(oldPassword, newPassword);
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+      );
+    }
+  }
+
+  void _navigateToListScreen(List<dynamic> items, String title) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ItemListScreen(items: items, title: title),
+      ),
     );
   }
 
@@ -298,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 20),
                   _buildTextField(
                     controller: _nameController,
                     labelText: 'Nom',
@@ -360,25 +377,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                   ),
-
-                  SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showPasswordChangeWidget,
-                    icon: Icon(Icons.lock),
-                    label: Text('Modifier le mot de passe'),
+                  SizedBox(height: 20.0),
+                  ListTile(
+                    leading: Icon(Icons.lock),
+                    title: Text('Modifier le mot de passe'),
+                    trailing: IconButton(
+                      icon: Icon(_showPasswordFields ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
+                      onPressed: () {
+                        setState(() {
+                          _showPasswordFields = !_showPasswordFields;
+                        });
+                      },
+                    ),
                   ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: () => _logout(context),
-                    icon: Icon(Icons.exit_to_app),
-                    label: Text('Déconnexion'),
+                  if (_showPasswordFields) _buildPasswordFields(),
+                  SizedBox(height: 20.0),
+                  ListTile(
+                    leading: Icon(Icons.exit_to_app),
+                    title: Text('Déconnexion'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.exit_to_app),
+                      onPressed: () => _logout(context),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ListTile(
+                    leading: Icon(Icons.delete_forever),
+                    title: Text('Supprimer mon compte'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete_forever, color: Colors.red),
+                      onPressed: () => _deleteAccount(context),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ListTile(
+                    leading: Icon(Icons.archive),
+                    title: Text('Archives et Stories'),
+                    onTap: () => _navigateToListScreen([..._user.archives, ..._user.stories], 'Archives et Stories'),
                   ),
                   SizedBox(height: 20),
                   _buildGroupList(),
-                  SizedBox(height: 20),
-                  _buildStoryList(),
-                  SizedBox(height: 20),
-                  _buildArchiveList(),
                 ],
               ),
             ),
@@ -391,6 +429,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _oldPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+}
+
+class ItemListScreen extends StatelessWidget {
+  final List<dynamic> items;
+  final String title;
+
+  const ItemListScreen({super.key, required this.items, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: ListView.builder(
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: item is Story && item.type == 'image' ? NetworkImage(item.content) : null,
+              child: item is Story && item.type == 'text' ? Icon(Icons.text_fields) : null,
+            ),
+            title: Text(item is Story ? item.type : 'Archive'),
+            subtitle: Text(item is Story ? item.content : ''),
+          );
+        },
+      ),
+    );
   }
 }

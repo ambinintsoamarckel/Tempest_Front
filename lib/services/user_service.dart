@@ -46,6 +46,20 @@ class UserService {
     } 
   }
 
+
+  Future<bool> delete() async {
+    try {
+      final response = await dio.delete('/me'); 
+      await storage.delete(key: 'authCookie');
+      await storage.delete(key: 'user');
+      return response.statusCode==204;
+
+    } catch (e) {
+      print('Logout error: $e');
+      return false;
+    } 
+  }
+  
   Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
       final response = await dio.post(
