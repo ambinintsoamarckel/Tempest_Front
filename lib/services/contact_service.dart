@@ -20,6 +20,21 @@ class ContactService {
     }
   }
 
+  Future<List<Contact>> getNonMembre(String groupId) async {
+    try {
+      final response = await dio.get('/utilisateurs/nonMembres/$groupId');
+      if (response.statusCode == 200) {
+        List<dynamic> data = response.data;
+        List<Contact> contacts = data.map((json) => Contact.fromJson(json)).toList();
+        return contacts;
+      } else {
+        throw Exception('Failed to load contacts');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<void> createGroup(List<String> userIds, String nom) async {
     try {
       final response = await dio.post('/groupes', data: {

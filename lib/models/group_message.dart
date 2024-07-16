@@ -78,8 +78,9 @@ class Group {
   final String? description;
   final String? photo;
   final List<User> membres;
+  User createur;
 
-  Group({required this.id, required this.nom, required this.description, this.photo, required this.membres});
+  Group({required this.id, required this.nom, required this.description, this.photo, required this.membres, required this.createur});
 
   factory Group.fromJson(Map<String, dynamic> json) {
     var membresFromJson = json['membres'] as List;
@@ -88,6 +89,7 @@ class Group {
     return Group(
       id: json['_id'],
       nom: json['nom'],
+      createur: User.fromJson(json['createur']),
       description: json['description'],
       photo: json['photo'],
       membres: membresList,

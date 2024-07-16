@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/models/contact.dart';
-import 'package:mini_social_network/screens/ctt_screen.dart';
+import 'package:mini_social_network/screens/membre_screen.dart';
 import '../models/group_message.dart';
 import '../services/discu_group_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -47,6 +47,8 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isCreator = _currentUserId == widget.groupe.createur.id;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Paramètres du groupe'),
@@ -112,6 +114,11 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 ),
                 SizedBox(height: 20.0),
                 ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Créateur du groupe : ${widget.groupe.createur.nom}'),
+                ),
+                SizedBox(height: 20.0),
+                ListTile(
                   leading: Icon(Icons.person_add),
                   title: Text('Ajouter un membre'),
                   trailing: IconButton(
@@ -124,14 +131,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   leading: Icon(Icons.people),
                   title: Text('Membres du groupe'),
                 ),
-                _buildMembersList(),
+                _buildMembersList(isCreator),
                 SizedBox(height: 20.0),
                 ListTile(
-                  leading: Icon(Icons.exit_to_app),
-                  title: Text('Quitter le groupe'),
+                  leading: isCreator ? Icon(Icons.delete) : Icon(Icons.exit_to_app),
+                  title: Text(isCreator ? 'Supprimer le groupe' : 'Quitter le groupe'),
                   trailing: IconButton(
-                    icon: Icon(Icons.exit_to_app),
-                    onPressed: _leaveGroup,
+                    icon: isCreator ? Icon(Icons.delete, color: Colors.red) : Icon(Icons.exit_to_app),
+                    onPressed: isCreator ? _confirmDeleteGroup : _confirmLeaveGroup,
                   ),
                 ),
               ],
@@ -172,12 +179,11 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
       ],
     );
   }
-
-  Widget _buildMembersList() {
+  Widget _buildMembersList(bool isCreator) {
     if (_currentUserId == null) {
       return Center(child: CircularProgressIndicator());
     }
-
+    
     final members = widget.groupe.membres.where((member) => member.id != _currentUserId).toList();
 
     return ListView.builder(
@@ -192,14 +198,17 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
           ),
           title: Text(member.nom),
           subtitle: Text(member.email),
-          trailing: IconButton(
-            icon: Icon(Icons.remove_circle, color: Colors.red),
-            onPressed: () => _removeMemberFromGroup(member.id),
-          ),
+          trailing: isCreator
+              ? IconButton(
+                  icon: Icon(Icons.remove_circle, color: Colors.red),
+                  onPressed: () => _removeMemberFromGroup(member.id),
+                )
+              : null,
         );
       },
     );
   }
+
 
   void _showImagePickerOptions() {
     showModalBottomSheet(
@@ -308,7 +317,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     String newMemberUsername = _addMemberController.text.trim();
     if (newMemberUsername.isNotEmpty) {
       try {
-        await _groupService.addMemberToGroup(widget.groupe.id, newMemberUsername, {});
+        await _groupService.addMemberToGroup(widget.groupe.id, newMemberUsername);
         setState(() {
           widget.groupe.membres.add(User(id: 'newId', nom: newMemberUsername, email: 'newEmail'));
         });
@@ -318,11 +327,16 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     }
   }
 
-  void _ajouterMembre() {
-    Navigator.push<Contact>(
+  void _ajouterMembre() async {
+    final addedContacts = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: false, id: widget.groupe.id)),
+      MaterialPageRoute(builder: (context) => ContaScreen(groupId: widget.groupe.id,)),
     );
+    if (addedContacts != null) {
+      setState(() {
+        widget.groupe = addedContacts;
+      });
+    }
   }
 
   void _removeMemberFromGroup(String memberId) async {
@@ -336,6 +350,52 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     }
   }
 
+  void _confirmLeaveGroup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Quitter le groupe'),
+        content: Text('Êtes-vous sûr de vouloir quitter le groupe ?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Annuler'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text('Oui'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _leaveGroup();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteGroup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Supprimer le groupe'),
+        content: Text('Êtes-vous sûr de vouloir supprimer le groupe ? Cette action est irréversible.'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Annuler'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text('Oui'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteGroup();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   void _leaveGroup() async {
     setState(() {
       _isLoading = true;
@@ -343,11 +403,25 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     try {
       if (_currentUserId != null) {
         await _groupService.quitGroup(widget.groupe.id);
-        Navigator.pop(context); // Ferme l'écran des paramètres après avoir quitté le groupe
-        Navigator.pop(context);
+     Navigator.popUntil(context, (route) => route.isFirst);
       }
     } catch (e) {
       print('Erreur lors de la sortie du groupe : $e');
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void _deleteGroup() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await _groupService.deleteGroup(widget.groupe.id);
+     Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      print('Erreur lors de la suppression du groupe : $e');
     }
     setState(() {
       _isLoading = false;

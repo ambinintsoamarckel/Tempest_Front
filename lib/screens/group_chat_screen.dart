@@ -275,30 +275,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
           },
         ),
          actions: [
-          PopupMenuButton<String>(
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'parametregroup',
-                child: Text('Paramètres du groupe'),
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () async {
+            Group group = await _groupFuture;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupSettingsScreen(groupe: group), // Pass group object
               ),
-            ],
-            onSelected: (String value) async {
-              switch (value) {
-                case 'parametregroup':
-                  Group group = await _groupFuture;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GroupSettingsScreen(groupe: group), // Pass group object
-                    ),
-                  );
-                  break;
-              }
-            },
-          ),
-
-        ],
-      ),
+            );
+          },
+        ),
+      ],
+    ),
       body: FutureBuilder<Group>(
         future: _groupFuture,
         builder: (context, snapshot) {

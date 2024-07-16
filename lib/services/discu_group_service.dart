@@ -147,16 +147,15 @@ List<dynamic> messagesJson = response.data;
   }
 
   // Method to add a member to a group
-  Future<Group> addMemberToGroup(String id, String utilisateurId, Map<String, dynamic> memberData) async {
+  Future<Group> addMemberToGroup(String id, String utilisateurId) async {
     try {
 
     final response = await dio.post(
       '/groupes/$id/membres/$utilisateurId',
-      data: jsonEncode(memberData),
       options: Options(headers: {'Content-Type': 'application/json'}),
     );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode != 200) {
       print('Failed to add member to group: ${response.data}');
       throw Exception('Failed to add member to group');
     }
@@ -203,6 +202,25 @@ List<dynamic> messagesJson = response.data;
       
     }
   }
+  Future<bool> deleteGroup(String id) async {
+    try {
+
+    final response = await dio.delete('/groupes/$id');
+
+    if (response.statusCode != 204) {
+      print('Failed to remove member from group: ${response.data}');
+      throw Exception('Failed to remove member from group');
+    }
+    return true;
+      
+    } catch (e) {
+        print('Failed to remove user: $e');
+        rethrow;
+      
+    }
+  }
+  
+  
     Future<bool> sendFileToGroup(String groupId, String filePath) async {
     try {
       String url = '/messages/groupe/$groupId';
