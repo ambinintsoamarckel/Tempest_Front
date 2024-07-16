@@ -12,7 +12,9 @@ class _RecordingWidgetState extends State<RecordingWidget>
   late Animation<Color?> _colorAnimation;
   late Timer _timer;
   late Stopwatch _stopwatch;
+  late Timer _dotTimer;
   String _recordingTime = '00:00';
+  String _dots = '';
 
   @override
   void initState() {
@@ -21,11 +23,12 @@ class _RecordingWidgetState extends State<RecordingWidget>
       vsync: this,
       duration: Duration(seconds: 1),
     )..repeat(reverse: true);
-    _colorAnimation = ColorTween(begin: Colors.redAccent, end: Colors.red)
+    _colorAnimation = ColorTween(begin: Colors.red, end: Colors.red)
         .animate(_animationController);
 
     _stopwatch = Stopwatch();
     _startTimer();
+    _startDotTimer();
   }
 
   void _startTimer() {
@@ -33,6 +36,17 @@ class _RecordingWidgetState extends State<RecordingWidget>
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _recordingTime = _formatTime(_stopwatch.elapsed);
+      });
+    });
+  }
+
+  void _startDotTimer() {
+    _dotTimer = Timer.periodic(Duration(milliseconds: 500), (timer) {
+      setState(() {
+        _dots += '.';
+        if (_dots.length > 3) {
+          _dots = '';
+        }
       });
     });
   }
@@ -48,6 +62,7 @@ class _RecordingWidgetState extends State<RecordingWidget>
   void dispose() {
     _animationController.dispose();
     _timer.cancel();
+    _dotTimer.cancel();
     _stopwatch.stop();
     super.dispose();
   }
@@ -71,6 +86,10 @@ class _RecordingWidgetState extends State<RecordingWidget>
                 Icons.mic, // Remplacez par l'icône que vous souhaitez
                 color: Colors.white,
                 size: 30,
+              ),
+              Text(
+                'Enregistrement $_dots',
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
               Text(
                 _recordingTime,
