@@ -3,9 +3,9 @@ import '../services/user_service.dart';
 import '../models/user.dart';
 
 class PasswordChangeWidget extends StatefulWidget {
-  final UserModel user;
 
-  const PasswordChangeWidget({Key? key, required this.user}) : super(key: key);
+
+  const PasswordChangeWidget({Key? key}) : super(key: key);
 
   @override
   _PasswordChangeWidgetState createState() => _PasswordChangeWidgetState();

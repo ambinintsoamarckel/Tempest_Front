@@ -96,7 +96,7 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
+                      MaterialPageRoute(builder: (context) => ProfileScreen()),
                     );
                   },
                 ),

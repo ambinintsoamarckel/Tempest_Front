@@ -8,13 +8,11 @@ import '../services/user_service.dart';
 import '../widgets/PasswordChangeWidget.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/user.dart';
+import '../models/profile.dart';
 import '../socket/socket_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final UserModel user;
-
-  const ProfileScreen({super.key, required this.user});
+  const ProfileScreen({super.key});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -34,28 +32,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _user = widget.user;
-    _nameController = TextEditingController(text: _user.nom);
-    _emailController = TextEditingController(text: _user.email);
+    _loadUser();
   }
 
-  void _showProfileInfoUpdateWidget() async {
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+    _user = await _userService.getUserProfile();
+    setState(() {
+      _nameController = TextEditingController(text: _user.nom);
+      _emailController = TextEditingController(text: _user.email);
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _reloadUser() async {
+    await _loadUser();
+  }
+
+/*   void _showProfileInfoUpdateWidget() async {
     UserModel? updatedUser = await showModalBottomSheet<UserModel>(
       context: context,
       builder: (context) => ProfileInfoUpdateWidget(user: _user),
     );
 
     if (updatedUser != null) {
-      setState(() {
-        _user = updatedUser;
-      });
+      await _reloadUser();
     }
-  }
+  } */
 
   void _showPasswordChangeWidget() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => PasswordChangeWidget(user: _user),
+      builder: (context) => PasswordChangeWidget(),
     );
   }
 
@@ -76,9 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (confirm == true) {
                   bool success = await _userService.updateProfilePhoto(pickedImage.path);
                   if (success) {
-                    setState(() {
-                      widget.user.photo = pickedImage.path;
-                    });
+                    await _reloadUser();
                   }
                 }
               }
@@ -95,9 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (confirm == true) {
                   bool success = await _userService.updateProfilePhoto(pickedImage.path);
                   if (success) {
-                    setState(() {
-                      widget.user.photo = pickedImage.path;
-                    });
+                    await _reloadUser();
                   }
                 }
               }
@@ -173,122 +179,208 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildGroupList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Groupes',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: _user.groupes.length,
+          itemBuilder: (context, index) {
+            final group = _user.groupes[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: group.photo != null ? NetworkImage(group.photo!) : null,
+                child: group.photo == null ? Icon(Icons.group) : null,
+              ),
+              title: Text(group.nom),
+              subtitle: Text(group.description ?? ''),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStoryList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Stories',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: _user.stories.length,
+          itemBuilder: (context, index) {
+            final story = _user.stories[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: story.type == 'image' ? NetworkImage(story.content) : null,
+                child: story.type == 'text' ? Icon(Icons.text_fields) : null,
+              ),
+              title: Text(story.type),
+              subtitle: Text(story.content),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArchiveList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Archives',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: _user.archives.length,
+          itemBuilder: (context, index) {
+            final archive = _user.archives[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: archive.type == 'image' ? NetworkImage(archive.content) : null,
+                child: archive.type == 'text' ? Icon(Icons.text_fields) : null,
+              ),
+              title: Text(archive.type),
+              subtitle: Text(archive.content),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: widget.user.photo != null ? NetworkImage(widget.user.photo!) : null,
-                        child: _user.photo == null ? Icon(Icons.person, size: 50) : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: IconButton(
-                            icon: Icon(Icons.camera_alt, color: Colors.black),
-                            onPressed: _pickImage,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 16),
-                _buildTextField(
-                  controller: _nameController,
-                  labelText: 'Nom',
-                  icon: Icons.edit,
-                  isEditing: _isEditingName,
-                  onPressedEdit: () {
-                    setState(() {
-                      _isEditingName = true;
-                    });
-                  },
-                  onPressedSave: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    String newName = _nameController.text.trim();
-                    if (newName.isNotEmpty) {
-                      bool success = await _userService.updateUserProfile({"nom": newName});
-                      if (success) {
-                        setState(() {
-                          _nameController.text = newName;
-                          _isEditingName = false;
-                        });
-                      }
-                    }
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  },
-                ),
-                SizedBox(height: 10),
-                _buildTextField(
-                  controller: _emailController,
-                  labelText: 'Email',
-                  icon: Icons.edit,
-                  isEditing: _isEditingEmail,
-                  onPressedEdit: () {
-                    setState(() {
-                      _isEditingEmail = true;
-                    });
-                  },
-                  onPressedSave: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    String newEmail = _emailController.text.trim();
-                    if (newEmail.isNotEmpty) {
-                      bool success = await _userService.updateUserProfile({"email": newEmail});
-                      if (success) {
-                        setState(() {
-                          _emailController.text = newEmail;
-                          _isEditingEmail = false;
-                        });
-                      }
-                    }
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _showProfileInfoUpdateWidget,
-                  icon: Icon(Icons.info),
-                  label: Text('Modifier les informations du profil'),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _showPasswordChangeWidget,
-                  icon: Icon(Icons.lock),
-                  label: Text('Modifier le mot de passe'),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: () => _logout(context),
-                  icon: Icon(Icons.exit_to_app),
-                  label: Text('Déconnexion'),
-                ),
-              ],
-            ),
-          ),
           if (_isLoading)
             Center(
               child: CircularProgressIndicator(),
+            )
+          else
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo!) : null,
+                          child: _user.photo == null ? Icon(Icons.person, size: 50) : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            child: IconButton(
+                              icon: Icon(Icons.camera_alt, color: Colors.black),
+                              onPressed: _pickImage,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _nameController,
+                    labelText: 'Nom',
+                    icon: Icons.edit,
+                    isEditing: _isEditingName,
+                    onPressedEdit: () {
+                      setState(() {
+                        _isEditingName = true;
+                      });
+                    },
+                    onPressedSave: () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      String newName = _nameController.text.trim();
+                      if (newName.isNotEmpty) {
+                        bool success = await _userService.updateUserProfile({"nom": newName});
+                        if (success) {
+                          setState(() {
+                            _nameController.text = newName;
+                            _isEditingName = false;
+                          });
+                        }
+                      }
+                      await _reloadUser();
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  _buildTextField(
+                    controller: _emailController,
+                    labelText: 'Email',
+                    icon: Icons.edit,
+                    isEditing: _isEditingEmail,
+                    onPressedEdit: () {
+                      setState(() {
+                        _isEditingEmail = true;
+                      });
+                    },
+                    onPressedSave: () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      String newEmail = _emailController.text.trim();
+                      if (newEmail.isNotEmpty) {
+                        bool success = await _userService.updateUserProfile({"email": newEmail});
+                        if (success) {
+                          setState(() {
+                            _emailController.text = newEmail;
+                            _isEditingEmail = false;
+                          });
+                        }
+                      }
+                      await _reloadUser();
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    },
+                  ),
+
+                  SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _showPasswordChangeWidget,
+                    icon: Icon(Icons.lock),
+                    label: Text('Modifier le mot de passe'),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: () => _logout(context),
+                    icon: Icon(Icons.exit_to_app),
+                    label: Text('Déconnexion'),
+                  ),
+                  SizedBox(height: 20),
+                  _buildGroupList(),
+                  SizedBox(height: 20),
+                  _buildStoryList(),
+                  SizedBox(height: 20),
+                  _buildArchiveList(),
+                ],
+              ),
             ),
         ],
       ),

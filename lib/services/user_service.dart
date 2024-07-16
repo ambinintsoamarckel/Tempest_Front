@@ -6,6 +6,7 @@ import '../network/network_config.dart';
 import '../socket/socket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import '../models/profile.dart'as profile;
 class UserService {
   final storage = FlutterSecureStorage();
   final Dio dio = NetworkConfig().client;
@@ -87,12 +88,12 @@ class UserService {
     }
   }
 
-  Future<UserModel?> getUserProfile(String userId) async {
+  Future<profile.UserModel> getUserProfile() async {
     final response = await dio.get('/me');
 
     if (response.statusCode == 200) {
       final data = response.data;
-      return UserModel.fromJson(data);
+      return profile.UserModel.fromJson(data);
     } else {
       throw Exception('Erreur lors de la récupération du profil utilisateur');
     }

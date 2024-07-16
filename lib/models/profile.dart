@@ -1,46 +1,17 @@
-/* class User {
-  final String id;
-  final String nom;
-  final String email;
-  final String? photo;
-
-  User({required this.id, required this.nom, required this.email, this.photo});
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'],
-      nom: json['nom'],
-      email: json['email'],
-      photo: json['photo'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'nom': nom,
-      'email': email,
-      'photo': photo,
-    };
-  }
-}
 class Group {
   final String id;
   final String nom;
   final String? description;
   final String? photo;
-  User createur;
 
-  Group({required this.id, required this.nom, required this.description, this.photo, required this.createur});
+
+  Group({required this.id, required this.nom, required this.description, this.photo, });
 
   factory Group.fromJson(Map<String, dynamic> json) {
-    var membresFromJson = json['membres'] as List;
-    List<User> membresList = membresFromJson.map((i) => User.fromJson(i)).toList();
 
     return Group(
       id: json['_id'],
       nom: json['nom'],
-      createur: User.fromJson(json['createur']),
       description: json['description'],
       photo: json['photo'],
     );
@@ -55,6 +26,38 @@ class Group {
     };
   }
 }
+class Story {
+  final String id;
+  final String type;
+  final String content;
+  final DateTime creationDate;
+  final DateTime expirationDate;
+  final List<dynamic> vues;
+
+
+  Story({
+    required this.id,
+    required this.type,
+    required this.content,
+    required this.creationDate,
+    required this.expirationDate,
+    required this.vues,
+
+  });
+
+  factory Story.fromJson(Map<String, dynamic> json) {
+
+    return Story(
+      id: json['_id'],
+      type: json['contenu']['type'],
+      content: json['contenu']['texte'],
+      creationDate: DateTime.parse(json['dateCreation']),
+      expirationDate: DateTime.parse(json['dateExpiration']),
+      vues: json['vues'],
+
+    );
+  }
+}
 
 class UserModel {
   final String uid;
@@ -63,6 +66,8 @@ class UserModel {
   late final String photo;
   final String presence;
   final List<Group> groupes;
+  final List<Story> stories;
+  final List<Story>archives;
   
 
   UserModel({
@@ -71,15 +76,27 @@ class UserModel {
     required this.nom,
     required this.photo,
     required this.presence,
+    required this.archives,
+    required this.groupes,
+    required this.stories,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    var archivesFromJson = json['archives'] as List;
+    var storiesFromJson = json['stories'] as List;
+    var groupesFromJson =json['groupes'] as List;
+    List<Story> archivesList = archivesFromJson.map((i) => Story.fromJson(i)).toList();
+    List<Story> storiesList = storiesFromJson.map((i) => Story.fromJson(i)).toList();
+    List<Group> groupesList=groupesFromJson.map((i)=> Group.fromJson(i)).toList();
     return UserModel(
       uid: json['_id'] ?? '',
       email: json['email'] ?? '',
       nom: json['nom'] ?? '',
       photo: json['photo'] ?? '',
       presence: json['presence'] ?? '',
+      stories: storiesList,
+      archives: archivesList,
+      groupes: groupesList,
     );
   }
 
@@ -92,53 +109,5 @@ class UserModel {
       'presence': presence,
     };
   }
-
-  UserModel copyWith({
-    String? uid,
-    String? email,
-    String? nom,
-    String? photo,
-    String? presence,
-  }) {
-    return UserModel(
-      uid: uid ?? this.uid,
-      email: email ?? this.email,
-      nom: nom ?? this.nom,
-      photo: photo ?? this.photo,
-      presence: presence ?? this.presence,
-    );
-  }
-}
-class Story {
-  final String id;
-  final String type;
-  final String content;
-  final DateTime creationDate;
-  final DateTime expirationDate;
-  final List<dynamic> vues;
-  final User user;
-
-  Story({
-    required this.id,
-    required this.type,
-    required this.content,
-    required this.creationDate,
-    required this.expirationDate,
-    required this.vues,
-    required this.user,
-  });
-
-  factory Story.fromJson(Map<String, dynamic> json, User user) {
-    return Story(
-      id: json['_id'],
-      type: json['contenu']['type'],
-      content: json['contenu']['texte'],
-      creationDate: DateTime.parse(json['dateCreation']),
-      expirationDate: DateTime.parse(json['dateExpiration']),
-      vues: json['vues'],
-      user: user,
-    );
-  }
 }
 
- */

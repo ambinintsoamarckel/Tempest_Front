@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => HomeScreen(),
         '/profile': (context) {
           final user = ModalRoute.of(context)!.settings.arguments as UserModel;
-          return ProfileScreen(user: user);
+          return ProfileScreen();
         },
         '/register': (context) => RegisterScreen(),
       },
