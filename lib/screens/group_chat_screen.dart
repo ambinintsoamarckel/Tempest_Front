@@ -20,6 +20,7 @@ import '../utils/audio_message_player.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'group_settings.dart';
+import '../widgets/RecordingWidget.dart';
 import '../main.dart';
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
@@ -355,52 +356,65 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                   ),
                 ),
               
-                if (_previewFile != null)
+            if (_previewFile != null)
                   Container(
                     margin: EdgeInsets.all(10.0),
                     padding: EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(5.0),
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(10.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 5.0,
+                          spreadRadius: 2.0,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
                         if (_previewType == 'image') ...[
                           Image.file(
                             _previewFile!,
-                            width: 100,
-                            height: 100,
+                            width: 70,
+                            height: 70,
                             fit: BoxFit.cover,
                           ),
-                          SizedBox(width: 10),
+                          SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'audio') ...[
-                          Icon(Icons.audiotrack, size: 100),
-                          SizedBox(width: 10),
+                          Icon(Icons.audiotrack, size: 100, color: Colors.blue),
+                          SizedBox(width: 20), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'file') ...[
-                          Icon(Icons.insert_drive_file, size: 100),
-                          SizedBox(width: 10),
+                          Icon(Icons.insert_drive_file, size: 95, color: Colors.green),
+                          SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ],
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(_previewFile!.path.split('/').last),
+                              Text(
+                                _previewFile!.path.split('/').last,
+                          
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
                               SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () => _sendPreview(),
-                                    child: Text('Envoyer'),
-                                  ),
-                                  SizedBox(width: 5),
-                                  ElevatedButton(
-                                    onPressed: _clearPreview,
-                                    child: Text('Annuler'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                              Center(
+                                child: Row (
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: _clearPreview,
+                                      child: Icon(Icons.delete, size: 40, color: Colors.redAccent), // Icône pour annuler avec taille augmentée
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 30), // Augmentation de la distance entre les icônes
+                                    GestureDetector(
+                                      onTap: () => _sendPreview(),
+                                      child: Icon(Icons.upload, size: 40, color: Colors.greenAccent), // Icône pour envoyer
+                                    ),
+                                  ]
+                                ),
                               ),
                             ],
                           ),
@@ -408,12 +422,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                       ],
                     ),
                   ),
-                Divider(height: 1.0),  
+              
+                if (_isRecording)
+                  RecordingWidget(),
+          
+                Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
                   child: _buildTextComposer(),
-                ),
-           
+                   ),
               ],
             );
           }
@@ -421,7 +438,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       ),
     );
   }
-
 
  
   Widget _buildTextComposer() {
@@ -558,7 +574,11 @@ void _showProgressDialog() {
     },
   );
 }
-
+  @override
+  void dispose() {
+    _recorder!.closeRecorder();
+    super.dispose();
+  }
   void _deleteMessage(String messageId, String groupId) async {
     try {
       await _messageService.deleteMessage(messageId, groupId);
