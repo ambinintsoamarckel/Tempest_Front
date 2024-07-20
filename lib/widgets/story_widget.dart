@@ -1,37 +1,62 @@
 import 'package:flutter/material.dart';
 import '../models/grouped_stories.dart';
+import 'package:flutter/material.dart';
 
-class StoryWidget extends StatelessWidget {
+class StoryTile extends StatelessWidget {
   final GroupedStory story;
 
-  const StoryWidget({super.key, required this.story});
+  const StoryTile({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(story.utilisateur.name[0]),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StoryDetailScreen(story: story.stories[0]),
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.all(4.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.0),
+          image: DecorationImage(
+            image: NetworkImage(story.stories[0].contenu.image ?? story.stories[0].contenu.video ?? ''),
+            fit: BoxFit.cover,
+          ),
         ),
-        title: Text(story.utilisateur.name),
-        subtitle: Text(story.stories[0].creationDate.toIso8601String()),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StoryDetailScreen(story: story.stories[0]),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8.0,
+              left: 8.0,
+              child: CircleAvatar(
+                backgroundImage: story.utilisateur.photo != null? NetworkImage(story.utilisateur.photo!) : null,
+                radius: 24.0,
+              ),
             ),
-          );
-        },
+            Positioned(
+              bottom: 8.0,
+              left: 8.0,
+              child: Text(
+                story.utilisateur.name,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  backgroundColor: Colors.black54,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
 class StoryDetailScreen extends StatelessWidget {
   final Story story;

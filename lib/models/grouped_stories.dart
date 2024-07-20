@@ -17,7 +17,7 @@ class StoryContent {
   });
 
   factory StoryContent.fromJson(Map<String, dynamic> json) {
-    print('le type est : ${json['type']}');
+
     return StoryContent(
       type: StoryType.values.firstWhere(
         (e) => describeEnum(e) == json['type'],
@@ -33,14 +33,16 @@ class User {
   final String id;
   final String name;
   final String email;
+  final String? photo;
 
-  User({required this.id, required this.name, required this.email});
+  User({required this.id, required this.name, required this.email,required this.photo });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'],
       name: json['nom'],
       email: json['email'],
+      photo: json['photo']??'' ,
     );
   }
 }

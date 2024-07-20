@@ -82,33 +82,63 @@ class StoryScreenState extends State<StoryScreen> {
     );
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stories'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: _createStory, // Call function to create a story
-          ),
-        ],
+        title: Text('Stories'),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : GridView.builder(
-              padding: const EdgeInsets.all(8.0),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
+      body: GridView.builder(
+        padding: EdgeInsets.all(8.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+        ),
+        itemCount: _stories.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildAddStoryTile(context);
+          } else {
+            return StoryTile(story: _stories[index - 1]);
+          }
+        },
+      )
+    );
+  }
+
+  Widget _buildAddStoryTile(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to story creation screen
+        _createStory();
+      },
+      child: Container(
+        margin: EdgeInsets.all(4.0),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add,
+                size: 50.0,
+                color: Colors.black54,
               ),
-              itemCount: _stories.length,
-              itemBuilder: (context, index) {
-                return StoryWidget(story: _stories[index]);
-              },
-            ),
+              SizedBox(height: 8.0),
+              Text(
+                'Ajoutez à story',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

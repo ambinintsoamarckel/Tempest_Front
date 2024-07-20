@@ -17,7 +17,6 @@ class StoryContent {
   });
 
   factory StoryContent.fromJson(Map<String, dynamic> json) {
-    print('le type est : ${json['type']}');
     return StoryContent(
       type: StoryType.values.firstWhere(
         (e) => describeEnum(e) == json['type'],
