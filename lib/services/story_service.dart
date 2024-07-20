@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/stories.dart';
 import '../network/network_config.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import '../models/grouped_stories.dart' as group;
 
 class StoryService {
   final Dio dio = NetworkConfig().client;
@@ -26,12 +29,26 @@ class StoryService {
     }
   }
 
-  Future<void> createStoryFile(Map<String, dynamic> storyData) async {
+  Future<void> createStoryFile(String filePath) async {
 
     try {
+       final mimeType = lookupMimeType(filePath) ?? 'application/octet-stream';
+        MultipartFile file = await MultipartFile.fromFile(
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      );
+      
+      FormData formData = FormData.fromMap({
+        'file': file,
+      });
       final response = await dio.post(
         '/me/addStory',
-        data: []
+        data: formData,
+          options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
 
       if (response.statusCode == 201) {
@@ -65,7 +82,7 @@ class StoryService {
     }
   }
 
-  Future<List<Story>> getStories() async {
+  Future<List<group.GroupedStory>> getStories() async {
 
     try {
       final response = await dio.get(
@@ -74,13 +91,11 @@ class StoryService {
       );
 
       if (response.statusCode == 200) {
-        List<Story> stories = [];
+        List<group.GroupedStory> stories = [];
         for (var userStories in response.data) {
-          User user = User.fromJson(userStories['utilisateur']);
-          for (var storyJson in userStories['stories']) {
-            Story story = Story.fromJson(storyJson, user);
-            stories.add(story);
-          }
+          group.GroupedStory story = group.GroupedStory.fromJson(userStories);
+          stories.add(story);
+   
         }
         return stories;
       } else {

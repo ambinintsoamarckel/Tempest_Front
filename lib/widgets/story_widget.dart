@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/stories.dart';
+import '../models/grouped_stories.dart';
 
 class StoryWidget extends StatelessWidget {
-  final Story story;
+  final GroupedStory story;
 
   const StoryWidget({super.key, required this.story});
 
@@ -16,15 +16,15 @@ class StoryWidget extends StatelessWidget {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          child: Text(story.user.name[0]),
+          child: Text(story.utilisateur.name[0]),
         ),
-        title: Text(story.user.name),
-        subtitle: Text(story.creationDate.toIso8601String()),
+        title: Text(story.utilisateur.name),
+        subtitle: Text(story.stories[0].creationDate.toIso8601String()),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => StoryDetailScreen(story: story),
+              builder: (context) => StoryDetailScreen(story: story.stories[0]),
             ),
           );
         },
@@ -48,12 +48,12 @@ class StoryDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            if (story.type == 'image')
-              Image.network(story.content)
-            else if (story.type == 'video')
+            if (story.contenu.type == StoryType.image)
+              Image.network(story.contenu.image!)
+            else if (story.contenu.type == StoryType.video)
               // Add video player here
               Icon(Icons.videocam, size: 100)
-            else if (story.type == 'texte')
+            else if (story.contenu.type == StoryType.texte)
               Container(
                 padding: EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
@@ -61,7 +61,7 @@ class StoryDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16.0),
                 ),
                 child: Text(
-                  story.content,
+                  story.contenu.texte!,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),

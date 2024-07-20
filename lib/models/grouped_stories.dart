@@ -52,7 +52,6 @@ class Story {
   final DateTime creationDate;
   final DateTime expirationDate;
   final List<dynamic> vues;
-  final User user;
 
   Story({
     required this.id,
@@ -60,17 +59,36 @@ class Story {
     required this.creationDate,
     required this.expirationDate,
     required this.vues,
-    required this.user,
   });
 
-  factory Story.fromJson(Map<String, dynamic> json, User user) {
+  factory Story.fromJson(Map<String, dynamic> json) {
     return Story(
       id: json['_id'],
       contenu: StoryContent.fromJson(json['contenu']),
       creationDate: DateTime.parse(json['dateCreation']),
       expirationDate: DateTime.parse(json['dateExpiration']),
       vues: json['vues'],
-      user: user,
     );
   }
+
+  
 }
+class GroupedStory
+  {
+    final User utilisateur;
+    final List<Story> stories;
+      GroupedStory({
+    required this.utilisateur,
+    required this.stories,
+  });
+    factory GroupedStory.fromJson(Map<String, dynamic> json) {
+    var storiesfromjson  = json['stories'] as List;
+    List<Story> storiesList = storiesfromjson.map((i) => Story.fromJson(i)).toList();
+    return GroupedStory(
+
+      utilisateur: User.fromJson(json['utilisateur']),
+      stories: storiesList ,
+
+    );
+  }
+  }

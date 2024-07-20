@@ -4,9 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
-import '../models/stories.dart';
+import '../models/grouped_stories.dart';
 import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
+
 
 class StoryScreen extends StatefulWidget {
   final GlobalKey<StoryScreenState> storyScreenKey ;
@@ -25,7 +26,7 @@ class StoryScreen extends StatefulWidget {
 }
 
 class StoryScreenState extends State<StoryScreen> {
-  final List<Story> _stories = [];
+  final List<GroupedStory> _stories = [];
   final StoryService _storyService = StoryService();
   final CurrentScreenManager screenManager = CurrentScreenManager();
   bool _isLoading = true;
@@ -52,11 +53,24 @@ class StoryScreenState extends State<StoryScreen> {
   }
 
   Future<void> _reload() async {
+     try {
     setState(() {
       _isLoading = true;
-      _stories.clear();
+ 
     });
-    await _loadStories();
+      final stories = await _storyService.getStories();
+            setState(() {
+        _stories.clear();
+        _stories.addAll(stories);
+        _isLoading = false;
+      });
+      }
+       catch (e) {
+      print('Failed to load stories: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      }
   }
 
   Future<void> _createStory() async {
@@ -136,8 +150,19 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
       };
 
       if (_selectedMedia != null) {
-        storyData['file'] = await MultipartFile.fromFile(_selectedMedia!.path);
+
+      try {
+        await _storyService.createStoryFile(_selectedMedia!.path);
+        widget.onStoryCreated();
+        setState(() {
+          _selectedMedia=null;
+        });
+        Navigator.of(context).pop();
+      } catch (e) {
+        print('Failed to create story: $e');
       }
+      }
+      else{
 
       try {
         await _storyService.createStory(storyData);
@@ -146,6 +171,8 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
       } catch (e) {
         print('Failed to create story: $e');
       }
+      }
+
     }
   }
 

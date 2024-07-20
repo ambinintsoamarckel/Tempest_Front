@@ -1,3 +1,4 @@
+import '../models/grouped_stories.dart';
 class Group {
   final String id;
   final String nom;
@@ -24,38 +25,6 @@ class Group {
       'description': description,
       'photo': photo,
     };
-  }
-}
-class Story {
-  final String id;
-  final String type;
-  final String content;
-  final DateTime creationDate;
-  final DateTime expirationDate;
-  final List<dynamic> vues;
-
-
-  Story({
-    required this.id,
-    required this.type,
-    required this.content,
-    required this.creationDate,
-    required this.expirationDate,
-    required this.vues,
-
-  });
-
-  factory Story.fromJson(Map<String, dynamic> json) {
-
-    return Story(
-      id: json['_id'],
-      type: json['contenu']['type'],
-      content: json['contenu']['texte'],
-      creationDate: DateTime.parse(json['dateCreation']),
-      expirationDate: DateTime.parse(json['dateExpiration']),
-      vues: json['vues'],
-
-    );
   }
 }
 

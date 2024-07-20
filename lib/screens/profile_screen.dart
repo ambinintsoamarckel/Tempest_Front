@@ -6,6 +6,7 @@ import 'package:mini_social_network/screens/messages_screen.dart';
 import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
 import '../widgets/ProfileInfoUpdateWidget.dart';
+import '../models/grouped_stories.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
 import '../socket/socket_service.dart';
@@ -268,11 +269,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToListScreen(List<dynamic> items, String title) {
+  void _navigateToListScreen(String title) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ItemListScreen(items: items, title: title),
+        builder: (context) => ItemListScreen(items: _user.archives, title: title),
       ),
     );
   }
@@ -413,7 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ListTile(
                     leading: Icon(Icons.archive),
                     title: Text('Archives et Stories'),
-                    onTap: () => _navigateToListScreen([..._user.archives, ..._user.stories], 'Archives et Stories'),
+                    onTap: () => _navigateToListScreen( 'Archives et Stories'),
                   ),
                   SizedBox(height: 20),
                   _buildGroupList(),
@@ -437,7 +438,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class ItemListScreen extends StatelessWidget {
-  final List<dynamic> items;
+  final List<Story> items;
   final String title;
 
   const ItemListScreen({super.key, required this.items, required this.title});
@@ -452,11 +453,11 @@ class ItemListScreen extends StatelessWidget {
           final item = items[index];
           return ListTile(
             leading: CircleAvatar(
-              backgroundImage: item is Story && item.type == 'image' ? NetworkImage(item.content) : null,
-              child: item is Story && item.type == 'text' ? Icon(Icons.text_fields) : null,
+              backgroundImage:  item.contenu.type == StoryType.image ? NetworkImage(item.contenu.image!) : null,
+              child: item is Story && item.contenu.type == StoryType.texte ? Icon(Icons.text_fields) : null,
             ),
-            title: Text(item is Story ? item.type : 'Archive'),
-            subtitle: Text(item is Story ? item.content : ''),
+            title: Text('Archive'),
+            subtitle: Text(item is Story ? item.contenu.texte! : ''),
           );
         },
       ),
