@@ -71,9 +71,7 @@ class StoryService {
       );
 
       if (response.statusCode == 200) {
-        final userJson = response.data['utilisateur'];
-        User user = User.fromJson(userJson);
-        return Story.fromJson(response.data['story'], user);
+        return Story.fromJson(response.data);
       } else {
         throw Exception('Failed to load story');
       }

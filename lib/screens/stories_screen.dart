@@ -7,10 +7,9 @@ import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/grouped_stories.dart';
 import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
-
-
+import 'all_screen.dart';
 class StoryScreen extends StatefulWidget {
-  final GlobalKey<StoryScreenState> storyScreenKey ;
+  final GlobalKey<StoryScreenState> storyScreenKey;
 
   StoryScreen({required this.storyScreenKey}) : super(key: storyScreenKey);
 
@@ -37,6 +36,7 @@ class StoryScreenState extends State<StoryScreen> {
     _loadStories();
     screenManager.updateCurrentScreen('story');
   }
+
   Future<void> _loadStories() async {
     try {
       final stories = await _storyService.getStories();
@@ -53,24 +53,22 @@ class StoryScreenState extends State<StoryScreen> {
   }
 
   Future<void> _reload() async {
-     try {
-    setState(() {
-      _isLoading = true;
- 
-    });
+    try {
+      setState(() {
+        _isLoading = true;
+      });
       final stories = await _storyService.getStories();
-            setState(() {
+      setState(() {
         _stories.clear();
         _stories.addAll(stories);
         _isLoading = false;
       });
-      }
-       catch (e) {
+    } catch (e) {
       print('Failed to load stories: $e');
       setState(() {
         _isLoading = false;
       });
-      }
+    }
   }
 
   Future<void> _createStory() async {
@@ -82,7 +80,20 @@ class StoryScreenState extends State<StoryScreen> {
     );
   }
 
-   @override
+  void _onStorySelected(int index) {
+    final storyIds = _stories.sublist(index).expand((groupedStory) => groupedStory.stories).map((story) => story.id).toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AllStoriesScreen(
+          initialIndex: index,
+          storyIds: storyIds,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -99,10 +110,13 @@ class StoryScreenState extends State<StoryScreen> {
           if (index == 0) {
             return _buildAddStoryTile(context);
           } else {
-            return StoryTile(story: _stories[index - 1]);
+            return GestureDetector(
+              onTap: () => _onStorySelected(index - 1),
+              child: StoryTile(story: _stories[index - 1]),
+            );
           }
         },
-      )
+      ),
     );
   }
 
@@ -180,29 +194,25 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
       };
 
       if (_selectedMedia != null) {
-
-      try {
-        await _storyService.createStoryFile(_selectedMedia!.path);
-        widget.onStoryCreated();
-        setState(() {
-          _selectedMedia=null;
-        });
-        Navigator.of(context).pop();
-      } catch (e) {
-        print('Failed to create story: $e');
+        try {
+          await _storyService.createStoryFile(_selectedMedia!.path);
+          widget.onStoryCreated();
+          setState(() {
+            _selectedMedia = null;
+          });
+          Navigator.of(context).pop();
+        } catch (e) {
+          print('Failed to create story: $e');
+        }
+      } else {
+        try {
+          await _storyService.createStory(storyData);
+          widget.onStoryCreated();
+          Navigator.of(context).pop();
+        } catch (e) {
+          print('Failed to create story: $e');
+        }
       }
-      }
-      else{
-
-      try {
-        await _storyService.createStory(storyData);
-        widget.onStoryCreated();
-        Navigator.of(context).pop();
-      } catch (e) {
-        print('Failed to create story: $e');
-      }
-      }
-
     }
   }
 

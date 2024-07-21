@@ -32,18 +32,19 @@ class User {
   final String id;
   final String name;
   final String email;
+  final String? photo;
 
-  User({required this.id, required this.name, required this.email});
+  User({required this.id, required this.name, required this.email,required this.photo });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'],
       name: json['nom'],
       email: json['email'],
+      photo: json['photo']??'' ,
     );
   }
 }
-
 // models/story.dart
 class Story {
   final String id;
@@ -62,14 +63,14 @@ class Story {
     required this.user,
   });
 
-  factory Story.fromJson(Map<String, dynamic> json, User user) {
+  factory Story.fromJson(Map<String, dynamic> json) {
     return Story(
       id: json['_id'],
       contenu: StoryContent.fromJson(json['contenu']),
       creationDate: DateTime.parse(json['dateCreation']),
       expirationDate: DateTime.parse(json['dateExpiration']),
       vues: json['vues'],
-      user: user,
+      user: User.fromJson(json['utilisateur']),
     );
   }
 }

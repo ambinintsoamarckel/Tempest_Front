@@ -1,39 +1,67 @@
 import 'package:flutter/material.dart';
 import '../models/grouped_stories.dart';
-import 'package:flutter/material.dart';
+import 'dart:math';
 
 class StoryTile extends StatelessWidget {
   final GroupedStory story;
+  final List<Color> colors = [
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.yellow,
+    Colors.pink,
+    Colors.cyan,
+  ];
 
-  const StoryTile({super.key, required this.story});
+ StoryTile({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
+    final bool isTextStory = story.stories[0].contenu.type == StoryType.texte;
+    final Color backgroundColor = colors[Random().nextInt(colors.length)];
+
     return GestureDetector(
-      onTap: () {
+      /*onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => StoryDetailScreen(story: story.stories[0]),
           ),
         );
-      },
+      },*/
       child: Container(
         margin: EdgeInsets.all(4.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.0),
-          image: DecorationImage(
-            image: NetworkImage(story.stories[0].contenu.image ?? story.stories[0].contenu.video ?? ''),
-            fit: BoxFit.cover,
-          ),
+          color: isTextStory ? backgroundColor : null,
+          image: isTextStory
+              ? null
+              : DecorationImage(
+                  image: NetworkImage(story.stories[0].contenu.image ?? story.stories[0].contenu.video ?? ''),
+                  fit: BoxFit.cover,
+                ),
         ),
         child: Stack(
           children: [
+            if (isTextStory)
+              Center(
+                child: Text(
+                  story.stories[0].contenu.texte!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24.0,
+                  ),
+                ),
+              ),
             Positioned(
               top: 8.0,
               left: 8.0,
               child: CircleAvatar(
-                backgroundImage: story.utilisateur.photo != null? NetworkImage(story.utilisateur.photo!) : null,
+                backgroundImage: story.utilisateur.photo != null ? NetworkImage(story.utilisateur.photo!) : null,
                 radius: 24.0,
               ),
             ),
@@ -50,12 +78,33 @@ class StoryTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (story.stories.length > 1)
+              Positioned(
+                top: 8.0,
+                right: 8.0,
+                child: Container(
+                  padding: EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${story.stories.length}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 }
+
+
 
 
 class StoryDetailScreen extends StatelessWidget {
