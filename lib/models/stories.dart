@@ -51,7 +51,7 @@ class Story {
   final StoryContent contenu;
   final DateTime creationDate;
   final DateTime expirationDate;
-  final List<dynamic> vues;
+  final List<User> vues;
   final User user;
 
   Story({
@@ -64,12 +64,14 @@ class Story {
   });
 
   factory Story.fromJson(Map<String, dynamic> json) {
+    var vuesFromJson =json['vues'] as List;
+    List<User> vuesList = vuesFromJson.map((i) => User.fromJson(i)).toList();
     return Story(
       id: json['_id'],
       contenu: StoryContent.fromJson(json['contenu']),
       creationDate: DateTime.parse(json['dateCreation']),
       expirationDate: DateTime.parse(json['dateExpiration']),
-      vues: json['vues'],
+      vues: vuesList,
       user: User.fromJson(json['utilisateur']),
     );
   }
