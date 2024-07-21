@@ -23,6 +23,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
   final StoryService _storyService = StoryService();
   Story? _currentStory;
   bool _isLoading = true;
+
   final List<Color> colors = [
     Colors.red,
     Colors.blue,
@@ -87,7 +88,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
     }
   }
 
-  void _showViews() {
+void _showViews() {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -98,7 +99,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   final user = _currentStory!.vues[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(user.photo ?? ''),
+                      backgroundImage: user.photo != '' ? NetworkImage(user.photo! ):null,
                     ),
                     title: Text(user.name),
                   );
@@ -107,8 +108,8 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
             : Center(child: CircularProgressIndicator());
       },
     );
-  }
-
+  
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,54 +142,60 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
+          if (_currentIndex > 0)
+            Positioned(
+              top: MediaQuery.of(context).size.height / 2 - 24,
+              left: 16,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios),
+                color: Colors.white,
+                onPressed: _prevPage,
+              ),
+            ),
+          if (_currentIndex < widget.storyIds.length - 1)
+            Positioned(
+              top: MediaQuery.of(context).size.height / 2 - 24,
+              right: 16,
+              child: IconButton(
+                icon: Icon(Icons.arrow_forward_ios),
+                color: Colors.white,
+                onPressed: _nextPage,
+              ),
+            ),
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+            left: 16,
+            child: GestureDetector(
+              onTap: _currentStory!=null && _currentStory!.vues.isNotEmpty ? _showViews: null,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.visibility,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '${_currentStory?.vues.length ?? 0} vues',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
-            left: MediaQuery.of(context).size.width / 2 - 60,
+            left: 60,
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(_currentStory?.user.photo ?? ''),
+                  backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
                 ),
                 SizedBox(width: 8),
                 Text(
                   _currentStory?.user.name ?? '',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
-            ),
-          ),
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            left: 16,
-            child: _currentIndex > 0
-                ? ElevatedButton(
-                    onPressed: _prevPage,
-                    child: Text('Précédent'),
-                  )
-                : SizedBox(),
-          ),
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            right: 16,
-            child: _currentIndex < widget.storyIds.length - 1
-                ? ElevatedButton(
-                    onPressed: _nextPage,
-                    child: Text('Suivant'),
-                  )
-                : SizedBox(),
-          ),
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            right: MediaQuery.of(context).size.width / 2 - 32,
-            child: ElevatedButton(
-              onPressed: _showViews,
-              child: Row(
-                children: [
-                  Icon(Icons.remove_red_eye),
-                  SizedBox(width: 4),
-                  Text('${_currentStory?.vues.length ?? 0}'),
-                ],
-              ),
             ),
           ),
         ],
@@ -219,7 +226,6 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 24.0,
-                  backgroundColor: Colors.black54,
                 ),
               )
             : null,
