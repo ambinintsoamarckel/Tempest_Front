@@ -43,11 +43,13 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   }
 
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
-    } else {
-      _controller.play();
-    }
+    setState(() {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      } else {
+        _controller.play();
+      }
+    });
   }
 
   void _enterFullScreen() {
@@ -76,12 +78,30 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                 ),
               ),
               _buildProgressBar(),
-              _buildControls(),
+              FullScreenControls(
+                isPlaying: _isPlaying,
+                onPlayPause: _togglePlayPause,
+                onStop: () {
+                  _controller.pause();
+                  _controller.seekTo(Duration.zero);
+                  setState(() {
+                    _isPlaying = false;
+                  });
+                  _exitFullScreen();
+                },
+                onExitFullScreen: _exitFullScreen,
+                onDownload: _downloadVideo,
+              ),
             ],
           ),
         ),
       ),
-    );
+    ).then((_) {
+      _controller.play(); // Play the video when entering full screen
+      setState(() {
+        _isPlaying = true;
+      });
+    });
   }
 
   void _exitFullScreen() {
@@ -96,55 +116,83 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   }
 
   Widget _buildProgressBar() {
-    return VideoProgressIndicator(
-      _controller,
-      allowScrubbing: true,
-      colors: VideoProgressColors(
-        playedColor: Colors.red,
-        backgroundColor: Colors.grey,
-      ),
-    );
-  }
-
-  Widget _buildControls() {
     return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10),
 
-      color: Colors.black54,
-      padding: EdgeInsets.all(8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          IconButton(
-            icon: Icon(
-              _isPlaying ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
+          Text(
+            _formatDuration(_controller.value.position),
+            style: TextStyle(color: Colors.white),
+          ),
+          Expanded(
+            child: Slider(
+              value: _controller.value.position.inSeconds.toDouble(),
+              min: 0,
+              max: _controller.value.duration.inSeconds.toDouble(),
+              onChanged: (value) {
+                setState(() {
+                  _controller.seekTo(Duration(seconds: value.toInt()));
+                });
+              },
+              activeColor: Colors.red,
+              inactiveColor: Colors.grey,
 
             ),
-            onPressed: _togglePlayPause,
           ),
-
-          IconButton(
-            icon: Icon(Icons.stop, color: Colors.white),
-            onPressed: () {
-              _controller.pause();
-              _controller.seekTo(Duration.zero);
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              _isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
-              color: Colors.white,
-            ),
-            onPressed: _isFullScreen ? _exitFullScreen : _enterFullScreen,
-          ),
-          IconButton(
-            icon: Icon(Icons.download, color: Colors.white),
-            onPressed: _downloadVideo,
+          Text(
+            _formatDuration(_controller.value.duration),
+            style: TextStyle(color: Colors.white),
 
           ),
         ],
       ),
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$minutes:$seconds";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _controller.value.isInitialized
+        ? GestureDetector(
+            onTap: _enterFullScreen, // Ouvrir automatiquement en plein écran lorsque la vidéo est touchée
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 300,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    ),
+                  ),
+                ),
+                if (!_isPlaying)
+                  Icon(
+                    Icons.play_arrow,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Text(
+                    _formatDuration(_controller.value.duration),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : CircularProgressIndicator();
   }
 
   Future<void> downloadFile(BuildContext context, String url, String type) async {
@@ -196,36 +244,56 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
 
 
   }
+}
+
+class FullScreenControls extends StatelessWidget {
+  final bool isPlaying;
+  final VoidCallback onPlayPause;
+  final VoidCallback onStop;
+  final VoidCallback onExitFullScreen;
+  final VoidCallback onDownload;
+
+  FullScreenControls({
+    required this.isPlaying,
+    required this.onPlayPause,
+    required this.onStop,
+    required this.onExitFullScreen,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return _controller.value.isInitialized
-
-        ? GestureDetector(
-            onTap: () {
-              _controller.play();
-              setState(() {
-                _isPlaying = true;
-              });
-              _enterFullScreen();
-            },
-            child: Column(
-              children: [
-                Container(
-                  width: 300,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
-                    ),
-                  ),
-                ),
-                _buildProgressBar(),
-                _buildControls(),
-              ],
+    return Container(
+      color: Colors.black54,
+      padding: EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            icon: Icon(
+              isPlaying ? Icons.pause : Icons.play_arrow,
+              color: Colors.white,
             ),
-          )
-        : const CircularProgressIndicator();
+            onPressed: onPlayPause,
+          ),
+          IconButton(
+            icon: Icon(Icons.stop, color: Colors.white),
+            onPressed: onStop,
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.fullscreen_exit,
+              color: Colors.white,
+            ),
+            onPressed: onExitFullScreen,
+          ),
+          IconButton(
+            icon: Icon(Icons.download, color: Colors.white),
+            onPressed: onDownload,
+          ),
+        ],
+      ),
+    );
+
   }
 }
