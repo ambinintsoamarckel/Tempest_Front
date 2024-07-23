@@ -4,6 +4,7 @@ import '../models/messages.dart';
 import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../main.dart';
+import  'all_screen.dart';
 
 class ConversationListScreen extends StatefulWidget {
   final GlobalKey<ConversationListScreenState> conversationListScreenKey;
@@ -77,6 +78,66 @@ class ConversationListScreenState extends State<ConversationListScreen> with Rou
     _reload();
   }
 
+
+  Widget _buildAvatar(Contact contact, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        if (contact.story.isNotEmpty) {
+          _navigateToAllStoriesScreen(context,contact);
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: contact.story.isNotEmpty
+              ? Border.all(color: Colors.blue.shade900, width: 3)
+              : null,
+        ),
+        child: CircleAvatar(
+          radius: 24.0,
+          backgroundImage: contact.photo != null
+              ? NetworkImage(contact.photo!)
+              : null,
+          child: contact.photo == null
+              ? const Icon(Icons.person, size: 24.0)
+              : null,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToAllStoriesScreen(BuildContext context, Contact contact) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AllStoriesScreen(storyIds: contact.story,initialIndex: 0,)),
+    );
+  }
+
+
+Widget _buildStatus(Contact user) {
+  print('ato leka ${user.presence}');
+
+  
+  // Vérifiez si user.story n'est pas vide
+  if (user.presence!='inactif') {
+    return Positioned(
+      right: 0,
+      bottom: 0,
+      child: Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Color.fromARGB(255, 25, 234, 42),
+        ),
+      ),
+    );
+  } else {
+    // Si user.story est vide, retournez un widget vide
+    return SizedBox.shrink();
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,29 +156,9 @@ class ConversationListScreenState extends State<ConversationListScreen> with Rou
                     children: [
                       Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 24.0, // Taille de l'avatar
-                            backgroundImage: conversation.contact.photo != null
-                                ? NetworkImage(conversation.contact.photo!)
-                                : null,
-                            child: conversation.contact.photo == null
-                                ? const Icon(Icons.person, size: 24.0)
-                                : null,
-                          ),
-                          if (conversation.contact.presence == 'actif')
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.blue,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-                            ),
+                          _buildAvatar(conversation.contact,context),
+                          
+                          _buildStatus(conversation.contact),
                         ],
                       ),
                       const SizedBox(height: 4), // Espacement entre l'avatar et le nom

@@ -34,6 +34,7 @@ class Contact {
   final String nom;
   final String? photo;
   final String presence;
+  final List<String> story;
 
   Contact({
     required this.id,
@@ -41,15 +42,19 @@ class Contact {
     required this.nom,
     this.photo,
     required this.presence,
+    required this.story,
   });
 
   factory Contact.fromJson(Map<String, dynamic> json) {
+List<String> storyFromJson = (json['stories'] as List).map((item) => item as String).toList();
+
     return Contact(
       id: json['_id'] ?? '',
       type: json['type'] ?? '',
       nom: json['nom'] ?? '',
       photo: json['photo'],
       presence: json['presence'] ?? 'inactif',
+      story: storyFromJson ?? []
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/stories.dart';
 import '../services/story_service.dart';
 import 'dart:math';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AllStoriesScreen extends StatefulWidget {
   final List<String> storyIds;
@@ -23,6 +24,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
   final StoryService _storyService = StoryService();
   Story? _currentStory;
   bool _isLoading = true;
+  String? _currentUserId;
 
   final List<Color> colors = [
     Colors.red,
@@ -35,12 +37,23 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
     Colors.cyan,
   ];
 
+  final storage = const FlutterSecureStorage();
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    _loadCurrentUser();
     _loadStory(widget.storyIds[_currentIndex]);
+  }
+
+  Future<void> _loadCurrentUser() async {
+    String? user = await storage.read(key: 'user');
+    user = user?.replaceAll('"', '').trim();
+    setState(() {
+      _currentUserId = user;
+    });
   }
 
   Future<void> _loadStory(String storyId) async {
@@ -88,7 +101,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
     }
   }
 
-void _showViews() {
+  void _showViews() {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -108,8 +121,8 @@ void _showViews() {
             : const Center(child: CircularProgressIndicator());
       },
     );
-  
-}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,26 +175,27 @@ void _showViews() {
                 onPressed: _nextPage,
               ),
             ),
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            left: 16,
-            child: GestureDetector(
-              onTap: _currentStory!=null && _currentStory!.vues.isNotEmpty ? _showViews: null,
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.visibility,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${_currentStory?.vues.length ?? 0} vues',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
+          if (_currentStory != null && _currentStory!.user.id == _currentUserId)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: _currentStory != null && _currentStory!.vues.isNotEmpty ? _showViews : null,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.visibility,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_currentStory?.vues.length ?? 0} vues',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 60,

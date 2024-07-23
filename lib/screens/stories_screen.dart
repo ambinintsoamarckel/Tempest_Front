@@ -85,7 +85,7 @@ class StoryScreenState extends State<StoryScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => AllStoriesScreen(
-          initialIndex: index,
+          initialIndex: 0,
           storyIds: storyIds,
         ),
       ),
