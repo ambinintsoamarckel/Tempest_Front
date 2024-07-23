@@ -8,17 +8,13 @@ import '../models/group_message.dart';
 import '../widgets/group_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_group_service.dart';
-import 'contacts_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/contact.dart';
 import 'package:dio/dio.dart';
 import 'ctt_screen.dart';
-import '../models/contact.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import '../utils/audio_message_player.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'group_settings.dart';
 import '../widgets/RecordingWidget.dart';
 import '../main.dart';
@@ -45,7 +41,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
   final TextEditingController _textController = TextEditingController();
   final GroupChatService _messageService = GroupChatService();
   late Future<Group> _groupFuture;
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
   late Future<String> _currentUser;
   final CurrentScreenManager screenManager = CurrentScreenManager();
   DateTime? _previousMessageDate;
@@ -267,9 +263,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
           future: _groupFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Text('Loading...');
+              return const Text('Loading...');
             } else if (snapshot.hasError) {
-              return Text('Error');
+              return const Text('Error');
             } else {
               return Text(snapshot.data?.nom ?? 'Chat');
             }
@@ -294,9 +290,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
         future: _groupFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Failed to load chat'));
+            return const Center(child: Text('Failed to load chat'));
           } else {
             return Column(
               children: <Widget>[
@@ -305,12 +301,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                     future: _currentUser,
                     builder: (context, userSnapshot) {
                       if (userSnapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       } else if (userSnapshot.hasError) {
-                        return Center(child: Text('Failed to load user'));
+                        return const Center(child: Text('Failed to load user'));
                       } else {
                         return ListView.builder(
-                    padding: EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8.0),
                     controller: _scrollController,
                     itemBuilder: (_, int index) {
                       GroupMessage message = _messages[index];
@@ -358,8 +354,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
               
             if (_previewFile != null)
                   Container(
-                    margin: EdgeInsets.all(10.0),
-                    padding: EdgeInsets.all(10.0),
+                    margin: const EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(10.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: Colors.grey.shade400),
@@ -369,7 +365,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                           color: Colors.grey.shade300,
                           blurRadius: 5.0,
                           spreadRadius: 2.0,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -382,13 +378,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                             height: 70,
                             fit: BoxFit.cover,
                           ),
-                          SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'audio') ...[
-                          Icon(Icons.audiotrack, size: 100, color: Colors.blue),
-                          SizedBox(width: 20), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const Icon(Icons.audiotrack, size: 100, color: Colors.blue),
+                          const SizedBox(width: 20), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'file') ...[
-                          Icon(Icons.insert_drive_file, size: 95, color: Colors.green),
-                          SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const Icon(Icons.insert_drive_file, size: 95, color: Colors.green),
+                          const SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ],
                         Expanded(
                           child: Column(
@@ -397,21 +393,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                               Text(
                                 _previewFile!.path.split('/').last,
                           
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Center(
                                 child: Row (
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     GestureDetector(
                                       onTap: _clearPreview,
-                                      child: Icon(Icons.delete, size: 40, color: Colors.redAccent), // Icône pour annuler avec taille augmentée
+                                      child: const Icon(Icons.delete, size: 40, color: Colors.redAccent), // Icône pour annuler avec taille augmentée
                                     ),
-                                    SizedBox(width: 30), // Augmentation de la distance entre les icônes
+                                    const SizedBox(width: 30), // Augmentation de la distance entre les icônes
                                     GestureDetector(
                                       onTap: () => _sendPreview(),
-                                      child: Icon(Icons.upload, size: 40, color: Colors.greenAccent), // Icône pour envoyer
+                                      child: const Icon(Icons.upload, size: 40, color: Colors.greenAccent), // Icône pour envoyer
                                     ),
                                   ]
                                 ),
@@ -424,9 +420,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                   ),
               
                 if (_isRecording)
-                  RecordingWidget(),
+                  const RecordingWidget(),
           
-                Divider(height: 1.0),
+                const Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
                   child: _buildTextComposer(),
@@ -444,30 +440,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Row(
           children: <Widget>[
             IconButton(
-              icon: Icon(Icons.photo),
+              icon: const Icon(Icons.photo),
               onPressed: () => _pickImage(),
             ),
             IconButton(
-              icon: Icon(Icons.camera_alt),
+              icon: const Icon(Icons.camera_alt),
               onPressed: () => _takePhoto(),
             ),
             IconButton(
-              icon: Icon(Icons.insert_drive_file),
+              icon: const Icon(Icons.insert_drive_file),
               onPressed: () => _pickFileAndSend(),
             ),
             Expanded(
               child: TextField(
                 controller: _textController,
                 onSubmitted: _handleSubmitted,
-                decoration: InputDecoration.collapsed(hintText: 'Envoyer un message'),
+                decoration: const InputDecoration.collapsed(hintText: 'Envoyer un message'),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.send),
+              icon: const Icon(Icons.send),
               onPressed: () => _handleSubmitted(_textController.text),
             ),
             GestureDetector(
@@ -558,9 +554,9 @@ void _showProgressDialog() {
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) {
-      return Dialog(
+      return const Dialog(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -584,18 +580,18 @@ void _showProgressDialog() {
       await _messageService.deleteMessage(messageId, groupId);
       print('Message deleted successfully');
       _reload(); // Recharge les messages après la suppression réussie
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       if (e.response != null && e.response!.statusCode == 404) {
         print('Message not found or already deleted');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Message not found or already deleted'),
           ),
         );
       } else {
         print('Error deleting message: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Error deleting message'),
           ),
         );
@@ -621,11 +617,11 @@ void _copyMessage(int index) {
   if (text != null) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Message copié dans le presse-papiers')),
+      const SnackBar(content: Text('Message copié dans le presse-papiers')),
     );
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Aucun texte à copier')),
+      const SnackBar(content: Text('Aucun texte à copier')),
     );
   }
 

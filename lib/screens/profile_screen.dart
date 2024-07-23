@@ -1,11 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/screens/contacts_screen.dart';
 import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:mini_social_network/screens/messages_screen.dart';
 import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
-import '../widgets/ProfileInfoUpdateWidget.dart';
 import '../models/grouped_stories.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
@@ -62,8 +60,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: Icon(Icons.photo_library),
-            title: Text('Galerie'),
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Galerie'),
             onTap: () async {
               final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
               Navigator.of(context).pop();
@@ -79,8 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           ListTile(
-            leading: Icon(Icons.photo_camera),
-            title: Text('Caméra'),
+            leading: const Icon(Icons.photo_camera),
+            title: const Text('Caméra'),
             onTap: () async {
               final XFile? pickedImage = await _picker.pickImage(source: ImageSource.camera);
               Navigator.of(context).pop();
@@ -105,17 +103,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmer'),
+          title: const Text('Confirmer'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
-              child: Text('Non'),
+              child: const Text('Non'),
               onPressed: () {
                 Navigator.of(context).pop(false);
               },
             ),
             TextButton(
-              child: Text('Oui'),
+              child: const Text('Oui'),
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
@@ -154,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         socketService.disconnect();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la suppression du compte')),
+          const SnackBar(content: Text('Erreur lors de la suppression du compte')),
         );
       }
     }
@@ -191,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Groupes',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
@@ -203,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return ListTile(
               leading: CircleAvatar(
                 backgroundImage: group.photo != null ? NetworkImage(group.photo!) : null,
-                child: group.photo == null ? Icon(Icons.group) : null,
+                child: group.photo == null ? const Icon(Icons.group) : null,
               ),
               title: Text(group.nom),
               subtitle: Text(group.description ?? ''),
@@ -232,10 +230,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: const InputDecoration(labelText: 'Confirmer le nouveau mot de passe'),
           obscureText: true,
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _changePassword,
-          child: Text('Changer le mot de passe'),
+          child: const Text('Changer le mot de passe'),
         ),
       ],
     );
@@ -248,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (newPassword != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
+        const SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
       );
       return;
     }
@@ -259,12 +257,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+          const SnackBar(content: Text('Erreur lors du changement de mot de passe')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+        const SnackBar(content: Text('Erreur lors du changement de mot de passe')),
       );
     }
   }
@@ -285,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Stack(
         children: [
           if (_isLoading)
-            Center(
+            const Center(
               child: CircularProgressIndicator(),
             )
           else
@@ -299,8 +297,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo!) : null,
-                          child: _user.photo == null ? Icon(Icons.person, size: 50) : null,
+                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo) : null,
+                          child: _user.photo == null ? const Icon(Icons.person, size: 50) : null,
                         ),
                         Positioned(
                           bottom: 0,
@@ -308,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: CircleAvatar(
                             backgroundColor: Colors.white,
                             child: IconButton(
-                              icon: Icon(Icons.camera_alt, color: Colors.black),
+                              icon: const Icon(Icons.camera_alt, color: Colors.black),
                               onPressed: _pickImage,
                             ),
                           ),
@@ -316,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextField(
                     controller: _nameController,
                     labelText: 'Nom',
@@ -347,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   _buildTextField(
                     controller: _emailController,
                     labelText: 'Email',
@@ -378,10 +376,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 20.0),
+                  const SizedBox(height: 20.0),
                   ListTile(
-                    leading: Icon(Icons.lock),
-                    title: Text('Modifier le mot de passe'),
+                    leading: const Icon(Icons.lock),
+                    title: const Text('Modifier le mot de passe'),
                     trailing: IconButton(
                       icon: Icon(_showPasswordFields ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
                       onPressed: () {
@@ -392,31 +390,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   if (_showPasswordFields) _buildPasswordFields(),
-                  SizedBox(height: 20.0),
+                  const SizedBox(height: 20.0),
                   ListTile(
-                    leading: Icon(Icons.exit_to_app),
-                    title: Text('Déconnexion'),
+                    leading: const Icon(Icons.exit_to_app),
+                    title: const Text('Déconnexion'),
                     trailing: IconButton(
-                      icon: Icon(Icons.exit_to_app),
+                      icon: const Icon(Icons.exit_to_app),
                       onPressed: () => _logout(context),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ListTile(
-                    leading: Icon(Icons.delete_forever),
-                    title: Text('Supprimer mon compte'),
+                    leading: const Icon(Icons.delete_forever),
+                    title: const Text('Supprimer mon compte'),
                     trailing: IconButton(
-                      icon: Icon(Icons.delete_forever, color: Colors.red),
+                      icon: const Icon(Icons.delete_forever, color: Colors.red),
                       onPressed: () => _deleteAccount(context),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ListTile(
-                    leading: Icon(Icons.archive),
-                    title: Text('Archives et Stories'),
+                    leading: const Icon(Icons.archive),
+                    title: const Text('Archives et Stories'),
                     onTap: () => _navigateToListScreen( 'Archives et Stories'),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildGroupList(),
                 ],
               ),
@@ -454,9 +452,9 @@ class ItemListScreen extends StatelessWidget {
           return ListTile(
             leading: CircleAvatar(
               backgroundImage:  item.contenu.type == StoryType.image ? NetworkImage(item.contenu.image!) : null,
-              child: item is Story && item.contenu.type == StoryType.texte ? Icon(Icons.text_fields) : null,
+              child: item.contenu.type == StoryType.texte ? const Icon(Icons.text_fields) : null,
             ),
-            title: Text('Archive'),
+            title: const Text('Archive'),
             subtitle: Text(item is Story ? item.contenu.texte! : ''),
           );
         },

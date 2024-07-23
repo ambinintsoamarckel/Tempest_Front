@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 class VideoMessagePlayer extends StatefulWidget {
   final String videoUrl;
 
-  VideoMessagePlayer({required this.videoUrl});
+  const VideoMessagePlayer({super.key, required this.videoUrl});
 
   @override
   _VideoMessagePlayerState createState() => _VideoMessagePlayerState();
@@ -95,7 +95,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   Widget _buildControls() {
     return Container(
       color: Colors.black54, // Background color for better visibility
-      padding: EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
@@ -103,7 +103,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
           VideoProgressIndicator(
             _controller,
             allowScrubbing: true,
-            colors: VideoProgressColors(
+            colors: const VideoProgressColors(
               playedColor: Colors.red,
               backgroundColor: Colors.grey,
             ),
@@ -119,7 +119,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                 onPressed: _togglePlayPause,
               ),
               IconButton(
-                icon: Icon(Icons.stop, color: Colors.white),
+                icon: const Icon(Icons.stop, color: Colors.white),
                 onPressed: _stopVideo,
               ),
               IconButton(
@@ -130,7 +130,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                 onPressed: _toggleFullScreen,
               ),
               IconButton(
-                icon: Icon(Icons.download, color: Colors.white),
+                icon: const Icon(Icons.download, color: Colors.white),
                 onPressed: _downloadVideo,
               ),
               
@@ -187,7 +187,7 @@ Future<void> downloadFile(BuildContext context, String url, String type) async {
     }
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Permission de stockage refusée')),
+      const SnackBar(content: Text('Permission de stockage refusée')),
     );
   }
 }
@@ -197,7 +197,7 @@ Future<void> downloadFile(BuildContext context, String url, String type) async {
     return _controller.value.isInitialized
         ? Column(
             children: [
-              Container(
+              SizedBox(
                 width: 300,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
@@ -215,6 +215,6 @@ Future<void> downloadFile(BuildContext context, String url, String type) async {
               ),
             ],
           )
-        : CircularProgressIndicator();
+        : const CircularProgressIndicator();
   }
 }

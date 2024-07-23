@@ -50,7 +50,7 @@ Future<void> downloadFile(ScaffoldMessengerState scaffoldMessenger, String url, 
     }
   } else {
     scaffoldMessenger.showSnackBar(
-      SnackBar(content: Text('Permission de stockage refusée')),
+      const SnackBar(content: Text('Permission de stockage refusée')),
     );
   }
 }

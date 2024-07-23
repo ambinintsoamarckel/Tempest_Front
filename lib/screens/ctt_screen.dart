@@ -9,7 +9,7 @@ class ContaScreen extends StatefulWidget {
   final bool isTransferMode;
   final String id;
 
-  const ContaScreen({Key? key, this.isTransferMode = false, required this.id}) : super(key: key);
+  const ContaScreen({super.key, this.isTransferMode = false, required this.id});
 
   @override
   _ContaScreenState createState() => _ContaScreenState();
@@ -24,7 +24,7 @@ class _ContaScreenState extends State<ContaScreen> {
   final MessageService _messageService = MessageService();
   bool _isSending = false;
   Contact? _selectedContact;
-  List<Contact> _sentContacts = [];
+  final List<Contact> _sentContacts = [];
 
   @override
   void initState() {

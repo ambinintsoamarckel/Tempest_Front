@@ -1,10 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:photo_view/photo_view.dart';
 import '../models/group_message.dart';
 import '../utils/audio_message_player.dart';
@@ -19,7 +14,7 @@ class GroupMessageWidget extends StatefulWidget {
   final Function(String) onTransfer;
   final VoidCallback? onSave;
 
-  GroupMessageWidget({
+  const GroupMessageWidget({super.key, 
     required this.message,
     required this.currentUser,
     this.onCopy,
@@ -64,7 +59,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
         messageContent = _buildVideoMessage(context, isCurrentUser);
         break;
       default:
-        messageContent = Text('Unsupported message type');
+        messageContent = const Text('Unsupported message type');
     }
 
     return GestureDetector(
@@ -83,7 +78,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
               CircleAvatar(
                 backgroundImage: widget.message.expediteur.photo != null ? NetworkImage(widget.message.expediteur.photo!) : null,
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
             ],
             Flexible(
               child: Container(
@@ -96,21 +91,21 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
                     if (isCurrentUser)
                       Text(
                         widget.message.expediteur.nom ?? 'Anonyme',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     Container(
-                      margin: EdgeInsets.only(top: 5.0),
-                      padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                      margin: const EdgeInsets.only(top: 5.0),
+                      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
                       decoration: BoxDecoration(
                         color: isCurrentUser ? Colors.grey[300] : Colors.blue[100],
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10.0),
-                          topRight: Radius.circular(10.0),
-                          bottomRight: Radius.circular(10.0),
-                          bottomLeft: isCurrentUser ? Radius.circular(10.0) : Radius.circular(0.0),
+                          topLeft: const Radius.circular(10.0),
+                          topRight: const Radius.circular(10.0),
+                          bottomRight: const Radius.circular(10.0),
+                          bottomLeft: isCurrentUser ? const Radius.circular(10.0) : const Radius.circular(0.0),
                         ),
                       ),
                       child: messageContent,
@@ -132,7 +127,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
                 ),
               ),
             ),
-            if (isCurrentUser) SizedBox(width: 5),
+            if (isCurrentUser) const SizedBox(width: 5),
           ],
         ),
       ),
@@ -142,7 +137,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
   Widget _buildTextMessage(BuildContext context, bool isCurrentUser) {
     return Text(
       widget.message.contenu.texte ?? '',
-      style: TextStyle(
+      style: const TextStyle(
         color: Colors.black,
       ),
       softWrap: true,
@@ -156,10 +151,10 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
         : '${widget.message.expediteur.nom} a $content';
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
       child: Text(
         displayContent,
-        style: TextStyle(color: Colors.black),
+        style: const TextStyle(color: Colors.black),
       ),
     );
   }
@@ -169,11 +164,11 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.attach_file),
-        SizedBox(width: 5),
+        const Icon(Icons.attach_file),
+        const SizedBox(width: 5),
         Text(
           widget.message.contenu.fichier?.split('/').last ?? '',
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black,
           ),
         ),
@@ -203,12 +198,12 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
   }
 
   String _formatDate(DateTime date) {
-    final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
+    final DateTime adjustedDate = date.add(const Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
     return DateFormat.Hm().format(adjustedDate); // Heure si aujourd'hui
   }
 
   Widget _buildReadStatus() {
-    return widget.message.luPar!.isNotEmpty ? Icon(Icons.done_all, color: Colors.blue) : Icon(Icons.done, color: Colors.grey);
+    return widget.message.luPar!.isNotEmpty ? const Icon(Icons.done_all, color: Colors.blue) : const Icon(Icons.done, color: Colors.grey);
   }
 
   Future<void> _saveFile(BuildContext context) async {
@@ -259,7 +254,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
           body: Center(
             child: PhotoView(
               imageProvider: NetworkImage(imageUrl),
-              backgroundDecoration: BoxDecoration(
+              backgroundDecoration: const BoxDecoration(
                 color: Colors.black,
               ),
             ),
@@ -272,37 +267,37 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
   void _showMessageOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20.0),
         ),
       ),
       builder: (BuildContext context) {
         return Container(
-          padding: EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (widget.message.contenu.type == MessageType.texte)
                 ListTile(
-                  leading: Icon(Icons.copy, color: Colors.blueAccent),
-                  title: Text('Copier'),
+                  leading: const Icon(Icons.copy, color: Colors.blueAccent),
+                  title: const Text('Copier'),
                   onTap: () {
                     widget.onCopy?.call();
                     Navigator.of(context).pop();
                   },
                 ),
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.redAccent),
-                title: Text('Supprimer'),
+                leading: const Icon(Icons.delete, color: Colors.redAccent),
+                title: const Text('Supprimer'),
                 onTap: () {
                   widget.onDelete(widget.message.id);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
-                leading: Icon(Icons.forward, color: Colors.greenAccent),
-                title: Text('Transférer'),
+                leading: const Icon(Icons.forward, color: Colors.greenAccent),
+                title: const Text('Transférer'),
                 onTap: () {
                   String messageId = widget.message.id;
                   Navigator.of(context).pop();
@@ -314,8 +309,8 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
                   widget.message.contenu.type == MessageType.audio ||
                   widget.message.contenu.type == MessageType.video)
                 ListTile(
-                  leading: Icon(Icons.download, color: Colors.orangeAccent),
-                  title: Text('Enregistrer'),
+                  leading: const Icon(Icons.download, color: Colors.orangeAccent),
+                  title: const Text('Enregistrer'),
                   onTap: () {
                     _saveFile(context);
                     Navigator.of(context).pop();

@@ -96,7 +96,7 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ProfileScreen()),
+                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
                     );
                   },
                 ),
@@ -104,7 +104,7 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
             : null,
         bottom: _isOnline
             ? PreferredSize(
-                preferredSize: Size.fromHeight(kToolbarHeight),
+                preferredSize: const Size.fromHeight(kToolbarHeight),
                 child: Column(
                   children: [
                     TabBar(
@@ -115,7 +115,7 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
                         Tab(icon: Icon(Icons.photo), text: 'Stories'),
                       ],
                     ),
-                    Divider(
+                    const Divider(
                       height: 1,
                       color: Colors.grey,
                     ),

@@ -2,7 +2,7 @@ import 'package:dio/browser.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-final storage = FlutterSecureStorage();
+const storage = FlutterSecureStorage();
 
 Dio getClient() {
  final dio = Dio()

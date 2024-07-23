@@ -8,7 +8,7 @@ import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import '../models/profile.dart'as profile;
 class UserService {
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
   final Dio dio = NetworkConfig().client;
   final socketService = SocketService();
 

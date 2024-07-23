@@ -1,10 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Pour la gestion des formats de date
+// Pour la gestion des formats de date
 import 'package:photo_view/photo_view.dart';
 import '../models/direct_message.dart';
 import '../utils/audio_message_player.dart';
@@ -19,7 +15,7 @@ class DirectMessageWidget extends StatefulWidget {
   final Function(String) onTransfer;
   final DateTime? previousMessageDate;
 
-  DirectMessageWidget({
+  const DirectMessageWidget({super.key, 
     required this.message,
     required this.contact,
     required this.onCopy,
@@ -63,7 +59,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
         messageContent = _buildVideoMessage(context, isContact);
         break;
       default:
-        messageContent = Text('Unsupported message type');
+        messageContent = const Text('Unsupported message type');
     }
 
     final messageDate = DateTime(
@@ -88,7 +84,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                   CircleAvatar(
                     backgroundImage: widget.contact.photo != null ? NetworkImage(widget.contact.photo!) : null,
                   ),
-                  SizedBox(width: 5),
+                  const SizedBox(width: 5),
                 ],
                 Flexible(
                   child: Container(
@@ -99,14 +95,14 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
                           decoration: BoxDecoration(
                             color: isContact ? Colors.grey[300] : Colors.green[100],
                             borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10.0),
-                              topRight: Radius.circular(10.0),
-                              bottomRight: Radius.circular(10.0),
-                              bottomLeft: isContact ? Radius.circular(10.0) : Radius.circular(0.0),
+                              topLeft: const Radius.circular(10.0),
+                              topRight: const Radius.circular(10.0),
+                              bottomRight: const Radius.circular(10.0),
+                              bottomLeft: isContact ? const Radius.circular(10.0) : const Radius.circular(0.0),
                             ),
                           ),
                           child: Column(
@@ -134,7 +130,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                   ),
                 ),
                 if (isContact)
-                  SizedBox(width: 5),
+                  const SizedBox(width: 5),
               ],
             ),
           ),
@@ -146,7 +142,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
   Widget _buildTextMessage(BuildContext context, bool isContact) {
     return Text(
       widget.message.contenu.texte ?? '',
-      style: TextStyle(
+      style: const TextStyle(
         color: Colors.black,
       ),
       softWrap: true,
@@ -158,11 +154,11 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.attach_file),
-        SizedBox(width: 5),
+        const Icon(Icons.attach_file),
+        const SizedBox(width: 5),
         Text(
           widget.message.contenu.fichier?.split('/').last ?? '',
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black,
           ),
         ),
@@ -192,12 +188,12 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
   }
 
   String _formatDate(DateTime date) {
-    final DateTime adjustedDate = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
+    final DateTime adjustedDate = date.add(const Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
     return DateFormat.Hm().format(adjustedDate); // Heure si aujourd'hui
   }
 
   Widget _buildReadStatus() {
-    return widget.message.lu ? Icon(Icons.done_all, color: Colors.blue) : Icon(Icons.done, color: Colors.grey);
+    return widget.message.lu ? const Icon(Icons.done_all, color: Colors.blue) : const Icon(Icons.done, color: Colors.grey);
   }
 
   Future<void> _saveFile(BuildContext context) async {
@@ -248,7 +244,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
           body: Center(
             child: PhotoView(
               imageProvider: NetworkImage(imageUrl),
-              backgroundDecoration: BoxDecoration(
+              backgroundDecoration: const BoxDecoration(
                 color: Colors.black,
               ),
             ),
@@ -261,37 +257,37 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
   void _showMessageOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20.0),
         ),
       ),
       builder: (BuildContext context) {
         return Container(
-          padding: EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (widget.message.contenu.type == MessageType.texte)
                 ListTile(
-                  leading: Icon(Icons.copy, color: Colors.blueAccent),
-                  title: Text('Copier'),
+                  leading: const Icon(Icons.copy, color: Colors.blueAccent),
+                  title: const Text('Copier'),
                   onTap: () {
                     widget.onCopy();
                     Navigator.of(context).pop();
                   },
                 ),
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.redAccent),
-                title: Text('Supprimer'),
+                leading: const Icon(Icons.delete, color: Colors.redAccent),
+                title: const Text('Supprimer'),
                 onTap: () {
                   widget.onDelete(widget.message.id);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
-                leading: Icon(Icons.forward, color: Colors.greenAccent),
-                title: Text('Transférer'),
+                leading: const Icon(Icons.forward, color: Colors.greenAccent),
+                title: const Text('Transférer'),
                 onTap: () {
                   String messageId = widget.message.id;
                   Navigator.of(context).pop();
@@ -303,8 +299,8 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                   widget.message.contenu.type == MessageType.audio ||
                   widget.message.contenu.type == MessageType.video)
                 ListTile(
-                  leading: Icon(Icons.download, color: Colors.orangeAccent),
-                  title: Text('Enregistrer'),
+                  leading: const Icon(Icons.download, color: Colors.orangeAccent),
+                  title: const Text('Enregistrer'),
                   onTap: () {
                     _saveFile(context);  
                     Navigator.of(context).pop();

@@ -9,7 +9,7 @@ class ConversationWidget extends StatelessWidget {
   final Conversation conversation;
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
-  ConversationWidget({Key? key, required this.conversation}) : super(key: key);
+  const ConversationWidget({super.key, required this.conversation});
 
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
@@ -62,7 +62,7 @@ class ConversationWidget extends StatelessWidget {
               children: [
                 Text(
                   _formatDate(conversation.dernierMessage.dateEnvoi),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,
                   ),
@@ -86,8 +86,8 @@ class ConversationWidget extends StatelessWidget {
     final content = _getContentSubtitle(message.contenu, true);
     return Text(
       content,
-      style: TextStyle(
-        color: const Color.fromARGB(255, 80, 79, 79),
+      style: const TextStyle(
+        color: Color.fromARGB(255, 80, 79, 79),
         fontWeight: FontWeight.normal,
       ),
     );
@@ -97,7 +97,7 @@ class ConversationWidget extends StatelessWidget {
     final message = conversation.dernierMessage;
     final content = _getContentSubtitle(message.contenu, false);
     final isRead = message is DernierMessageUtilisateur
-        ? (message as DernierMessageUtilisateur).lu
+        ? (message).lu
         : (message as DernierMessageGroupe).luPar.any((lecture) => lecture.utilisateurId == userId);
     return Text(
       content,
@@ -149,7 +149,7 @@ class ConversationWidget extends StatelessWidget {
     }
 
     if (text.length > maxLength) {
-      text = text.substring(0, maxLength) + '...';
+      text = '${text.substring(0, maxLength)}...';
     }
 
     return text;
@@ -209,7 +209,7 @@ class ConversationWidget extends StatelessWidget {
     final difference = nowDate.difference(messageDate).inDays;
 
     if (difference == 0) {
-  final DateTime adjustedDat = date.add(Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
+  final DateTime adjustedDat = date.add(const Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
     return DateFormat.Hm().format(adjustedDat); 
     } else if (difference == 1) {
       return 'Hier';

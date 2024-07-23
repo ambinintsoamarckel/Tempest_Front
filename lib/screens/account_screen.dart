@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 
 class AccountScreen extends StatelessWidget {
-  AccountScreen({Key? key}) : super(key: key);
+  AccountScreen({super.key});
 
   final UserService _userService = UserService();
 
@@ -19,10 +19,10 @@ class AccountScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mon compte'),
+        title: const Text('Mon compte'),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings),
             onPressed: () {
               // Action à exécuter lors du clic sur l'icône des paramètres
             },
@@ -33,39 +33,39 @@ class AccountScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 50,
               backgroundImage: AssetImage('assets/avatar.png'),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'Nom Utilisateur',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 10),
-            Text(
+            const SizedBox(height: 10),
+            const Text(
               'Adresse email@example.com',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 // Action à exécuter lors du clic sur le bouton
               },
-              child: Text('Modifier le profil'),
+              child: const Text('Modifier le profil'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
                 _logout(context);
               },
-              child: Text('Déconnexion'),
+              child: const Text('Déconnexion'),
             ),
           ],
         ),

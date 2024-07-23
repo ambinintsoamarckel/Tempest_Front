@@ -7,8 +7,9 @@ import '../services/contact_service.dart';
 import '../screens/direct_chat_screen.dart';
 
 class ContactScreen extends StatefulWidget {
-  final GlobalKey<ContactScreenState> contactScreenKey ;
-  ContactScreen({required this.contactScreenKey}) : super(key: contactScreenKey);
+  final GlobalKey<ContactScreenState> contactScreenKey;
+  const ContactScreen({required this.contactScreenKey}) : super(key: contactScreenKey);
+  
   @override
   ContactScreenState createState() => ContactScreenState();
 
@@ -63,38 +64,25 @@ class ContactScreenState extends State<ContactScreen> {
   }
 
   void _selectContact(Contact contact) {
-    if (_isSelectionMode) {
-      _toggleSelection(contact);
-    } else {
-      if (contact.story) {
-        _viewStory(contact);
-      } else {
-        _navigateToChat(contact);
-      }
-    }
+      _navigateToChat(contact);
   }
 
   void _navigateToChat(Contact contact) {
-    if(contact.type=='groupe')
-    {
-          Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => GroupChatScreen(groupId:  contact.id),
-      ),
-    );
-
+    if (contact.type == 'groupe') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupChatScreen(groupId: contact.id),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DirectChatScreen(id: contact.id),
+        ),
+      );
     }
-    else{
-          Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DirectChatScreen(id: contact.id),
-      ),
-    );
-
-    }
-
   }
 
   void _viewStory(Contact contact) {
@@ -134,22 +122,22 @@ class ContactScreenState extends State<ContactScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Créer un groupe'),
+          title: const Text('Créer un groupe'),
           content: TextField(
             controller: groupNameController,
-            decoration: InputDecoration(hintText: 'Nom du groupe'),
+            decoration: const InputDecoration(hintText: 'Nom du groupe'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Annuler'),
+              child: const Text('Annuler'),
             ),
             ElevatedButton(
               onPressed: () {
                 _createGroup(groupNameController.text);
                 Navigator.pop(context);
               },
-              child: Text('Créer'),
+              child: const Text('Créer'),
             ),
           ],
         );
@@ -166,7 +154,7 @@ class ContactScreenState extends State<ContactScreen> {
     try {
       await _contactService.createGroup(userIds, groupName);
       // Afficher un message de succès ou naviguer vers l'écran du groupe nouvellement créé
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Groupe créé avec succès')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Groupe créé avec succès')));
       // Réinitialiser la sélection
       setState(() {
         _selectedContacts.clear();
@@ -175,7 +163,7 @@ class ContactScreenState extends State<ContactScreen> {
     } catch (e) {
       print('Failed to create group: $e');
       // Afficher un message d'erreur
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Échec de la création du groupe')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de la création du groupe')));
     }
   }
 
@@ -185,25 +173,25 @@ class ContactScreenState extends State<ContactScreen> {
       appBar: AppBar(
         title: _isSelectionMode
             ? Text('${_selectedContacts.length} sélectionné(s)')
-            : Text('Contacts'),
+            : const Text('Contacts'),
         actions: _isSelectionMode
             ? [
                 IconButton(
-                  icon: Icon(Icons.group_add),
+                  icon: const Icon(Icons.group_add),
                   onPressed: _showCreateGroupDialog,
                 ),
               ]
             : null,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
+          preferredSize: const Size.fromHeight(80.0), // Hauteur augmentée
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: TextField(
               controller: _searchController,
               onChanged: _filterContacts,
               decoration: InputDecoration(
                 hintText: 'Rechercher...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide.none,
@@ -226,16 +214,16 @@ class ContactScreenState extends State<ContactScreen> {
                   onLongPress: () => _toggleSelection(contact),
                   child: Card(
                     color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white,
-                    margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
                     child: Padding(
-                      padding: EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.all(10.0),
                       child: ContactWidget(contact: contact),
                     ),
                   ),
                 );
               },
             )
-          : Center(
+          : const Center(
               child: CircularProgressIndicator(),
             ),
     );

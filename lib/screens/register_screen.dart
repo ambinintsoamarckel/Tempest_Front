@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     UserModel? user = await _userService.createUserWithEmailAndPassword(email, password, nom);
     if (user != null) {
       // Navigate to the main screen or home screen
-      Navigator.pushReplacementNamed(context, '/profile', arguments: user);
+      Navigator.pushReplacementNamed(context, '/home', arguments: user);
     } else {
       // Show error message
     }

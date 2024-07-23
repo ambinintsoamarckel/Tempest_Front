@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class RecordingWidget extends StatefulWidget {
+  const RecordingWidget({super.key});
+
   @override
   _RecordingWidgetState createState() => _RecordingWidgetState();
 }
@@ -21,7 +23,7 @@ class _RecordingWidgetState extends State<RecordingWidget>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
     _colorAnimation = ColorTween(begin: Colors.red, end: Colors.red)
         .animate(_animationController);
@@ -33,7 +35,7 @@ class _RecordingWidgetState extends State<RecordingWidget>
 
   void _startTimer() {
     _stopwatch.start();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _recordingTime = _formatTime(_stopwatch.elapsed);
       });
@@ -41,7 +43,7 @@ class _RecordingWidgetState extends State<RecordingWidget>
   }
 
   void _startDotTimer() {
-    _dotTimer = Timer.periodic(Duration(milliseconds: 500), (timer) {
+    _dotTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
       setState(() {
         _dots += '.';
         if (_dots.length > 3) {
@@ -73,8 +75,8 @@ class _RecordingWidgetState extends State<RecordingWidget>
       animation: _colorAnimation,
       builder: (context, child) {
         return Container(
-          margin: EdgeInsets.all(10.0),
-          padding: EdgeInsets.all(20),
+          margin: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: _colorAnimation.value,
             borderRadius: BorderRadius.circular(10),
@@ -82,18 +84,18 @@ class _RecordingWidgetState extends State<RecordingWidget>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
+              const Icon(
                 Icons.mic, // Remplacez par l'icône que vous souhaitez
                 color: Colors.white,
                 size: 30,
               ),
               Text(
                 'Enregistrement $_dots',
-                style: TextStyle(color: Colors.white, fontSize: 20),
+                style: const TextStyle(color: Colors.white, fontSize: 20),
               ),
               Text(
                 _recordingTime,
-                style: TextStyle(color: Colors.white, fontSize: 20),
+                style: const TextStyle(color: Colors.white, fontSize: 20),
               ),
             ],
           ),

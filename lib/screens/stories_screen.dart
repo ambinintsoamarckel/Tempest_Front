@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
@@ -11,7 +10,7 @@ import 'all_screen.dart';
 class StoryScreen extends StatefulWidget {
   final GlobalKey<StoryScreenState> storyScreenKey;
 
-  StoryScreen({required this.storyScreenKey}) : super(key: storyScreenKey);
+  const StoryScreen({required this.storyScreenKey}) : super(key: storyScreenKey);
 
   @override
   StoryScreenState createState() => StoryScreenState();
@@ -97,11 +96,11 @@ class StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Stories'),
+        title: const Text('Stories'),
       ),
       body: GridView.builder(
-        padding: EdgeInsets.all(8.0),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.75,
         ),
@@ -127,12 +126,12 @@ class StoryScreenState extends State<StoryScreen> {
         _createStory();
       },
       child: Container(
-        margin: EdgeInsets.all(4.0),
+        margin: const EdgeInsets.all(4.0),
         decoration: BoxDecoration(
           color: Colors.grey.shade300,
           borderRadius: BorderRadius.circular(16.0),
         ),
-        child: Center(
+        child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -219,7 +218,7 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Create Story'),
+      title: const Text('Create Story'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -227,7 +226,7 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Story Text'),
+                decoration: const InputDecoration(labelText: 'Story Text'),
                 maxLines: 3,
                 validator: (value) {
                   if (_mediaType == 'texte' && (value == null || value.isEmpty)) {
@@ -239,15 +238,15 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
                   _storyText = value;
                 },
               ),
-              SizedBox(height: 8.0),
+              const SizedBox(height: 8.0),
               ElevatedButton(
                 onPressed: () => _pickMedia(ImageSource.gallery),
-                child: Text('Pick Image from Gallery'),
+                child: const Text('Pick Image from Gallery'),
               ),
-              SizedBox(height: 8.0),
+              const SizedBox(height: 8.0),
               ElevatedButton(
                 onPressed: () => _pickMedia(ImageSource.camera),
-                child: Text('Take a Photo'),
+                child: const Text('Take a Photo'),
               ),
             ],
           ),
@@ -256,11 +255,11 @@ class _StoryCreationDialogState extends State<StoryCreationDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _submitStory,
-          child: Text('Submit'),
+          child: const Text('Submit'),
         ),
       ],
     );

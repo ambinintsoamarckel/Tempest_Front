@@ -4,7 +4,6 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
-import 'services/current_screen_manager.dart';
 import 'screens/register_screen.dart';
 import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -16,10 +15,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final notificationService = NotificationService();
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
           secondary: Colors.orange, // Couleur d'accentuation
         ),
         scaffoldBackgroundColor: Colors.grey[200], // Couleur de fond
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Colors.teal, // Couleur de l'AppBar
           titleTextStyle: TextStyle(
             color: Colors.white,
@@ -48,26 +49,28 @@ class MyApp extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: Colors.teal, // Couleur du bouton flottant
         ),
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => SplashScreen(),
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
         '/profile': (context) {
           final user = ModalRoute.of(context)!.settings.arguments as UserModel;
-          return ProfileScreen();
+          return const ProfileScreen();
         },
-        '/register': (context) => RegisterScreen(),
+        '/register': (context) => const RegisterScreen(),
       },
     );
   }
 }
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -85,21 +88,17 @@ class _SplashScreenState extends State<SplashScreen> {
   void _checkSession() async {
     try {
       UserModel isValidSession = await _userService.checkSession();
-      if (isValidSession != null) {
-        socketService.initializeSocket(isValidSession.uid);
-        Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
-      } else {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    } catch (e) {
+      socketService.initializeSocket(isValidSession.uid);
+      Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
+        } catch (e) {
       Navigator.pushReplacementNamed(context, '/login');
-      throw (e);
+      rethrow;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(child: CircularProgressIndicator()),
     );
   }

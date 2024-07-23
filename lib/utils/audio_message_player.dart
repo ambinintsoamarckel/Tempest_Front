@@ -5,7 +5,7 @@ import 'audio_player_manager.dart';
 class AudioMessagePlayer extends StatefulWidget {
   final String audioUrl;
 
-  AudioMessagePlayer({required this.audioUrl});
+  const AudioMessagePlayer({super.key, required this.audioUrl});
 
   @override
   _AudioMessagePlayerState createState() => _AudioMessagePlayerState();
@@ -80,9 +80,9 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
     int barCount = 15;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 200, 230, 202),
+        color: const Color.fromARGB(255, 200, 230, 202),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -114,7 +114,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
           ),
           Text(
             _formatDuration(_duration),
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
         ],
       ),
@@ -159,12 +159,12 @@ class Waveform extends StatelessWidget {
   final double progress;
   final int barCount;
 
-  Waveform({required this.progress, required this.barCount});
+  const Waveform({super.key, required this.progress, required this.barCount});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      size: Size(double.infinity, 40),
+      size: const Size(double.infinity, 40),
       painter: WaveformPainter(progress: progress, barCount: barCount),
     );
   }

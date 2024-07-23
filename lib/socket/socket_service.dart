@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/direct_message.dart' as direct;
 import 'package:mini_social_network/models/group_message.dart' as group;
@@ -6,13 +5,12 @@ import 'package:mini_social_network/screens/group_chat_screen.dart';
 import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mini_social_network/screens/direct_chat_screen.dart';
-import 'package:mini_social_network/screens/messages_screen.dart';
 import 'notification_service.dart';
 import '../services/current_screen_manager.dart'; // Importez le CurrentScreenManager
 
 class SocketService {
   IO.Socket? socket;
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
 
   void initializeSocket(id) {
     socket = IO.io('http://mahm.tempest.dov:3000', <String, dynamic>{

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mini_social_network/models/contact.dart';
 import 'package:mini_social_network/screens/membre_screen.dart';
 import '../models/group_message.dart';
 import '../services/discu_group_service.dart';
@@ -10,7 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class GroupSettingsScreen extends StatefulWidget {
   Group groupe;
 
-  GroupSettingsScreen({required this.groupe});
+  GroupSettingsScreen({super.key, required this.groupe});
 
   @override
   _GroupSettingsScreenState createState() => _GroupSettingsScreenState();
@@ -19,14 +18,14 @@ class GroupSettingsScreen extends StatefulWidget {
 class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
   late TextEditingController _groupNameController;
   late TextEditingController _groupDescriptionController;
-  TextEditingController _addMemberController = TextEditingController();
+  final TextEditingController _addMemberController = TextEditingController();
   final GroupChatService _groupService = GroupChatService();
   final ImagePicker _picker = ImagePicker();
   File? _groupPhotoFile;
   bool _isEditingName = false;
   bool _isEditingDescription = false;
   bool _isLoading = false;
-  final FlutterSecureStorage storage = FlutterSecureStorage();
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
   String? _currentUserId;
 
   @override
@@ -51,7 +50,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Paramètres du groupe'),
+        title: const Text('Paramètres du groupe'),
       ),
       body: Stack(
         children: [
@@ -69,21 +68,21 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                             ? FileImage(_groupPhotoFile!)
                             : widget.groupe.photo != null
                                 ? NetworkImage(widget.groupe.photo!) as ImageProvider
-                                : AssetImage('assets/default_group.png'), // Chemin vers une image par défaut
+                                : const AssetImage('assets/default_group.png'), // Chemin vers une image par défaut
                       ),
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: IconButton(
-                          icon: Icon(Icons.camera_alt, color: Colors.white),
+                          icon: const Icon(Icons.camera_alt, color: Colors.white),
                           onPressed: _showImagePickerOptions,
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 20.0),
-                ListTile(
+                const SizedBox(height: 20.0),
+                const ListTile(
                   leading: Icon(Icons.group),
                   title: Text('Informations du groupe'),
                 ),
@@ -99,7 +98,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   },
                   onPressedSave: _updateGroupName,
                 ),
-                SizedBox(height: 10.0),
+                const SizedBox(height: 10.0),
                 _buildTextField(
                   controller: _groupDescriptionController,
                   labelText: 'Description du groupe',
@@ -112,32 +111,32 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   },
                   onPressedSave: _updateGroupDescription,
                 ),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20.0),
                 ListTile(
-                  leading: Icon(Icons.person),
+                  leading: const Icon(Icons.person),
                   title: Text('Créateur du groupe : ${widget.groupe.createur.nom}'),
                 ),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20.0),
                 ListTile(
-                  leading: Icon(Icons.person_add),
-                  title: Text('Ajouter un membre'),
+                  leading: const Icon(Icons.person_add),
+                  title: const Text('Ajouter un membre'),
                   trailing: IconButton(
-                    icon: Icon(Icons.add),
+                    icon: const Icon(Icons.add),
                     onPressed: _ajouterMembre,
                   ),
                 ),
-                SizedBox(height: 20.0),
-                ListTile(
+                const SizedBox(height: 20.0),
+                const ListTile(
                   leading: Icon(Icons.people),
                   title: Text('Membres du groupe'),
                 ),
                 _buildMembersList(isCreator),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20.0),
                 ListTile(
-                  leading: isCreator ? Icon(Icons.delete) : Icon(Icons.exit_to_app),
+                  leading: isCreator ? const Icon(Icons.delete) : const Icon(Icons.exit_to_app),
                   title: Text(isCreator ? 'Supprimer le groupe' : 'Quitter le groupe'),
                   trailing: IconButton(
-                    icon: isCreator ? Icon(Icons.delete, color: Colors.red) : Icon(Icons.exit_to_app),
+                    icon: isCreator ? const Icon(Icons.delete, color: Colors.red) : const Icon(Icons.exit_to_app),
                     onPressed: isCreator ? _confirmDeleteGroup : _confirmLeaveGroup,
                   ),
                 ),
@@ -145,7 +144,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
             ),
           ),
           if (_isLoading)
-            Center(
+            const Center(
               child: CircularProgressIndicator(),
             ),
         ],
@@ -181,7 +180,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
   }
   Widget _buildMembersList(bool isCreator) {
     if (_currentUserId == null) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
     
     final members = widget.groupe.membres.where((member) => member.id != _currentUserId).toList();
@@ -194,13 +193,13 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
         return ListTile(
           leading: CircleAvatar(
             backgroundImage: member.photo != null ? NetworkImage(member.photo!) : null,
-            child: member.photo == null ? Icon(Icons.person) : null,
+            child: member.photo == null ? const Icon(Icons.person) : null,
           ),
           title: Text(member.nom),
           subtitle: Text(member.email),
           trailing: isCreator
               ? IconButton(
-                  icon: Icon(Icons.remove_circle, color: Colors.red),
+                  icon: const Icon(Icons.remove_circle, color: Colors.red),
                   onPressed: () => _removeMemberFromGroup(member.id),
                 )
               : null,
@@ -217,16 +216,16 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
         return Wrap(
           children: <Widget>[
             ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Galerie'),
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galerie'),
               onTap: () {
                 _pickImage(ImageSource.gallery);
                 Navigator.of(context).pop();
               },
             ),
             ListTile(
-              leading: Icon(Icons.photo_camera),
-              title: Text('Caméra'),
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Caméra'),
               onTap: () {
                 _pickImage(ImageSource.camera);
                 Navigator.of(context).pop();
@@ -354,15 +353,15 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Quitter le groupe'),
-        content: Text('Êtes-vous sûr de vouloir quitter le groupe ?'),
+        title: const Text('Quitter le groupe'),
+        content: const Text('Êtes-vous sûr de vouloir quitter le groupe ?'),
         actions: <Widget>[
           TextButton(
-            child: Text('Annuler'),
+            child: const Text('Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           TextButton(
-            child: Text('Oui'),
+            child: const Text('Oui'),
             onPressed: () {
               Navigator.of(context).pop();
               _leaveGroup();
@@ -377,15 +376,15 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Supprimer le groupe'),
-        content: Text('Êtes-vous sûr de vouloir supprimer le groupe ? Cette action est irréversible.'),
+        title: const Text('Supprimer le groupe'),
+        content: const Text('Êtes-vous sûr de vouloir supprimer le groupe ? Cette action est irréversible.'),
         actions: <Widget>[
           TextButton(
-            child: Text('Annuler'),
+            child: const Text('Annuler'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           TextButton(
-            child: Text('Oui'),
+            child: const Text('Oui'),
             onPressed: () {
               Navigator.of(context).pop();
               _deleteGroup();

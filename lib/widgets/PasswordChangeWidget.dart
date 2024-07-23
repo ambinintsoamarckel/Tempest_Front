@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
-import '../models/user.dart';
 
 class PasswordChangeWidget extends StatefulWidget {
 
 
-  const PasswordChangeWidget({Key? key}) : super(key: key);
+  const PasswordChangeWidget({super.key});
 
   @override
   _PasswordChangeWidgetState createState() => _PasswordChangeWidgetState();
@@ -24,7 +23,7 @@ class _PasswordChangeWidgetState extends State<PasswordChangeWidget> {
 
     if (newPassword != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
+        const SnackBar(content: Text('Les nouveaux mots de passe ne correspondent pas')),
       );
       return;
     }
@@ -35,12 +34,12 @@ class _PasswordChangeWidgetState extends State<PasswordChangeWidget> {
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+          const SnackBar(content: Text('Erreur lors du changement de mot de passe')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du changement de mot de passe')),
+        const SnackBar(content: Text('Erreur lors du changement de mot de passe')),
       );
     }
   }
@@ -66,10 +65,10 @@ class _PasswordChangeWidgetState extends State<PasswordChangeWidget> {
             decoration: const InputDecoration(labelText: 'Confirmer le nouveau mot de passe'),
             obscureText: true,
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _changePassword,
-            child: Text('Changer le mot de passe'),
+            child: const Text('Changer le mot de passe'),
           ),
         ],
       ),

@@ -67,7 +67,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       });
       _pageController.animateToPage(
         _currentIndex,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
       _loadStory(widget.storyIds[_currentIndex]);
@@ -81,7 +81,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       });
       _pageController.animateToPage(
         _currentIndex,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
       _loadStory(widget.storyIds[_currentIndex]);
@@ -105,7 +105,7 @@ void _showViews() {
                   );
                 },
               )
-            : Center(child: CircularProgressIndicator());
+            : const Center(child: CircularProgressIndicator());
       },
     );
   
@@ -116,7 +116,7 @@ void _showViews() {
       body: Stack(
         children: [
           if (_isLoading)
-            Center(child: CircularProgressIndicator())
+            const Center(child: CircularProgressIndicator())
           else if (_currentStory != null)
             PageView.builder(
               controller: _pageController,
@@ -137,7 +137,7 @@ void _showViews() {
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
             child: IconButton(
-              icon: Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back),
               color: Colors.white,
               onPressed: () => Navigator.pop(context),
             ),
@@ -147,7 +147,7 @@ void _showViews() {
               top: MediaQuery.of(context).size.height / 2 - 24,
               left: 16,
               child: IconButton(
-                icon: Icon(Icons.arrow_back_ios),
+                icon: const Icon(Icons.arrow_back_ios),
                 color: Colors.white,
                 onPressed: _prevPage,
               ),
@@ -157,7 +157,7 @@ void _showViews() {
               top: MediaQuery.of(context).size.height / 2 - 24,
               right: 16,
               child: IconButton(
-                icon: Icon(Icons.arrow_forward_ios),
+                icon: const Icon(Icons.arrow_forward_ios),
                 color: Colors.white,
                 onPressed: _nextPage,
               ),
@@ -169,14 +169,14 @@ void _showViews() {
               onTap: _currentStory!=null && _currentStory!.vues.isNotEmpty ? _showViews: null,
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.visibility,
                     color: Colors.white,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     '${_currentStory?.vues.length ?? 0} vues',
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ],
               ),
@@ -190,10 +190,10 @@ void _showViews() {
                 CircleAvatar(
                   backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   _currentStory?.user.name ?? '',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
@@ -222,7 +222,7 @@ void _showViews() {
             ? Text(
                 story.contenu.texte ?? '',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 24.0,

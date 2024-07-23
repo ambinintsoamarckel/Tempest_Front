@@ -8,7 +8,7 @@ import '../models/grouped_stories.dart' as group;
 
 class StoryService {
   final Dio dio = NetworkConfig().client;
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
 
   Future<void> createStory(Map<String, dynamic> storyData) async {
 

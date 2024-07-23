@@ -32,7 +32,7 @@ class StoryTile extends StatelessWidget {
         );
       },*/
       child: Container(
-        margin: EdgeInsets.all(4.0),
+        margin: const EdgeInsets.all(4.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.0),
           color: isTextStory ? backgroundColor : null,
@@ -50,7 +50,7 @@ class StoryTile extends StatelessWidget {
                 child: Text(
                   story.stories[0].contenu.texte!,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 24.0,
@@ -61,8 +61,13 @@ class StoryTile extends StatelessWidget {
               top: 8.0,
               left: 8.0,
               child: CircleAvatar(
-                backgroundImage: story.utilisateur.photo != null ? NetworkImage(story.utilisateur.photo!) : null,
-                radius: 24.0,
+                radius: 24.0, // Taille de l'avatar
+                backgroundImage: story.utilisateur.photo != null
+                    ? NetworkImage(story.utilisateur.photo!)
+                    : null,
+                child: story.utilisateur.photo == null
+                    ? const Icon(Icons.person, size: 24.0)
+                    : null,
               ),
             ),
             Positioned(
@@ -70,7 +75,7 @@ class StoryTile extends StatelessWidget {
               left: 8.0,
               child: Text(
                 story.utilisateur.name,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16.0,
@@ -83,14 +88,14 @@ class StoryTile extends StatelessWidget {
                 top: 8.0,
                 right: 8.0,
                 child: Container(
-                  padding: EdgeInsets.all(4.0),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: const BoxDecoration(
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     '${story.stories.length}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -116,7 +121,7 @@ class StoryDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Story Details'),
+        title: const Text('Story Details'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -126,28 +131,28 @@ class StoryDetailScreen extends StatelessWidget {
               Image.network(story.contenu.image!)
             else if (story.contenu.type == StoryType.video)
               // Add video player here
-              Icon(Icons.videocam, size: 100)
+              const Icon(Icons.videocam, size: 100)
             else if (story.contenu.type == StoryType.texte)
               Container(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade100,
                   borderRadius: BorderRadius.circular(16.0),
                 ),
                 child: Text(
                   story.contenu.texte!,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'Published at: ${story.creationDate.toIso8601String()}',
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'Expires at: ${story.expirationDate.toIso8601String()}',
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
           ],
         ),

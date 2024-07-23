@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
@@ -53,16 +55,19 @@ class _ProfileScreenWidgetState extends State<ProfileScreenWidget> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: widget.user.presence == "en ligne" ? Color.fromARGB(255, 8, 199, 100) : Colors.transparent,
+                  color: widget.user.presence == "en ligne" ? const Color.fromARGB(255, 8, 199, 100) : Colors.transparent,
                   width: 3.0,
                 ),
               ),
               child: CircleAvatar(
-          backgroundImage: widget.user.photo != null
-              ? NetworkImage(widget.user.photo!)
-              : null,
-          child: widget.user.photo == null ? const Icon(Icons.person) : null,
-        ),
+                radius: 24.0, // Taille de l'avatar
+                backgroundImage: widget.user.photo != null
+                    ? NetworkImage(widget.user.photo)
+                    : null,
+                child: widget.user.photo == null
+                    ? const Icon(Icons.person, size: 24.0)
+                    : null,
+              ),
             ),
             const SizedBox(height: 16),
             Text(

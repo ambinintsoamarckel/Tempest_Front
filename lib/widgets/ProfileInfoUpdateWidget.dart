@@ -5,7 +5,7 @@ import '../services/user_service.dart';
 class ProfileInfoUpdateWidget extends StatefulWidget {
   final UserModel user;
 
-  const ProfileInfoUpdateWidget({Key? key, required this.user}) : super(key: key);
+  const ProfileInfoUpdateWidget({super.key, required this.user});
 
   @override
   _ProfileInfoUpdateWidgetState createState() => _ProfileInfoUpdateWidgetState();
@@ -33,7 +33,7 @@ class _ProfileInfoUpdateWidgetState extends State<ProfileInfoUpdateWidget> {
       Navigator.pop(context, updatedUser);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la mise à jour du profil')),
+        const SnackBar(content: Text('Erreur lors de la mise à jour du profil')),
       );
     }
   }
@@ -52,10 +52,10 @@ class _ProfileInfoUpdateWidgetState extends State<ProfileInfoUpdateWidget> {
             controller: _nomController,
             decoration: const InputDecoration(labelText: 'Nom'),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _updateProfile,
-            child: Text('Mettre à jour'),
+            child: const Text('Mettre à jour'),
           ),
         ],
       ),

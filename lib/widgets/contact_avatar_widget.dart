@@ -4,7 +4,7 @@ import '../models/contact.dart';
 class ContactAvatarWidget extends StatelessWidget {
   final Contact contact;
 
-  const ContactAvatarWidget({Key? key, required this.contact}) : super(key: key);
+  const ContactAvatarWidget({super.key, required this.contact});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class ContactAvatarWidget extends StatelessWidget {
         Flexible(
           child: Text(
             contact.nom,
-            style: TextStyle(fontSize: 14, color: Colors.white), // Taille de la police
+            style: const TextStyle(fontSize: 14, color: Colors.white), // Taille de la police
             overflow: TextOverflow.ellipsis, // Ajoutez l'overflow pour éviter le débordement
           ),
         ),

@@ -9,7 +9,7 @@ import '../widgets/contact_widget.dart';
 class ContaScreen extends StatefulWidget {
   final String groupId;
 
-  const ContaScreen({Key? key, required this.groupId}) : super(key: key);
+  const ContaScreen({super.key, required this.groupId});
 
   @override
   _ContaScreenState createState() => _ContaScreenState();
@@ -24,7 +24,7 @@ class _ContaScreenState extends State<ContaScreen> {
   final CurrentScreenManager screenManager = CurrentScreenManager();
   bool _isAdding = false;
   Contact? _selectedContact;
-  List<Contact> _addedContacts = [];
+  final List<Contact> _addedContacts = [];
   List<Group> groupes=[];
 
   @override
