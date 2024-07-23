@@ -18,6 +18,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   late VideoPlayerController _controller;
   bool _isPlaying = false;
   bool _isFullScreen = false;
+  ValueNotifier<Duration> _currentPosition = ValueNotifier(Duration.zero);
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
       ..setLooping(true);
 
     _controller.addListener(() {
+      _currentPosition.value = _controller.value.position;
       setState(() {
         _isPlaying = _controller.value.isPlaying;
       });
@@ -39,6 +41,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   @override
   void dispose() {
     _controller.dispose();
+    _currentPosition.dispose();
     super.dispose();
   }
 
@@ -126,38 +129,41 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     downloadFile(context, widget.videoUrl, "video");
   }
 
-  Widget _buildProgressBar() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-
-      child: Row(
-        children: [
-          Text(
-            _formatDuration(_controller.value.position),
-            style: TextStyle(color: Colors.white),
+ Widget _buildProgressBar() {
+    return ValueListenableBuilder<Duration>(
+      valueListenable: _currentPosition,
+      builder: (context, value, child) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            children: [
+              Text(
+                _formatDuration(value),
+                style: TextStyle(color: Colors.white),
+              ),
+              Expanded(
+                child: Slider(
+                  value: value.inSeconds.toDouble(),
+                  min: 0,
+                  max: _controller.value.duration.inSeconds.toDouble(),
+                  onChanged: (value) {
+                    setState(() {
+                      _controller.seekTo(Duration(seconds: value.toInt()));
+                    });
+                  },
+                  activeColor: Colors.red,
+                  inactiveColor: Colors.grey,
+                ),
+              ),
+              Text(
+                _formatDuration(_controller.value.duration),
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
           ),
-          Expanded(
-            child: Slider(
-              value: _controller.value.position.inSeconds.toDouble(),
-              min: 0,
-              max: _controller.value.duration.inSeconds.toDouble(),
-              onChanged: (value) {
-                setState(() {
-                  _controller.seekTo(Duration(seconds: value.toInt()));
-                });
-              },
-              activeColor: Colors.red,
-              inactiveColor: Colors.grey,
+        );
+      },
 
-            ),
-          ),
-          Text(
-            _formatDuration(_controller.value.duration),
-            style: TextStyle(color: Colors.white),
-
-          ),
-        ],
-      ),
     );
   }
 
@@ -186,12 +192,11 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                     ),
                   ),
                 ),
-                //if (!_isPlaying)
-                  Icon(
-                    Icons.play_arrow,
-                    size: 64,
-                    color: Colors.white,
-                  ),
+                Icon(
+                  Icons.play_arrow,
+                  size: 64,
+                  color: Colors.white,
+                ),
                 Positioned(
                   bottom: 8,
                   right: 8,
