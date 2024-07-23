@@ -53,17 +53,25 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   }
 
   void _enterFullScreen() {
-    setState(() {
-      _isFullScreen = true;
-    });
+  setState(() {
+    _isFullScreen = true;
+  });
 
-    _controller.play(); // Jouer la vidéo avant de passer en plein écran
+  _controller.play(); // Jouer la vidéo avant de passer en plein écran
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (BuildContext context, _, __) => Scaffold(
+  Navigator.push(
+    context,
+    PageRouteBuilder(
+      opaque: false,
+      pageBuilder: (BuildContext context, _, __) => WillPopScope(
+        onWillPop: () async {
+          _controller.pause();
+          setState(() {
+            _isFullScreen = false;
+          });
+          return true; // Permettre le retour
+        },
+        child: Scaffold(
           backgroundColor: Colors.black,
           body: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -98,12 +106,14 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
           ),
         ),
       ),
-    ).then((_) {
-      setState(() {
-        _isPlaying = true;
-      });
+    ),
+  ).then((_) {
+    setState(() {
+      _isPlaying = true;
     });
-  }
+  });
+}
+
 
   void _exitFullScreen() {
     setState(() {
@@ -176,7 +186,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                     ),
                   ),
                 ),
-                if (!_isPlaying)
+                //if (!_isPlaying)
                   Icon(
                     Icons.play_arrow,
                     size: 64,
