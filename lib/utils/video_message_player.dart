@@ -57,6 +57,8 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
       _isFullScreen = true;
     });
 
+    _controller.play(); // Jouer la vidéo avant de passer en plein écran
+
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -97,7 +99,6 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
         ),
       ),
     ).then((_) {
-      _controller.play(); // Play the video when entering full screen
       setState(() {
         _isPlaying = true;
       });
@@ -161,7 +162,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   Widget build(BuildContext context) {
     return _controller.value.isInitialized
         ? GestureDetector(
-            onTap: _enterFullScreen, // Ouvrir automatiquement en plein écran lorsque la vidéo est touchée
+            onTap: _enterFullScreen,
             child: Stack(
               alignment: Alignment.center,
               children: [
