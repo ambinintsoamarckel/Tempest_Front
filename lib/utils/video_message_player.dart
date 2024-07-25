@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -17,8 +18,10 @@ class VideoMessagePlayer extends StatefulWidget {
 class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   late VideoPlayerController _controller;
   ValueNotifier<bool> _isPlaying = ValueNotifier<bool>(false);
+  ValueNotifier<bool> _showControls = ValueNotifier<bool>(true);
   bool _isFullScreen = false;
   ValueNotifier<Duration> _currentPosition = ValueNotifier(Duration.zero);
+  Timer? _hideTimer;
 
   @override
   void initState() {
@@ -33,6 +36,12 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     _controller.addListener(() {
       _currentPosition.value = _controller.value.position;
       _isPlaying.value = _controller.value.isPlaying;
+      if (_controller.value.isPlaying) {
+        _startHideTimer();
+      } else {
+        _showControls.value = true;
+        _hideTimer?.cancel();
+      }
     });
   }
 
@@ -41,6 +50,8 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     _controller.dispose();
     _currentPosition.dispose();
     _isPlaying.dispose();
+    _showControls.dispose();
+    _hideTimer?.cancel();
     super.dispose();
   }
 
@@ -75,41 +86,19 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
           },
           child: Scaffold(
             backgroundColor: Colors.black,
-            body: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _exitFullScreen,
-                      child: AspectRatio(
-                        aspectRatio: _controller.value.aspectRatio,
-                        child: VideoPlayer(_controller),
-                      ),
+            body: GestureDetector(
+              onTap: _toggleControls,
+              child: Stack(
+                children: [
+                  Center(
+                    child: AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
                     ),
                   ),
-                ),
-                _buildProgressBar(),
-                ValueListenableBuilder<bool>(
-                  valueListenable: _isPlaying,
-                  builder: (context, isPlaying, child) {
-                    return FullScreenControls(
-                      isPlaying: isPlaying,
-                      onPlayPause: _togglePlayPause,
-                      onStop: () {
-                        _controller.pause();
-                        _controller.seekTo(Duration.zero);
-                        setState(() {
-                          _isPlaying.value = false;
-                        });
-                        _exitFullScreen();
-                      },
-                      onExitFullScreen: _exitFullScreen,
-                      onDownload: _downloadVideo,
-                    );
-                  },
-                ),
-              ],
+                  _buildControls(),
+                ],
+              ),
             ),
           ),
         ),
@@ -175,6 +164,59 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return "$minutes:$seconds";
+  }
+
+  void _toggleControls() {
+    _showControls.value = !_showControls.value;
+    if (_showControls.value) {
+      _startHideTimer();
+    } else {
+      _hideTimer?.cancel();
+    }
+  }
+
+  void _startHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(Duration(seconds: 3), () {
+      _showControls.value = false;
+    });
+  }
+
+  Widget _buildControls() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _showControls,
+      builder: (context, show, child) {
+        return AnimatedOpacity(
+          opacity: show ? 1.0 : 0.0,
+          duration: Duration(milliseconds: 300),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _buildProgressBar(),
+              ValueListenableBuilder<bool>(
+                valueListenable: _isPlaying,
+                builder: (context, isPlaying, child) {
+                  return FullScreenControls(
+                    isPlaying: isPlaying,
+                    onPlayPause: _togglePlayPause,
+                    onStop: () {
+                      _controller.pause();
+                      _controller.seekTo(Duration.zero);
+                      setState(() {
+                        _isPlaying.value = false;
+                      });
+                      _exitFullScreen();
+                    },
+                    onExitFullScreen: _exitFullScreen,
+                    onDownload: _downloadVideo,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
