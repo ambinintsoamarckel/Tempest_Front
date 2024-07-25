@@ -16,7 +16,7 @@ class VideoMessagePlayer extends StatefulWidget {
 
 class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   late VideoPlayerController _controller;
-  bool _isPlaying = false;
+  ValueNotifier<bool> _isPlaying = ValueNotifier<bool>(false);
   bool _isFullScreen = false;
   ValueNotifier<Duration> _currentPosition = ValueNotifier(Duration.zero);
 
@@ -32,9 +32,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
 
     _controller.addListener(() {
       _currentPosition.value = _controller.value.position;
-      setState(() {
-        _isPlaying = _controller.value.isPlaying;
-      });
+      _isPlaying.value = _controller.value.isPlaying;
     });
   }
 
@@ -42,6 +40,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   void dispose() {
     _controller.dispose();
     _currentPosition.dispose();
+    _isPlaying.dispose();
     super.dispose();
   }
 
@@ -56,67 +55,71 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   }
 
   void _enterFullScreen() {
-  setState(() {
-    _isFullScreen = true;
-  });
+    setState(() {
+      _isFullScreen = true;
+    });
 
-  _controller.play(); // Jouer la vidéo avant de passer en plein écran
+    _controller.play(); // Jouer la vidéo avant de passer en plein écran
 
-  Navigator.push(
-    context,
-    PageRouteBuilder(
-      opaque: false,
-      pageBuilder: (BuildContext context, _, __) => WillPopScope(
-        onWillPop: () async {
-          _controller.pause();
-          setState(() {
-            _isFullScreen = false;
-          });
-          return true; // Permettre le retour
-        },
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Center(
-                  child: GestureDetector(
-                    onTap: _exitFullScreen,
-                    child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (BuildContext context, _, __) => WillPopScope(
+          onWillPop: () async {
+            _controller.pause();
+            setState(() {
+              _isFullScreen = false;
+            });
+            return true; // Permettre le retour
+          },
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _exitFullScreen,
+                      child: AspectRatio(
+                        aspectRatio: _controller.value.aspectRatio,
+                        child: VideoPlayer(_controller),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              _buildProgressBar(),
-              FullScreenControls(
-                isPlaying: _isPlaying,
-                onPlayPause: _togglePlayPause,
-                onStop: () {
-                  _controller.pause();
-                  _controller.seekTo(Duration.zero);
-                  setState(() {
-                    _isPlaying = false;
-                  });
-                  _exitFullScreen();
-                },
-                onExitFullScreen: _exitFullScreen,
-                onDownload: _downloadVideo,
-              ),
-            ],
+                _buildProgressBar(),
+                ValueListenableBuilder<bool>(
+                  valueListenable: _isPlaying,
+                  builder: (context, isPlaying, child) {
+                    return FullScreenControls(
+                      isPlaying: isPlaying,
+                      onPlayPause: _togglePlayPause,
+                      onStop: () {
+                        _controller.pause();
+                        _controller.seekTo(Duration.zero);
+                        setState(() {
+                          _isPlaying.value = false;
+                        });
+                        _exitFullScreen();
+                      },
+                      onExitFullScreen: _exitFullScreen,
+                      onDownload: _downloadVideo,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  ).then((_) {
-    setState(() {
-      _isPlaying = true;
+    ).then((_) {
+      setState(() {
+        _isPlaying.value = true;
+      });
     });
-  });
-}
-
+  }
 
   void _exitFullScreen() {
     setState(() {
@@ -129,7 +132,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     downloadFile(context, widget.videoUrl, "video");
   }
 
- Widget _buildProgressBar() {
+  Widget _buildProgressBar() {
     return ValueListenableBuilder<Duration>(
       valueListenable: _currentPosition,
       builder: (context, value, child) {
