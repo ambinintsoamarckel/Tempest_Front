@@ -297,13 +297,6 @@ class FullScreenControls extends StatelessWidget {
             onPressed: onStop,
           ),
           IconButton(
-            icon: Icon(
-              Icons.fullscreen_exit,
-              color: Colors.white,
-            ),
-            onPressed: onExitFullScreen,
-          ),
-          IconButton(
             icon: Icon(Icons.download, color: Colors.white),
             onPressed: onDownload,
           ),
