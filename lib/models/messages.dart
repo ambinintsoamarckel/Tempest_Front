@@ -27,7 +27,6 @@ class Contenu {
   }
 }
 
-// Modèle de classe Contact
 class Contact {
   final String id;
   final String type;
@@ -46,7 +45,8 @@ class Contact {
   });
 
   factory Contact.fromJson(Map<String, dynamic> json) {
-List<String> storyFromJson = (json['stories'] as List).map((item) => item as String).toList();
+    var jsonList = json['stories'] as List? ?? [];
+    List<String> storyFromJson = jsonList.map((item) => item as String).toList();
 
     return Contact(
       id: json['_id'] ?? '',
@@ -54,13 +54,11 @@ List<String> storyFromJson = (json['stories'] as List).map((item) => item as Str
       nom: json['nom'] ?? '',
       photo: json['photo'],
       presence: json['presence'] ?? 'inactif',
-      story: storyFromJson ?? []
+      story: storyFromJson,
     );
   }
 }
 
-
-// Modèle de classe DernierMessageUtilisateur
 class DernierMessageUtilisateur {
   final String id;
   final Contenu contenu;
@@ -90,7 +88,6 @@ class DernierMessageUtilisateur {
   }
 }
 
-// Modèle de classe DernierMessageGroupe
 class DernierMessageGroupe {
   final String id;
   final Contenu contenu;
@@ -109,13 +106,14 @@ class DernierMessageGroupe {
   });
 
   factory DernierMessageGroupe.fromJson(Map<String, dynamic> json) {
+    var luParJson = json['luPar'] as List? ?? [];
+    List<LectureUtilisateur> luParList = luParJson.map((entry) => LectureUtilisateur.fromJson(entry)).toList();
+
     return DernierMessageGroupe(
       id: json['_id'] ?? '',
       contenu: Contenu.fromJson(json['contenu'] ?? {}),
       expediteur: json['expediteur'] ?? '',
-      luPar: (json['luPar'] as List<dynamic>? ?? [])
-          .map((entry) => LectureUtilisateur.fromJson(entry))
-          .toList(),
+      luPar: luParList,
       dateEnvoi: DateTime.parse(json['dateEnvoi'] ?? DateTime.now().toString()),
       notification: json['notification'] ?? false,
     );
@@ -139,7 +137,6 @@ class LectureUtilisateur {
   }
 }
 
-// Modèle de classe Conversation
 class Conversation {
   final Contact contact;
   final dynamic dernierMessage;
@@ -158,7 +155,6 @@ class Conversation {
     } else if (contact.type == 'groupe') {
       dernierMessage = DernierMessageGroupe.fromJson(json['dernierMessage'] ?? {});
     }
-
 
     return Conversation(
       contact: contact,

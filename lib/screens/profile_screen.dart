@@ -4,7 +4,7 @@ import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:mini_social_network/screens/messages_screen.dart';
 import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
-import '../models/grouped_stories.dart';
+import 'archive_screen.dart' as archive;
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
 import '../socket/socket_service.dart';
@@ -271,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ItemListScreen(items: _user.archives, title: title),
+        builder: (context) => archive.StoryScreen(stories:  _user.archives),
       ),
     );
   }
@@ -435,30 +435,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class ItemListScreen extends StatelessWidget {
-  final List<Story> items;
-  final String title;
-
-  const ItemListScreen({super.key, required this.items, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: ListView.builder(
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage:  item.contenu.type == StoryType.image ? NetworkImage(item.contenu.image!) : null,
-              child: item.contenu.type == StoryType.texte ? const Icon(Icons.text_fields) : null,
-            ),
-            title: const Text('Archive'),
-            subtitle: Text(item is Story ? item.contenu.texte! : ''),
-          );
-        },
-      ),
-    );
-  }
-}

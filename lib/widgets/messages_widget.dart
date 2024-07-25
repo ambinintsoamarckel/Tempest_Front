@@ -74,9 +74,6 @@ class ConversationWidget extends StatelessWidget {
 
 
 Widget _buildStatus(Contact user) {
-  print('ato leka ${user.presence}');
-
-  
   // Vérifiez si user.story n'est pas vide
   if (user.presence!='inactif') {
     return Positioned(
