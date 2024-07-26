@@ -17,22 +17,24 @@ class TextStoryScreen extends StatefulWidget {
 class _TextStoryScreenState extends State<TextStoryScreen> {
   Color _backgroundColor = Colors.orangeAccent;
   String _storyText = "";
+  Color _textColor = Colors.white;
+  TextAlign _textAlign = TextAlign.center;
   final TextEditingController _textController = TextEditingController();
   final StoryService _storyService = StoryService();
   final ScreenshotController _screenshotController = ScreenshotController();
 
-  void _pickBackgroundColor() async {
+  void _pickTextColor() async {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Choisir une couleur de fond'),
+          title: const Text('Choisir une couleur de texte'),
           content: SingleChildScrollView(
             child: BlockPicker(
-              pickerColor: _backgroundColor,
+              pickerColor: _textColor,
               onColorChanged: (color) {
                 setState(() {
-                  _backgroundColor = color;
+                  _textColor = color;
                 });
                 Navigator.of(context).pop();
               },
@@ -103,11 +105,12 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
                 color: _backgroundColor,
                 width: double.infinity,
                 height: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 26.0),
                 child: Center(
-                  child: TextField(
+                  child: TextFormField(
                     controller: _textController,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: _textColor,
                       fontSize: 24,
                     ),
                     decoration: const InputDecoration(
@@ -118,7 +121,7 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
                       ),
                       border: InputBorder.none,
                     ),
-                    textAlign: TextAlign.center,
+                    textAlign: _textAlign,
                     maxLines: null,
                     onChanged: (value) {
                       setState(() {
@@ -135,27 +138,31 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
               child: Column(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.brush, color: Colors.white),
-                    onPressed: () {
-                      // Add drawing functionality here
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.text_fields, color: Colors.white),
-                    onPressed: () {
-                      // Add text functionality here
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.emoji_emotions, color: Colors.white),
-                    onPressed: () {
-                      // Add emoji functionality here
-                    },
+                    icon: const Icon(Icons.color_lens, color: Colors.white),
+                    onPressed: _pickTextColor,
                   ),
                   IconButton(
                     icon: const Icon(Icons.format_align_left, color: Colors.white),
                     onPressed: () {
-                      // Add alignment functionality here
+                      setState(() {
+                        _textAlign = TextAlign.left;
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_align_center, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        _textAlign = TextAlign.center;
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_align_right, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        _textAlign = TextAlign.right;
+                      });
                     },
                   ),
                 ],
@@ -165,7 +172,7 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
               bottom: 20,
               left: 20,
               child: GestureDetector(
-                onTap: _pickBackgroundColor,
+                onTap: _pickTextColor,
                 child: Container(
                   width: 50,
                   height: 50,
@@ -182,39 +189,18 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
               left: MediaQuery.of(context).size.width / 2 - 30,
               child: Row(
                 children: [
-                  TextButton(
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
-                      // Add text story functionality
+                      // Ajouter la fonctionnalité pour afficher la story précédente
                     },
-                    child: const Text(
-                      'TEXTE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
-                  TextButton(
+                  const SizedBox(width: 20),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
                     onPressed: () {
-                      // Add normal story functionality
+                      // Ajouter la fonctionnalité pour afficher la story suivante
                     },
-                    child: const Text(
-                      'NORMAL',
-                      style: TextStyle(
-                        color: Colors.white54,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Add video story functionality
-                    },
-                    child: const Text(
-                      'VIDÉO',
-                      style: TextStyle(
-                        color: Colors.white54,
-                      ),
-                    ),
                   ),
                 ],
               ),
