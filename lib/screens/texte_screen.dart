@@ -45,6 +45,28 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
     );
   }
 
+  void _pickBackgroundColor() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Choisir une couleur de fond'),
+          content: SingleChildScrollView(
+            child: BlockPicker(
+              pickerColor: _backgroundColor,
+              onColorChanged: (color) {
+                setState(() {
+                  _backgroundColor = color;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submitStory() async {
     try {
       final directory = await getTemporaryDirectory();
@@ -58,7 +80,7 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
         if (await imageFile.exists()) {
           await _storyService.createStoryFile(imagePath);
           widget.onStoryCreated();
-          Navigator.of(context).pop();
+          Navigator.popUntil(context, (route) => route.isFirst);
         } else {
           print('Failed to create story: Image file does not exist');
         }
@@ -172,7 +194,7 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
               bottom: 20,
               left: 20,
               child: GestureDetector(
-                onTap: _pickTextColor,
+                onTap: _pickBackgroundColor,
                 child: Container(
                   width: 50,
                   height: 50,
@@ -184,27 +206,7 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 20,
-              left: MediaQuery.of(context).size.width / 2 - 30,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      // Ajouter la fonctionnalité pour afficher la story précédente
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                    onPressed: () {
-                      // Ajouter la fonctionnalité pour afficher la story suivante
-                    },
-                  ),
-                ],
-              ),
-            ),
+
           ],
         ),
       ),

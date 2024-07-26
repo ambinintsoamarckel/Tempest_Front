@@ -1,9 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/story_service.dart';
 import 'texte_screen.dart';
+import 'image_story_screen.dart';
 
 class CreateStoryScreen extends StatefulWidget {
   final VoidCallback onStoryCreated;
@@ -29,6 +29,15 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         _selectedMedia = File(pickedFile.path);
         _mediaType = 'image';
       });
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ImageStoryScreen(
+            imageFile: _selectedMedia!,
+            onStoryCreated: widget.onStoryCreated,
+          ),
+        ),
+      );
     }
   }
 
@@ -122,7 +131,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                             onStoryCreated: widget.onStoryCreated,
                           ),
                         ),
-                      );;
+                      );
                     },
                     child: Container(
                       margin: const EdgeInsets.all(8.0),
@@ -155,30 +164,6 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16.0),
-            if (_mediaType == 'texte') ...[
-              Form(
-                key: _formKey,
-                child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Votre texte',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Le texte ne peut pas être vide';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _storyText = value;
-                  },
-                ),
-              ),
-            ] else if (_selectedMedia != null) ...[
-              Image.file(_selectedMedia!),
-            ],
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: () => _pickMedia(ImageSource.gallery),
