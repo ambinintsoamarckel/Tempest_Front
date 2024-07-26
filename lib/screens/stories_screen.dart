@@ -7,6 +7,7 @@ import '../models/grouped_stories.dart';
 import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
 import 'all_screen.dart';
+import 'creation_story.dart';
 class StoryScreen extends StatefulWidget {
   final GlobalKey<StoryScreenState> storyScreenKey;
 
@@ -70,14 +71,14 @@ class StoryScreenState extends State<StoryScreen> {
     }
   }
 
-  Future<void> _createStory() async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StoryCreationDialog(onStoryCreated: _reload);
-      },
-    );
-  }
+Future<void> _createStory() async {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CreateStoryScreen(onStoryCreated: _reload),
+    ),
+  );
+}
 
   void _onStorySelected(int index) {
     final storyIds = _stories.sublist(index).expand((groupedStory) => groupedStory.stories).map((story) => story.id).toList();
