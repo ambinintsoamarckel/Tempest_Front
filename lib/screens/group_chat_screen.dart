@@ -455,13 +455,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
               icon: const Icon(Icons.insert_drive_file),
               onPressed: () => _pickFileAndSend(),
             ),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                onSubmitted: _handleSubmitted,
-                decoration: const InputDecoration.collapsed(hintText: 'Envoyer un message'),
+            Flexible(
+            child: TextField(
+              controller: _textController,
+              onSubmitted: (text) => _handleSubmitted(text),
+              decoration: const InputDecoration.collapsed(
+                hintText: "Envoyer un message",
               ),
+              maxLines: null, // Permet au texte de se redimensionner automatiquement
+              minLines: 1, // Nombre minimum de lignes affichées
             ),
+          ),
             IconButton(
               icon: const Icon(Icons.send),
               onPressed: () => _handleSubmitted(_textController.text),

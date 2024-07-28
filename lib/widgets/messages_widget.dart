@@ -171,7 +171,7 @@ Widget _buildStatus(Contact user) {
   }
 
   String _getContentSubtitle(Contenu contenu, bool isSentByUser) {
-    const int maxLength = 25; // Limite du nombre de caractères
+    const int maxLength = 20; // Limite du nombre de caractères
     String text;
 
     if (isSentByUser) {

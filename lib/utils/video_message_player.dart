@@ -143,7 +143,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                       _controller.seekTo(Duration(seconds: value.toInt()));
                     });
                   },
-                  activeColor: Colors.red,
+                  activeColor: Colors.white,
                   inactiveColor: Colors.grey,
                 ),
               ),
@@ -239,7 +239,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                 ),
                 Icon(
                   Icons.play_arrow,
-                  size: 64,
+                  size: 70,
                   color: Colors.white,
                 ),
                 Positioned(
