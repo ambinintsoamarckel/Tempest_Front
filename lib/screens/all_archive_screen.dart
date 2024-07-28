@@ -55,7 +55,6 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       _currentUserId = user;
     });
   }
-
   Future<void> _loadStory(String storyId) async {
     setState(() {
       _isLoading = true;
@@ -112,7 +111,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   final user = _currentStory!.vues[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: user.photo != null ? NetworkImage(user.photo! ):null,
+                      backgroundImage: user.photo != null ? NetworkImage(user.photo!):null,
                       child: user.photo == null
               ? const Icon(Icons.person, size: 24.0)
               : null,
@@ -123,6 +122,17 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               )
             : const Center(child: CircularProgressIndicator());
       },
+    );
+  }
+
+  Widget buildCircleIconButton(IconData icon, VoidCallback onPressed) {
+    return CircleAvatar(
+      backgroundColor: Colors.black54,
+      radius: 24.0,
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white),
+        onPressed: onPressed,
+      ),
     );
   }
 
@@ -162,21 +172,13 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
             Positioned(
               top: MediaQuery.of(context).size.height / 2 - 24,
               left: 16,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios),
-                color: Colors.white,
-                onPressed: _prevPage,
-              ),
+              child: buildCircleIconButton(Icons.arrow_back_ios, _prevPage),
             ),
           if (_currentIndex < widget.storyIds.length - 1)
             Positioned(
               top: MediaQuery.of(context).size.height / 2 - 24,
               right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_forward_ios),
-                color: Colors.white,
-                onPressed: _nextPage,
-              ),
+              child: buildCircleIconButton(Icons.arrow_forward_ios, _nextPage),
             ),
           if (_currentStory != null && _currentStory!.user.id == _currentUserId)
             Positioned(
@@ -206,10 +208,9 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               children: [
                 CircleAvatar(
                   backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
-                   child: _currentStory?.user.photo == null
+                  child:  _currentStory?.user.photo == null
               ? const Icon(Icons.person, size: 24.0)
               : null,
-                  
                 ),
                 const SizedBox(width: 8),
                 Text(
