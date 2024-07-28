@@ -13,6 +13,7 @@ class UserService {
   final socketService = SocketService();
 
   Future<UserModel?> createUserWithEmailAndPassword(String email, String password, String nom) async {
+    try {
     final response = await dio.post(
       '/utilisateurs',
       data: jsonEncode({
@@ -23,14 +24,19 @@ class UserService {
     );
 
     if (response.statusCode == 201) {
-      final data = response.data['user'];
-      final user = UserModel.fromJson(data);
-      
-      await storage.write(key: 'user', value: jsonEncode(user.uid));
+      final user = await signInWithEmailAndPassword(email, password);
       return user;
+      
     } else {
       throw Exception('Erreur lors de la création de l\'utilisateur');
+    }  
+    } catch (e) {
+       print('user Creation error: $e');
+      rethrow;
+    
+      
     }
+    
   }
 
   Future<bool> logout() async {

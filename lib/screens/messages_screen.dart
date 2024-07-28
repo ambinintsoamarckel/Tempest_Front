@@ -115,9 +115,6 @@ class ConversationListScreenState extends State<ConversationListScreen> with Rou
 
 
 Widget _buildStatus(Contact user) {
-  print('ato leka ${user.presence}');
-
-  
   // Vérifiez si user.story n'est pas vide
   if (user.presence!='inactif') {
     return Positioned(

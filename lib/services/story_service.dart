@@ -79,6 +79,23 @@ class StoryService {
       throw Exception('Failed to load story: $e');
     }
   }
+    Future<Story?> getArchivesById(String id) async {
+
+    try {
+      final response = await dio.get(
+        '/archives/$id',
+
+      );
+
+      if (response.statusCode == 200) {
+        return Story.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load story');
+      }
+    } catch (e) {
+      throw Exception('Failed to load story: $e');
+    }
+  }
 
   Future<List<group.GroupedStory>> getStories() async {
 

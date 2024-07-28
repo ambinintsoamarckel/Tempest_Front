@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 import '../models/user.dart';
+import '../utils/widget_text.dart';
+import '../utils/widget_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -77,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
-                child: Image.asset('manga_transparent.png', height: 250),
+                child: Image.asset('assets/images/manga_transparent.png', height: 250),
               ),
               const Text(
                 'Welcome Back!',
@@ -96,43 +98,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              TextField(
+              CustomTextField(
                 controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  prefixIcon: const Icon(Icons.email),
-                ),
+                labelText: 'Email',
+                icon: Icons.email,
               ),
               const SizedBox(height: 20),
-              TextField(
+              CustomTextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  prefixIcon: const Icon(Icons.lock),
-                ),
-                obscureText: true,
+                labelText: 'Password',
+                icon: Icons.lock,
+                isPassword: true,
               ),
               const SizedBox(height: 30),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _signIn,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        textStyle: const TextStyle(fontSize: 18),
-                      ),
-                      child: const Text('Login'),
-                    ),
-                    TextButton(
+              CustomButton(
+                text: 'Login',
+                onPressed: _signIn,
+                isLoading: _isLoading,
+              ),
+              TextButton(
                 onPressed: _navigateToRegister,
                 child: const Text('Create an account'),
               ),
