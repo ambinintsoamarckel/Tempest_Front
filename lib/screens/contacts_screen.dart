@@ -20,7 +20,6 @@ class ContactScreen extends StatefulWidget {
     }
   }
 }
-
 class ContactScreenState extends State<ContactScreen> {
   final ContactService _contactService = ContactService();
   final List<Contact> _contacts = [];
@@ -64,7 +63,11 @@ class ContactScreenState extends State<ContactScreen> {
   }
 
   void _selectContact(Contact contact) {
+    if (_selectedContacts.isNotEmpty) {
+      _toggleSelection(contact);
+    } else {
       _navigateToChat(contact);
+    }
   }
 
   void _navigateToChat(Contact contact) {
@@ -152,7 +155,7 @@ class ContactScreenState extends State<ContactScreen> {
 
     List<String> userIds = _selectedContacts.map((contact) => contact.id).toList();
     try {
-     String? groupId= await _contactService.createGroup(userIds, groupName);
+      String? groupId = await _contactService.createGroup(userIds, groupName);
       // Afficher un message de succès ou naviguer vers l'écran du groupe nouvellement créé
       // Réinitialiser la sélection
       setState(() {
