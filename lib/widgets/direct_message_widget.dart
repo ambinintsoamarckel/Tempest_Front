@@ -83,6 +83,9 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                 if (isContact) ...[
                   CircleAvatar(
                     backgroundImage: widget.contact.photo != null ? NetworkImage(widget.contact.photo!) : null,
+                     child: widget.contact.photo == null
+              ? const Icon(Icons.person, size: 24.0)
+              : null,
                   ),
                   const SizedBox(width: 5),
                 ],

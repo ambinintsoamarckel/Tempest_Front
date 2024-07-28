@@ -18,7 +18,7 @@ class UserModel {
       uid: json['_id'] ?? '',
       email: json['email'] ?? '',
       nom: json['nom'] ?? '',
-      photo: json['photo'] ?? '',
+      photo: json['photo'],
       presence: json['presence'] ?? '',
     );
   }

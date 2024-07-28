@@ -5,6 +5,8 @@ import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../main.dart';
 import  'all_screen.dart';
+import '../screens/direct_chat_screen.dart';
+import '../screens/group_chat_screen.dart';
 
 class ConversationListScreen extends StatefulWidget {
   final GlobalKey<ConversationListScreenState> conversationListScreenKey;
@@ -82,16 +84,11 @@ class ConversationListScreenState extends State<ConversationListScreen> with Rou
   Widget _buildAvatar(Contact contact, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (contact.story.isNotEmpty) {
-          _navigateToAllStoriesScreen(context,contact);
-        }
+     _navigateToChatScreen(context, contact);
       },
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: contact.story.isNotEmpty
-              ? Border.all(color: Colors.blue.shade900, width: 3)
-              : null,
         ),
         child: CircleAvatar(
           radius: 24.0,
@@ -134,14 +131,26 @@ Widget _buildStatus(Contact user) {
     return SizedBox.shrink();
   }
 }
-
+  void _navigateToChatScreen(BuildContext context, Contact contact) {
+    if (contact.type == "groupe") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => GroupChatScreen(groupId: contact.id)),
+      );
+    } else if (contact.type == "utilisateur") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DirectChatScreen(id: contact.id)),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(110.0),
         child: AppBar(
-          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          backgroundColor: Color.fromARGB(0, 252, 252, 252),
           flexibleSpace: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
             child: SingleChildScrollView(
@@ -149,7 +158,7 @@ Widget _buildStatus(Contact user) {
               child: Row(
                 children: _conversations.map((conversation) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

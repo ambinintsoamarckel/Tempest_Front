@@ -297,7 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo) : null,
+                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo!) : null,
                           child: _user.photo == null ? const Icon(Icons.person, size: 50) : null,
                         ),
                         Positioned(

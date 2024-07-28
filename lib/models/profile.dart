@@ -32,7 +32,7 @@ class UserModel {
   final String uid;
   final String email;
   final String nom;
-  late final String photo;
+  late final String? photo;
   final String presence;
   final List<Group> groupes;
   final List<Story> stories;
@@ -61,7 +61,7 @@ class UserModel {
       uid: json['_id'] ?? '',
       email: json['email'] ?? '',
       nom: json['nom'] ?? '',
-      photo: json['photo'] ?? '',
+      photo: json['photo'],
       presence: json['presence'] ?? '',
       stories: storiesList,
       archives: archivesList,

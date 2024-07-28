@@ -112,7 +112,10 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   final user = _currentStory!.vues[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: user.photo != '' ? NetworkImage(user.photo! ):null,
+                      backgroundImage: user.photo != null ? NetworkImage(user.photo! ):null,
+                      child: user.photo == null
+              ? const Icon(Icons.person, size: 24.0)
+              : null,
                     ),
                     title: Text(user.name),
                   );
@@ -203,6 +206,9 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               children: [
                 CircleAvatar(
                   backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
+                  child:  _currentStory?.user.photo == null
+              ? const Icon(Icons.person, size: 24.0)
+              : null,
                 ),
                 const SizedBox(width: 8),
                 Text(

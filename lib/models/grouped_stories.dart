@@ -42,7 +42,7 @@ class User {
       id: json['_id'],
       name: json['nom'],
       email: json['email'],
-      photo: json['photo']??'' ,
+      photo: json['photo'],
     );
   }
 }

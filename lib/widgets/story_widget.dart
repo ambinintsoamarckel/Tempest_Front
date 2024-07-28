@@ -79,7 +79,7 @@ class StoryTile extends StatelessWidget {
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16.0,
-                  backgroundColor: Colors.black54,
+                  
                 ),
               ),
             ),

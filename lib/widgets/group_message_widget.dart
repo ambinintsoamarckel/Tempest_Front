@@ -77,6 +77,9 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
             if (isCurrentUser) ...[
               CircleAvatar(
                 backgroundImage: widget.message.expediteur.photo != null ? NetworkImage(widget.message.expediteur.photo!) : null,
+                 child: widget.message.expediteur.photo == null
+              ? const Icon(Icons.person, size: 24.0)
+              : null,
               ),
               const SizedBox(width: 5),
             ],
