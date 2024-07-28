@@ -78,16 +78,17 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+      - assets/images/logo.png
+      - assets/images/avatar.png
+      - assets/images/manga.png
+      - assets/images/manga_transparent.png
+      - assets/images/milay.png
+      - assets/images/milay_transparent.png
+
 
   # To add assets to your application, add an assets sect
 ion, like this:
-  assets:
-      - assets/logo.png
-      - assets/avatar.png
-      - assets/manga.png
-      - assets/manga_transparent.png
-      - assets/milay.png
-      - assets/milay_transparent.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
