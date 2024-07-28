@@ -4,7 +4,7 @@ class Contact {
   final String nom;
   final String? photo;
   final String presence;
-  final bool story; // Booléen pour indiquer si l'utilisateur a des stories
+  final List<String> story;
 
   Contact({
     required this.id,
@@ -16,13 +16,17 @@ class Contact {
   });
 
   factory Contact.fromJson(Map<String, dynamic> json) {
+    List<String> storyFromJson = json['stories'] != null 
+      ? (json['stories'] as List).map((item) => item as String).toList() 
+      : [];
+
     return Contact(
       id: json['_id'] ?? '',
       type: json['type'] ?? '',
       nom: json['nom'] ?? '',
       photo: json['photo'],
       presence: json['presence'] ?? 'inactif',
-      story: json['story'] != null ? (json['story'] > 0) : false,
+      story: storyFromJson,
     );
   }
 
@@ -33,7 +37,7 @@ class Contact {
       'nom': nom,
       'photo': photo,
       'presence': presence,
-      'story': story,
+      'stories': story,
     };
   }
 }
