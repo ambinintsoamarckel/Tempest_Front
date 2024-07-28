@@ -27,7 +27,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String email = _emailController.text.trim();
       String password = _passwordController.text.trim();
       String nom = _nameController.text.trim();
-      String photo = _photoController.text.trim();
 
       if (email.isEmpty || password.isEmpty || nom.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(

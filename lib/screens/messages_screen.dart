@@ -144,32 +144,34 @@ Widget _buildStatus(Contact user) {
           backgroundColor: Color.fromARGB(255, 255, 255, 255),
           flexibleSpace: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-            child: Row(
-              children: _conversations.map((conversation) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Stack(
-                        children: [
-                          _buildAvatar(conversation.contact,context),
-                          
-                          _buildStatus(conversation.contact),
-                        ],
-                      ),
-                      const SizedBox(height: 4), // Espacement entre l'avatar et le nom
-                      Flexible(
-                        child: Text(
-                          conversation.contact.nom,
-                          style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 0, 0, 0)), // Taille de la police
-                          overflow: TextOverflow.ellipsis, // Ajoutez l'overflow pour éviter le débordement
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _conversations.map((conversation) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Stack(
+                          children: [
+                            _buildAvatar(conversation.contact, context),
+                            _buildStatus(conversation.contact),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        const SizedBox(height: 4),
+                        Flexible(
+                          child: Text(
+                            conversation.contact.nom,
+                            style: const TextStyle(fontSize: 14, color: Color.fromARGB(255, 0, 0, 0)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),
