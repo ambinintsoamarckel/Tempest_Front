@@ -24,7 +24,7 @@ class _ProfileScreenWidgetState extends State<ProfileScreenWidget> {
     super.initState();
     _emailController.text = widget.user.email;
     _nomController.text = widget.user.nom;
-    _photoController.text = widget.user.photo;
+    _photoController.text = widget.user.photo!;
   }
 
   
@@ -62,7 +62,7 @@ class _ProfileScreenWidgetState extends State<ProfileScreenWidget> {
               child: CircleAvatar(
                 radius: 24.0, // Taille de l'avatar
                 backgroundImage: widget.user.photo != null
-                    ? NetworkImage(widget.user.photo)
+                    ? NetworkImage(widget.user.photo!)
                     : null,
                 child: widget.user.photo == null
                     ? const Icon(Icons.person, size: 24.0)

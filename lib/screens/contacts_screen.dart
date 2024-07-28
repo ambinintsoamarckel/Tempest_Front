@@ -152,14 +152,19 @@ class ContactScreenState extends State<ContactScreen> {
 
     List<String> userIds = _selectedContacts.map((contact) => contact.id).toList();
     try {
-      await _contactService.createGroup(userIds, groupName);
+     String? groupId= await _contactService.createGroup(userIds, groupName);
       // Afficher un message de succès ou naviguer vers l'écran du groupe nouvellement créé
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Groupe créé avec succès')));
       // Réinitialiser la sélection
       setState(() {
         _selectedContacts.clear();
         _isSelectionMode = false;
       });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupChatScreen(groupId: groupId!),
+        ),
+      );
     } catch (e) {
       print('Failed to create group: $e');
       // Afficher un message d'erreur

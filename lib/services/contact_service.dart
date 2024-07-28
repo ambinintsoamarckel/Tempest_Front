@@ -35,7 +35,7 @@ class ContactService {
     }
   }
 
-  Future<void> createGroup(List<String> userIds, String nom) async {
+  Future<String?> createGroup(List<String> userIds, String nom) async {
     try {
       final response = await dio.post('/groupes', data: {
         'membres': userIds,
@@ -44,6 +44,7 @@ class ContactService {
       if (response.statusCode != 201) {
         throw Exception('Failed to create group');
       }
+      return response.data['_id'];
     } catch (e) {
       throw Exception('Network error: $e');
     }
