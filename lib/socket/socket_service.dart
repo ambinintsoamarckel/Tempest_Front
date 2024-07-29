@@ -286,7 +286,15 @@ class SocketService {
         }
       }
     });
-
+    socket!.on('story_expire', (message) {
+      print('storyyyyyyiiization');
+     if (CurrentScreenManager.currentScreen == 'story') {
+        final state = HomeScreenState.storyScreenKey.currentState;
+        if (state != null) {
+        state.widget.reload();    
+        }
+      }
+    });
     socket!.on('photo_changee', (message) {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;

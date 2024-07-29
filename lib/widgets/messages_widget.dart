@@ -40,32 +40,37 @@ class ConversationWidget extends StatelessWidget {
   }
 
   
-    Widget _buildAvatar(Contact contact, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (contact.story.isNotEmpty) {
-          _navigateToAllStoriesScreen(context,contact);
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: contact.story.isNotEmpty
-              ? Border.all(color: Colors.blue.shade900, width: 3)
-              : null,
-        ),
+Widget _buildAvatar(Contact contact, BuildContext context) {
+  return GestureDetector(
+    onTap: () {
+      if (contact.story.isNotEmpty) {
+        _navigateToAllStoriesScreen(context, contact);
+      }
+    },
+    child: Container(
+      width: 60.0, // Ajuster la largeur et la hauteur globale du container
+      height: 60.0,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: contact.story.isNotEmpty
+            ? Border.all(color: Colors.blue.shade900, width: 3.0)
+            : null,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3.0), // Espace entre l'avatar et la bordure bleue
         child: CircleAvatar(
           radius: 24.0,
-          backgroundImage: contact.photo != null
-              ? NetworkImage(contact.photo!)
-              : null,
+          backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
           child: contact.photo == null
               ? const Icon(Icons.person, size: 24.0)
               : null,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   void _navigateToAllStoriesScreen(BuildContext context, Contact contact) {
     Navigator.push(

@@ -8,6 +8,7 @@ import 'archive_screen.dart' as archive;
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
 import '../socket/socket_service.dart';
+import 'all_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -295,11 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Center(
                     child: Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo!) : null,
-                          child: _user.photo == null ? const Icon(Icons.person, size: 50) : null,
-                        ),
+                       _buildAvatar(context),
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -420,6 +417,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+  Widget _buildAvatar(BuildContext context) {
+  return GestureDetector(
+    onTap: () {
+      if (_user.stories.isNotEmpty) {
+        _navigateToAllStoriesScreen(context);
+      }
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: _user.stories.isNotEmpty
+            ? Border.all(color: Colors.blue.shade900, width: 3.0)
+            : null,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3.0), // Espace entre l'avatar et la bordure bleue
+        child:  CircleAvatar(
+                          radius: 50,
+                          backgroundImage: _user.photo != null ? NetworkImage(_user.photo!) : null,
+                          child: _user.photo == null ? const Icon(Icons.person, size: 50) : null,
+                        ),
+      ),
+    ),
+  );
+}
+  void _navigateToAllStoriesScreen(BuildContext context) {
+    final storyIds = _user.stories.map((story) => story.id).toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AllStoriesScreen(
+          initialIndex: 0,
+          storyIds: storyIds,
+        ),
       ),
     );
   }
