@@ -12,6 +12,7 @@ import '../services/discu_message_service.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import '../widgets/RecordingWidget.dart';
+import 'ctt_screen.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String id;
@@ -473,11 +474,16 @@ void _showProgressDialog() {
       _reload();
     });
   }
-
   void _transferMessage(String messageId) async {
-    // Implémentez ici la logique de transfert de message
-    print('Message $messageId transféré.');
-  }
+      print('messaage : $messageId');
+       Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),
+      );
+
+          _reload();
+
+    }
 
   Future<void> _copyMessage(int index) async {
     DirectMessage message = _messages[index];

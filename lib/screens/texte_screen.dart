@@ -66,31 +66,38 @@ class _TextStoryScreenState extends State<TextStoryScreen> {
       },
     );
   }
+Future<void> _submitStory() async {
+  // Enlever le focus du clavier
+  FocusScope.of(context).unfocus();
 
-  Future<void> _submitStory() async {
-    try {
-      final directory = await getTemporaryDirectory();
-      final imagePath = '${directory.path}/story.png';
-      _screenshotController.captureAndSave(
-        directory.path,
-        fileName: 'story.png',
-        pixelRatio: 2.0,
-      ).then((path) async {
-        File imageFile = File(imagePath);
-        if (await imageFile.exists()) {
-          await _storyService.createStoryFile(imagePath);
-          widget.onStoryCreated();
-          Navigator.popUntil(context, (route) => route.isFirst);
-        } else {
-          print('Failed to create story: Image file does not exist');
-        }
-      }).catchError((error) {
-        print('Failed to create story: $error');
-      });
-    } catch (e) {
-      print('Failed to create story: $e');
-    }
+  // Attendre une seconde avant de capturer l'écran
+  await Future.delayed(const Duration(seconds: 1));
+
+  try {
+    final directory = await getTemporaryDirectory();
+    final imagePath = '${directory.path}/story.png';
+    _screenshotController.captureAndSave(
+      directory.path,
+      fileName: 'story.png',
+      pixelRatio: 2.0,
+    ).then((path) async {
+      File imageFile = File(imagePath);
+      if (await imageFile.exists()) {
+        await _storyService.createStoryFile(imagePath);
+        widget.onStoryCreated();
+        Navigator.popUntil(context, (route) => route.isFirst);
+      } else {
+        print('Failed to create story: Image file does not exist');
+      }
+    }).catchError((error) {
+      print('Failed to create story: $error');
+    });
+  } catch (e) {
+    print('Failed to create story: $e');
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {

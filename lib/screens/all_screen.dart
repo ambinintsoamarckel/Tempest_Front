@@ -225,34 +225,36 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       ),
     );
   }
+Widget buildStoryContent(Story story) {
+  final bool isTextStory = story.contenu.type == StoryType.texte;
+  final Color backgroundColor = colors[Random().nextInt(colors.length)];
 
-  Widget buildStoryContent(Story story) {
-    final bool isTextStory = story.contenu.type == StoryType.texte;
-    final Color backgroundColor = colors[Random().nextInt(colors.length)];
+  return Container(
+    decoration: BoxDecoration(
+      color: isTextStory ? backgroundColor : null,
+      image: !isTextStory
+          ? DecorationImage(
+              image: NetworkImage(story.contenu.image ?? story.contenu.video ?? ''),
+              fit: BoxFit.contain, // Adapter l'image à l'écran
+              alignment: Alignment.center, // Centrer l'image
+            )
+          : null,
+    ),
+    child: Center(
+      child: isTextStory
+          ? Text(
+              story.contenu.texte ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24.0,
+              ),
+            )
+          : null,
+    ),
+  );
+}
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isTextStory ? backgroundColor : null,
-        image: !isTextStory
-            ? DecorationImage(
-                image: NetworkImage(story.contenu.image ?? story.contenu.video ?? ''),
-                fit: BoxFit.cover,
-              )
-            : null,
-      ),
-      child: Center(
-        child: isTextStory
-            ? Text(
-                story.contenu.texte ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24.0,
-                ),
-              )
-            : null,
-      ),
-    );
-  }
+
 }

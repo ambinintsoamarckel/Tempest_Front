@@ -8,6 +8,7 @@ import 'screens/register_screen.dart';
 import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import './socket/notification_service.dart';
+import 'dart:io';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -15,7 +16,41 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
-  runApp(const MyApp());
+
+  bool isOnline = await checkConnectivity();
+  runApp(isOnline ? const MyApp() : const NoConnectionApp());
+}
+
+Future<bool> checkConnectivity() async {
+  try {
+    final result = await InternetAddress.lookup('mahm.tempest.dov');
+    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+  } on SocketException catch (_) {
+    return false;
+  }
+}
+
+class NoConnectionApp extends StatelessWidget {
+  const NoConnectionApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Pas de connexion',
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Pas de connexion'),
+        ),
+        body: const Center(
+          child: Text(
+            'Impossible de se connecter à mahm.tempest.com. Vérifiez votre connexion Internet.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -60,7 +95,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/profile': (context) {
           final user = ModalRoute.of(context)!.settings.arguments as UserModel;
-          return const ProfileScreen();
+          return ProfileScreen();
         },
         '/register': (context) => const RegisterScreen(),
       },
@@ -90,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen> {
       UserModel isValidSession = await _userService.checkSession();
       socketService.initializeSocket(isValidSession.uid);
       Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
-        } catch (e) {
+    } catch (e) {
       Navigator.pushReplacementNamed(context, '/login');
       rethrow;
     }
