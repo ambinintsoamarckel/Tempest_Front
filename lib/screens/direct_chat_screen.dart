@@ -279,15 +279,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             onCopy: () => _copyMessage(index),
                             previousMessageDate: _previousMessageDate,
                           ),
-                          if (_isLastReadMessageByCurrentUser(index))
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 2.0),
-                              child: Text(
-                                "Lu",
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                              ),
-                            ),
                         ],
                       );
                     },

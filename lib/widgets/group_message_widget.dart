@@ -100,17 +100,6 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
                         ),
                       ),
                     Container(
-                      margin: const EdgeInsets.only(top: 5.0),
-                      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                      decoration: BoxDecoration(
-                        color: isCurrentUser ? Colors.grey[300] : Colors.blue[100],
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(10.0),
-                          topRight: const Radius.circular(10.0),
-                          bottomRight: const Radius.circular(10.0),
-                          bottomLeft: isCurrentUser ? const Radius.circular(10.0) : const Radius.circular(0.0),
-                        ),
-                      ),
                       child: messageContent,
                     ),
                     Padding(
@@ -136,17 +125,29 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       ),
     );
   }
-
-  Widget _buildTextMessage(BuildContext context, bool isCurrentUser) {
-    return Text(
+Widget _buildTextMessage(BuildContext context, bool isContact) {
+  return Container(
+     padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+     decoration: BoxDecoration(
+     color: isContact ? Colors.grey[300] : Colors.green[100],
+     borderRadius: BorderRadius.only(
+        topLeft: const Radius.circular(10.0),
+        topRight: const Radius.circular(10.0),
+        bottomRight: const Radius.circular(10.0),
+        bottomLeft: isContact ? const Radius.circular(10.0) : const Radius.circular(0.0),
+      ),
+    ),
+    child: Text(
       widget.message.contenu.texte ?? '',
       style: const TextStyle(
         color: Colors.black,
       ),
       softWrap: true,
       overflow: TextOverflow.clip,
-    );
-  }
+    ),
+  );
+}
+
     Widget _buildNotificationMessage(BuildContext context, bool isCurrentUser) {
     final content = widget.message.contenu.texte ?? '';
     final displayContent = isCurrentUser

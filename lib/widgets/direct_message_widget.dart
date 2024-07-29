@@ -15,7 +15,8 @@ class DirectMessageWidget extends StatefulWidget {
   final Function(String) onTransfer;
   final DateTime? previousMessageDate;
 
-  const DirectMessageWidget({super.key, 
+  const DirectMessageWidget({
+    super.key,
     required this.message,
     required this.contact,
     required this.onCopy,
@@ -82,10 +83,12 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
               children: <Widget>[
                 if (isContact) ...[
                   CircleAvatar(
-                    backgroundImage: widget.contact.photo != null ? NetworkImage(widget.contact.photo!) : null,
-                     child: widget.contact.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+                    backgroundImage: widget.contact.photo != null
+                        ? NetworkImage(widget.contact.photo!)
+                        : null,
+                    child: widget.contact.photo == null
+                        ? const Icon(Icons.person, size: 24.0)
+                        : null,
                   ),
                   const SizedBox(width: 5),
                 ],
@@ -98,16 +101,9 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                          decoration: BoxDecoration(
-                            color: isContact ? Colors.grey[300] : Colors.green[100],
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(10.0),
-                              topRight: const Radius.circular(10.0),
-                              bottomRight: const Radius.circular(10.0),
-                              bottomLeft: isContact ? const Radius.circular(10.0) : const Radius.circular(0.0),
-                            ),
-                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5.0, horizontal: 10.0),
+
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
@@ -142,16 +138,29 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
     );
   }
 
-  Widget _buildTextMessage(BuildContext context, bool isContact) {
-    return Text(
+Widget _buildTextMessage(BuildContext context, bool isContact) {
+  return Container(
+     padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+     decoration: BoxDecoration(
+     color: isContact ? Colors.grey[300] : Colors.green[100],
+     borderRadius: BorderRadius.only(
+        topLeft: const Radius.circular(10.0),
+        topRight: const Radius.circular(10.0),
+        bottomRight: const Radius.circular(10.0),
+        bottomLeft: isContact ? const Radius.circular(10.0) : const Radius.circular(0.0),
+      ),
+    ),
+    child: Text(
       widget.message.contenu.texte ?? '',
       style: const TextStyle(
         color: Colors.black,
       ),
       softWrap: true,
       overflow: TextOverflow.clip,
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildFileMessage(BuildContext context, bool isContact) {
     return Row(
@@ -196,7 +205,9 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
   }
 
   Widget _buildReadStatus() {
-    return widget.message.lu ? const Icon(Icons.done_all, color: Colors.blue) : const Icon(Icons.done, color: Colors.grey);
+    return widget.message.lu
+        ? const Icon(Icons.done_all, color: Colors.blue)
+        : const Icon(Icons.done, color: Colors.grey);
   }
 
   Future<void> _saveFile(BuildContext context) async {
@@ -302,10 +313,10 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget> {
                   widget.message.contenu.type == MessageType.audio ||
                   widget.message.contenu.type == MessageType.video)
                 ListTile(
-                  leading: const Icon(Icons.download, color: Colors.orangeAccent),
-                  title: const Text('Enregistrer'),
-                  onTap: () {
-                    _saveFile(context);  
+                  leading: const Icon(Icons.file_download, color: Colors.grey),
+                  title: const Text('Télécharger'),
+                  onTap: () async {
+                    await _saveFile(context);
                     Navigator.of(context).pop();
                   },
                 ),

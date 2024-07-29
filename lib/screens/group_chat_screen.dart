@@ -333,15 +333,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                             onTransfer: _transferMessage,
                             onCopy: () => _copyMessage(index),
                           ),
-                          if (_isLastReadMessageByCurrentUser(index))
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 2.0),
-                              child: Text(
-                                "Lu",
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                              ),
-                            ),
                         ],
                       );
                     },
