@@ -66,28 +66,34 @@ class UserService {
     } 
   }
   
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
-    try {
+Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
+  
       final response = await dio.post(
         '/login',
         data: jsonEncode({
           'username': email,
           'password': password,
         }),
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Ne lance pas d'exception pour les codes de statut inférieurs à 500
+          },)
       );
-
+      print('eto lekaaaa :');
+      print(response.data);
       if (response.statusCode == 200) {
         final data = response.data['user'];
         final user = UserModel.fromJson(data);
         await storage.write(key: 'user', value: jsonEncode(user.uid));
         socketService.initializeSocket(user.uid);
         return user;
+      } else if (response.statusCode == 401 || response.statusCode == 403 || response.statusCode == 404) {
+        final errorMessage = response.data['message'] ?? 'Erreur lors de la connexion';
+        throw Exception(errorMessage);
       } else {
-        throw Exception('Erreur lors de la connexion');
+        throw Exception('Problème de serveur');
       }
-    } catch (e) {
-      throw Exception('Erreur lors de la connexion $e');
-    }
+    
   }
   Future<UserModel> checkSession() async {
     try {

@@ -60,16 +60,21 @@ try {
 }
   }
 
-  // Method to delete a group message
-  Future<void> deleteMessage(String groupId, String messageId) async {
-    final response = await dio.delete('/messages/groupe/$groupId/$messageId');
 
-    if (response.statusCode != 204) {
-      print('Failed to delete group message: ${response.data}');
-      throw Exception('Failed to delete group message');
+  // Méthode pour supprimer un message
+  Future<void> deleteMessage(String id) async {
+    try {
+      final response = await dio.delete('/messages/$id');
+
+      if (response.statusCode != 204) {
+        print('Failed to delete message: ${response.data}');
+        throw Exception('Failed to delete message');
+      }
+    } catch (e) {
+      print('Exception during message deletion: $e');
+      rethrow;
     }
   }
-
   // Method to transfer a group message
   Future<void> transferMessage(String contactId, String messageId) async {
     try {

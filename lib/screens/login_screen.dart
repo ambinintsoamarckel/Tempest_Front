@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (email.isEmpty || password.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields.')),
+          const SnackBar(content: Text('Veuillez remplir tous les champs.')),
         );
         setState(() {
           _isLoading = false;
@@ -40,14 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (user != null) {
         Navigator.pushReplacementNamed(context, '/home', arguments: user);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to login. Please check your credentials.')),
-        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to login: $e')),
+        SnackBar(content: Text(e.toString())),
       );
     } finally {
       setState(() {

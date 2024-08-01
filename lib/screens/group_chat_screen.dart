@@ -329,7 +329,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                           GroupMessageWidget(
                             message: _messages[index],
                             currentUser: userSnapshot.data!,
-                            onDelete: (messageId) => _deleteMessage(messageId, widget.groupId),
+                            onDelete: (messageId) => _deleteMessage(messageId),
                             onTransfer: _transferMessage,
                             onCopy: () => _copyMessage(index),
                           ),
@@ -570,28 +570,12 @@ void _showProgressDialog() {
     _recorder!.closeRecorder();
     super.dispose();
   }
-  void _deleteMessage(String messageId, String groupId) async {
-    try {
-      await _messageService.deleteMessage(messageId, groupId);
-      print('Message deleted successfully');
-      _reload(); // Recharge les messages après la suppression réussie
-    } on DioException catch (e) {
-      if (e.response != null && e.response!.statusCode == 404) {
-        print('Message not found or already deleted');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Message not found or already deleted'),
-          ),
-        );
-      } else {
-        print('Error deleting message: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error deleting message'),
-          ),
-        );
-      }
-    }
+  void _deleteMessage(String messageId) async {
+    await _messageService.deleteMessage(messageId).catchError((e) {
+      print('Failed to delete message: $e');
+    }).whenComplete(() {
+      _reload();
+    });
   }
 
  

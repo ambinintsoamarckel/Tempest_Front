@@ -64,12 +64,9 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                     children: [
                       CircleAvatar(
                         radius: 60,
-                        backgroundImage: _groupPhotoFile != null
-                            ? FileImage(_groupPhotoFile!)
-                            : widget.groupe.photo != null
-                                ? NetworkImage(widget.groupe.photo!) as ImageProvider
-                                : const AssetImage('assets/default_group.png'), // Chemin vers une image par défaut
-                      ),
+                      backgroundImage: widget.groupe.photo != null ? NetworkImage(widget.groupe.photo!) : null,
+                          child: widget.groupe.photo == null ? const Icon(Icons.groups, size: 50) : null,
+                        ),                      
                       Positioned(
                         bottom: 0,
                         right: 0,
