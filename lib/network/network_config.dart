@@ -6,7 +6,7 @@ import './get_network_config.dart'
 class NetworkConfig {
   final _client = getClient()
     ..options = BaseOptions(
-      baseUrl: 'http://mahm.tempest.dov:3000',
+      baseUrl: 'https://tempest-3hs7.onrender.com',
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 6),
     );
