@@ -23,7 +23,7 @@ void main() async {
 
 Future<bool> checkConnectivity() async {
   try {
-    final result = await InternetAddress.lookup('mahm.tempest.dov');
+    final result = await InternetAddress.lookup('tempest-3hs7.onrender.com');
     return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
   } on SocketException catch (_) {
     return false;
