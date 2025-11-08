@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  cached_network_image: ^3.3.1
+  flutter_dotenv: ^5.1.0
   file_picker: ^10.3.3
   image_picker: ^1.2.0
   http: ^1.5.0
@@ -72,6 +73,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+      - .env
       - assets/images/logo.png
       - assets/images/avatar.png
       - assets/images/manga.png

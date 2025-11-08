@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart'; // Pour la gestion des formats de date
@@ -60,10 +61,16 @@ Widget _buildAvatar(Contact contact, BuildContext context) {
         padding: const EdgeInsets.all(3.0), // Espace entre l'avatar et la bordure bleue
         child: CircleAvatar(
           radius: 24.0,
-          backgroundImage: contact.photo != null ? NetworkImage(contact.photo!) : null,
-          child: contact.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+          child: ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: contact.photo ?? '',
+              placeholder: (context, url) => CircularProgressIndicator(),
+              errorWidget: (context, url, error) => Icon(Icons.person, size: 24.0),
+              fit: BoxFit.cover,
+              width: 48.0,
+              height: 48.0,
+            ),
+          )
         ),
       ),
     ),
@@ -238,7 +245,7 @@ Widget _buildStatus(Contact user) {
 
   bool _isUnread(String userId) {
     if (conversation.dernierMessage is DernierMessageUtilisateur) {
-      DernierMessageUtilisateur message = conversation.dernierMessage as DernierMessageUtilisateur;
+      DiernierMessageUtilisateur message = conversation.dernierMessage as DernierMessageUtilisateur;
       return message.expediteur != userId && !message.lu;
     } else if (conversation.dernierMessage is DernierMessageGroupe) {
       DernierMessageGroupe message = conversation.dernierMessage as DernierMessageGroupe;

@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/direct_message.dart' as direct;
 import 'package:mini_social_network/models/group_message.dart' as group;
@@ -13,7 +14,7 @@ class SocketService {
   final storage = const FlutterSecureStorage();
 
   void initializeSocket(id) {
-    socket = IO.io('http://mahm.tempest.dov:3000', <String, dynamic>{
+    socket = IO.io(dotenv.env['SOCKET_URL']!, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

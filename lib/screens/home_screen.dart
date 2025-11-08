@@ -6,6 +6,7 @@ import 'stories_screen.dart';
 import 'profile_screen.dart';
 import '../models/user.dart';
 import 'custom_search_delegate.dart';
+import '../utils/connectivity.dart'; // Importation du fichier centralisé
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,25 +29,15 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
     _tabController.addListener(() {
       setState(() {});
     });
-    _checkConnectivity();
+    _performConnectivityCheck();
   }
 
-  Future<void> _checkConnectivity() async {
-    try {
-      final result = await InternetAddress.lookup('tempest-3hs7.onrender.com');
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _isOnline = true;
-          });
-        }
-      }
-    } on SocketException catch (_) {
-      if (mounted) {
-        setState(() {
-          _isOnline = false;
-        });
-      }
+  Future<void> _performConnectivityCheck() async {
+    bool isConnected = await checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOnline = isConnected;
+      });
     }
   }
 

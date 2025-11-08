@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
@@ -8,26 +9,18 @@ import 'screens/register_screen.dart';
 import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import './socket/notification_service.dart';
-import 'dart:io';
+import 'utils/connectivity.dart'; // Importation du fichier centralisé
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
+  await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  bool isOnline = await checkConnectivity();
-  runApp(isOnline ? const MyApp() : const NoConnectionApp());
-}
-
-Future<bool> checkConnectivity() async {
-  try {
-    final result = await InternetAddress.lookup('tempest-3hs7.onrender.com');
-    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-  } on SocketException catch (_) {
-    return false;
-  }
+  // Démarrage non bloquant : lance toujours l'application principale
+  runApp(const MyApp());
 }
 
 class NoConnectionApp extends StatelessWidget {
@@ -44,7 +37,7 @@ class NoConnectionApp extends StatelessWidget {
         ),
         body: const Center(
           child: Text(
-            'Impossible de se connecter à mahm.tempest.com. Vérifiez votre connexion Internet.',
+            'Impossible de se connecter. Vérifiez votre connexion Internet.',
             textAlign: TextAlign.center,
           ),
         ),
@@ -66,15 +59,15 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       navigatorObservers: [routeObserver],
       title: 'Houatsappy',
-      debugShowCheckedModeBanner: false, // Désactive le ruban "Debug"
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.teal, // Couleur principale
+        primarySwatch: Colors.teal,
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: Colors.orange, // Couleur d'accentuation
+          secondary: Colors.orange,
         ),
-        scaffoldBackgroundColor: Colors.grey[200], // Couleur de fond
+        scaffoldBackgroundColor: Colors.grey[200],
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.teal, // Couleur de l'AppBar
+          backgroundColor: Colors.teal,
           titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -85,7 +78,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.teal, // Couleur du bouton flottant
+          backgroundColor: Colors.teal,
         ),
       ),
       initialRoute: '/',
@@ -99,6 +92,8 @@ class MyApp extends StatelessWidget {
         },
         '/register': (context) => const RegisterScreen(),
       },
+      // Affiche l'écran NoConnectionApp si la route n'est pas trouvée
+      onUnknownRoute: (settings) => MaterialPageRoute(builder: (context) => const NoConnectionApp()),
     );
   }
 }
@@ -117,17 +112,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkSession();
+    _initializeApp();
   }
 
-  void _checkSession() async {
+  void _initializeApp() async {
+    // Vérifie la connectivité avant tout
+    bool isConnected = await checkConnectivity();
+    if (!isConnected) {
+      // Redirige vers un écran d'erreur ou affiche un dialogue
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NoConnectionApp()));
+      return;
+    }
+
+    // Si connecté, vérifie la session
     try {
       UserModel isValidSession = await _userService.checkSession();
       socketService.initializeSocket(isValidSession.uid);
       Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
     } catch (e) {
+      // Si la session n'est pas valide, redirige vers la page de connexion
       Navigator.pushReplacementNamed(context, '/login');
-      rethrow;
+      // Pas de rethrow pour éviter les erreurs inutiles dans la console
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/messages.dart';
@@ -84,20 +85,24 @@ class ConversationListScreenState extends State<ConversationListScreen> with Rou
   Widget _buildAvatar(Contact contact, BuildContext context) {
     return GestureDetector(
       onTap: () {
-     _navigateToChatScreen(context, contact);
+        _navigateToChatScreen(context, contact);
       },
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
         ),
         child: CircleAvatar(
-          radius: 24.0,
-          backgroundImage: contact.photo != null
-              ? NetworkImage(contact.photo!)
-              : null,
-          child: contact.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+            radius: 24.0,
+            child: ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: contact.photo ?? '',
+                placeholder: (context, url) => CircularProgressIndicator(),
+                errorWidget: (context, url, error) => Icon(Icons.person, size: 24.0),
+                fit: BoxFit.cover,
+                width: 48.0,
+                height: 48.0,
+              ),
+            )
         ),
       ),
     );
