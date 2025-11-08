@@ -39,10 +39,12 @@ class ContactScreenState extends State<ContactScreen> {
   Future<void> _loadContacts() async {
     try {
       List<Contact> contacts = await _contactService.getContacts();
-      setState(() {
-        _contacts.addAll(contacts);
-        _filteredContacts.addAll(contacts);
-      });
+      if (mounted) {
+        setState(() {
+          _contacts.addAll(contacts);
+          _filteredContacts.addAll(contacts);
+        });
+      }
     } catch (e) {
       print('Failed to load contacts: $e');
     }
@@ -51,12 +53,14 @@ class ContactScreenState extends State<ContactScreen> {
   Future<void> _reload() async {
     try {
       List<Contact> contacts = await _contactService.getContacts();
-      setState(() {
-        _contacts.clear();
-        _filteredContacts.clear();
-        _contacts.addAll(contacts);
-        _filteredContacts.addAll(contacts);
-      });
+      if (mounted) {
+        setState(() {
+          _contacts.clear();
+          _filteredContacts.clear();
+          _contacts.addAll(contacts);
+          _filteredContacts.addAll(contacts);
+        });
+      }
     } catch (e) {
       print('Failed to load contacts: $e');
     }
@@ -99,24 +103,28 @@ class ContactScreenState extends State<ContactScreen> {
       return contact.nom.toLowerCase().contains(query.toLowerCase());
     }).toList();
 
-    setState(() {
-      _filteredContacts.clear();
-      _filteredContacts.addAll(filteredContacts);
-    });
+    if (mounted) {
+      setState(() {
+        _filteredContacts.clear();
+        _filteredContacts.addAll(filteredContacts);
+      });
+    }
   }
 
   void _toggleSelection(Contact contact) {
-    setState(() {
-      if (_selectedContacts.contains(contact)) {
-        _selectedContacts.remove(contact);
-        if (_selectedContacts.isEmpty) {
-          _isSelectionMode = false;
+    if (mounted) {
+      setState(() {
+        if (_selectedContacts.contains(contact)) {
+          _selectedContacts.remove(contact);
+          if (_selectedContacts.isEmpty) {
+            _isSelectionMode = false;
+          }
+        } else {
+          _selectedContacts.add(contact);
+          _isSelectionMode = true;
         }
-      } else {
-        _selectedContacts.add(contact);
-        _isSelectionMode = true;
-      }
-    });
+      });
+    }
   }
 
   void _showCreateGroupDialog() {
@@ -158,20 +166,24 @@ class ContactScreenState extends State<ContactScreen> {
       String? groupId = await _contactService.createGroup(userIds, groupName);
       // Afficher un message de succès ou naviguer vers l'écran du groupe nouvellement créé
       // Réinitialiser la sélection
-      setState(() {
-        _selectedContacts.clear();
-        _isSelectionMode = false;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GroupChatScreen(groupId: groupId!),
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _selectedContacts.clear();
+          _isSelectionMode = false;
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GroupChatScreen(groupId: groupId!),
+          ),
+        );
+      }
     } catch (e) {
       print('Failed to create group: $e');
       // Afficher un message d'erreur
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de la création du groupe')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Échec de la création du groupe')));
+      }
     }
   }
 

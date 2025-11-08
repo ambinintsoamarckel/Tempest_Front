@@ -7,6 +7,11 @@ const storage = FlutterSecureStorage();
 Dio getClient() {
   final dio = Dio();
 
+  // Augmenter les délais d'attente
+  dio.options.connectTimeout = const Duration(seconds: 30);
+  dio.options.receiveTimeout = const Duration(seconds: 30);
+  dio.options.sendTimeout = const Duration(seconds: 30);
+
   // Alternative pour ignorer les erreurs de certificat SSL
   (dio.httpClientAdapter as dynamic).onHttpClientCreate = (HttpClient client) {
     client.badCertificateCallback = (X509Certificate cert, String host, int port) {

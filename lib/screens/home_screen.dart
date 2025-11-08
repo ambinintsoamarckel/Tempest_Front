@@ -33,16 +33,20 @@ class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMi
 
   Future<void> _checkConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('https://tempest-3hs7.onrender.com');
+      final result = await InternetAddress.lookup('tempest-3hs7.onrender.com');
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        setState(() {
-          _isOnline = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isOnline = true;
+          });
+        }
       }
     } on SocketException catch (_) {
-      setState(() {
-        _isOnline = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isOnline = false;
+        });
+      }
     }
   }
 
