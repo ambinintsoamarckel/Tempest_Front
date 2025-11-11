@@ -245,7 +245,7 @@ Widget _buildStatus(Contact user) {
 
   bool _isUnread(String userId) {
     if (conversation.dernierMessage is DernierMessageUtilisateur) {
-      DiernierMessageUtilisateur message = conversation.dernierMessage as DernierMessageUtilisateur;
+      DernierMessageUtilisateur message = conversation.dernierMessage as DernierMessageUtilisateur;
       return message.expediteur != userId && !message.lu;
     } else if (conversation.dernierMessage is DernierMessageGroupe) {
       DernierMessageGroupe message = conversation.dernierMessage as DernierMessageGroupe;

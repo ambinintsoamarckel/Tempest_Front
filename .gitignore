@@ -23,7 +23,6 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -37,10 +36,27 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Flutter project files
+.metadata
+.packages
+
+# Android files
+/android/.gradle
+/android/local.properties
+/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# iOS files
+/ios/Pods/
+/ios/.symlinks/
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+**/ios/Flutter/.last_build_id
+
+# Ephemeral build files
+/ios/Flutter/ephemeral
+/macos/Flutter/ephemeral
+/windows/flutter/ephemeral
+/linux/flutter/ephemeral
 
 # Environment variables
 .env
