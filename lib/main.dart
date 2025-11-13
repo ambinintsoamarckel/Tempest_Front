@@ -9,7 +9,8 @@ import 'screens/register_screen.dart';
 import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import './socket/notification_service.dart';
-import 'utils/connectivity.dart'; // Importation du fichier centralisé
+import 'utils/connectivity.dart';
+import 'theme/app_theme.dart'; // Importer le nouveau thème
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -19,7 +20,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  // Démarrage non bloquant : lance toujours l'application principale
   runApp(const MyApp());
 }
 
@@ -31,14 +31,59 @@ class NoConnectionApp extends StatelessWidget {
     return MaterialApp(
       title: 'Pas de connexion',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Pas de connexion'),
+          centerTitle: true,
         ),
-        body: const Center(
-          child: Text(
-            'Impossible de se connecter. Vérifiez votre connexion Internet.',
-            textAlign: TextAlign.center,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi_off,
+                size: 80,
+                color: AppTheme.accentColor.withOpacity(0.6),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Pas de connexion Internet',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Vérifiez votre connexion et réessayez',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Redémarrer l'app ou réessayer la connexion
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SplashScreen()),
+                  );
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -60,27 +105,12 @@ class MyApp extends StatelessWidget {
       navigatorObservers: [routeObserver],
       title: 'Houatsappy',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: Colors.orange,
-        ),
-        scaffoldBackgroundColor: Colors.grey[200],
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.teal,
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          iconTheme: IconThemeData(
-            color: Colors.white,
-          ),
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.teal,
-        ),
-      ),
+
+      // Utilisation du nouveau système de thème
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // Suit le thème du système
+
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
@@ -92,8 +122,9 @@ class MyApp extends StatelessWidget {
         },
         '/register': (context) => const RegisterScreen(),
       },
-      // Affiche l'écran NoConnectionApp si la route n'est pas trouvée
-      onUnknownRoute: (settings) => MaterialPageRoute(builder: (context) => const NoConnectionApp()),
+      onUnknownRoute: (settings) => MaterialPageRoute(
+        builder: (context) => const NoConnectionApp(),
+      ),
     );
   }
 }
@@ -105,22 +136,61 @@ class SplashScreen extends StatefulWidget {
   _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   final UserService _userService = UserService();
   final socketService = SocketService();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
     _initializeApp();
   }
 
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _initializeApp() async {
+    // Attendre un peu pour l'animation
+    await Future.delayed(const Duration(milliseconds: 800));
+
     // Vérifie la connectivité avant tout
     bool isConnected = await checkConnectivity();
-    if (!isConnected) {
-      // Redirige vers un écran d'erreur ou affiche un dialogue
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const NoConnectionApp()));
+    if (!isConnected && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const NoConnectionApp()),
+      );
       return;
     }
 
@@ -128,18 +198,106 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       UserModel isValidSession = await _userService.checkSession();
       socketService.initializeSocket(isValidSession.uid);
-      Navigator.pushReplacementNamed(context, '/home', arguments: isValidSession);
+      if (mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+          arguments: isValidSession,
+        );
+      }
     } catch (e) {
       // Si la session n'est pas valide, redirige vers la page de connexion
-      Navigator.pushReplacementNamed(context, '/login');
-      // Pas de rethrow pour éviter les erreurs inutiles dans la console
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Center(
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo de l'application avec gradient
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.secondaryColor
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble,
+                        size: 60,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Nom de l'application
+                    const Text(
+                      'Houatsappy',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'Connectez-vous avec vos proches',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Indicateur de chargement moderne
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
