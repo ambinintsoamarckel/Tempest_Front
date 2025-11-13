@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'user.dart';
 
 enum MessageType { texte, image, fichier, audio, video }
 
@@ -45,32 +46,6 @@ class MessageContent {
   }
 }
 
-class User {
-  final String id;
-  final String nom;
-  final String email;
-  final String? photo;
-
-  User({required this.id, required this.nom, required this.email, this.photo});
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'],
-      nom: json['nom'],
-      email: json['email'],
-      photo: json['photo'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'nom': nom,
-      'email': email,
-      'photo': photo,
-    };
-  }
-}
 
 class Group {
   final String id;
@@ -145,7 +120,7 @@ class GroupMessage {
     required this.notification,
     required this.luPar,
     required this.dateEnvoi,
-      
+
   });
 
   factory GroupMessage.fromJson(Map<String, dynamic> json) {

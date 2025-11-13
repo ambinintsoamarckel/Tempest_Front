@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../models/direct_message.dart';
+import '../../models/user.dart';
 
 class MessageAvatar extends StatelessWidget {
   final User contact;

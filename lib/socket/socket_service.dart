@@ -5,7 +5,7 @@ import 'package:mini_social_network/models/group_message.dart' as group;
 import 'package:mini_social_network/screens/group_chat_screen.dart';
 import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:mini_social_network/screens/direct_chat_screen.dart';
+import 'package:mini_social_network/screens/direct/direct_chat_screen.dart';
 import 'notification_service.dart';
 import '../services/current_screen_manager.dart'; // Importez le CurrentScreenManager
 
@@ -65,11 +65,11 @@ class SocketService {
             final state = DirectChatScreen.directChatScreenKey.currentState;
 
             if (state != null) {
-            if(state.widget.id==message.expediteur.id)
+            if(state.widget.contactId==message.expediteur.id)
                 {
-                  state.widget.reload();    
+                  state.widget.reload();
                 }
-              
+
             }
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
@@ -79,7 +79,7 @@ class SocketService {
               state.widget.reload();
               }
           }
-          
+
       }
     }});
 
@@ -94,11 +94,11 @@ class SocketService {
             final state = DirectChatScreen.directChatScreenKey.currentState;
 
             if (state != null) {
-            if(state.widget.id==data['destinataire'])
+            if(state.widget.contactId==data['destinataire'])
                 {
-                  state.widget.reload();    
+                  state.widget.reload();
                 }
-              
+
             }
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
@@ -163,9 +163,9 @@ class SocketService {
             if (state != null) {
             if(state.widget.groupId==message.groupe.id)
                 {
-                  state.widget.reload();    
+                  state.widget.reload();
                 }
-              
+
             }
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
@@ -194,7 +194,7 @@ class SocketService {
         bool isMember = data['membres'].contains(user);
 
         if (isMember) {
-         
+
           if(data['vu']!=user)
           {
 
@@ -204,14 +204,14 @@ class SocketService {
             if (state != null) {
             if(state.widget.groupId==data['groupe'])
                 {
-                  state.widget.reload();    
+                  state.widget.reload();
                 }
-              
+
             }
           }
           if(CurrentScreenManager.currentScreen == 'conversationList')
           {
-            
+
             final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
@@ -231,12 +231,12 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     if(CurrentScreenManager.currentScreen == 'conversationList')
     {
-      
+
       final state = HomeScreenState.conversationListScreen.currentState;
       if (state != null) {
         state.widget.reload();
@@ -249,12 +249,12 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     if(CurrentScreenManager.currentScreen == 'conversationList')
     {
-      
+
       final state = HomeScreenState.conversationListScreen.currentState;
       if (state != null) {
         state.widget.reload();
@@ -266,12 +266,12 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     if(CurrentScreenManager.currentScreen == 'conversationList')
     {
-      
+
       final state = HomeScreenState.conversationListScreen.currentState;
       if (state != null) {
         state.widget.reload();
@@ -283,7 +283,7 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     });
@@ -292,7 +292,7 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     });
@@ -300,12 +300,12 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     if(CurrentScreenManager.currentScreen == 'conversationList')
     {
-      
+
       final state = HomeScreenState.conversationListScreen.currentState;
       if (state != null) {
         state.widget.reload();
@@ -317,7 +317,7 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
 
@@ -341,12 +341,12 @@ class SocketService {
      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();    
+        state.widget.reload();
         }
       }
     if(CurrentScreenManager.currentScreen == 'conversationList')
     {
-      
+
       final state = HomeScreenState.conversationListScreen.currentState;
       if (state != null) {
         state.widget.reload();

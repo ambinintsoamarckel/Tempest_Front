@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../screens/direct_chat_screen.dart';
+import '../screens/direct/direct_chat_screen.dart';
 import '../screens/group_chat_screen.dart';
 
 class NotificationService {
@@ -64,7 +64,7 @@ class NotificationService {
       print('Direct');
       _navigatorKey?.currentState?.push(
         MaterialPageRoute(
-          builder: (context) => DirectChatScreen(id: id),
+          builder: (context) => DirectChatScreen(contactId: id),
         ),
       );
     } else if (type == 'group') {

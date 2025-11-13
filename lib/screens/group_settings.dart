@@ -5,6 +5,7 @@ import 'package:mini_social_network/screens/membre_screen.dart';
 import '../models/group_message.dart';
 import '../services/discu_group_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mini_social_network/models/user.dart';
 
 class GroupSettingsScreen extends StatefulWidget {
   Group groupe;
@@ -66,7 +67,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                         radius: 60,
                       backgroundImage: widget.groupe.photo != null ? NetworkImage(widget.groupe.photo!) : null,
                           child: widget.groupe.photo == null ? const Icon(Icons.groups, size: 50) : null,
-                        ),                      
+                        ),
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -179,7 +180,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     if (_currentUserId == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     final members = widget.groupe.membres.where((member) => member.id != _currentUserId).toList();
 
     return ListView.builder(

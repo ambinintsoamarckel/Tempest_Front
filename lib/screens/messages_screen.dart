@@ -6,7 +6,7 @@ import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../main.dart';
 import  'all_screen.dart';
-import '../screens/direct_chat_screen.dart';
+import 'direct/direct_chat_screen.dart';
 import '../screens/group_chat_screen.dart';
 
 class ConversationListScreen extends StatefulWidget {
@@ -145,7 +145,7 @@ Widget _buildStatus(Contact user) {
     } else if (contact.type == "utilisateur") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DirectChatScreen(id: contact.id)),
+        MaterialPageRoute(builder: (context) => DirectChatScreen(contactId: contact.id)),
       );
     }
   }

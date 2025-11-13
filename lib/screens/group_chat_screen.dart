@@ -5,7 +5,7 @@ import 'package:mini_social_network/services/current_screen_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
 import '../models/group_message.dart';
-import '../widgets/group_message_widget.dart';
+import '../widgets/messages/group_message_widget.dart';
 import '../utils/discu_file_picker.dart';
 import '../services/discu_group_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -55,13 +55,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
   @override
   void initState() {
     super.initState();
-  
+
     _currentUser = _loadCurrentUser();
       _groupFuture = _loadGroup();
-    
+
     screenManager.updateCurrentScreen('groupChat');
         _initRecorder();
-        
+
 
   }
 
@@ -183,9 +183,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     setState(() {
       _messages.clear();
       _groupFuture = _loadGroup();
-      
+
     });
-      
+
   }
  void _handleSubmitted(String text) async {
     if (text.isEmpty) return;
@@ -342,7 +342,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
               },
                   ),
                 ),
-              
+
             if (_previewFile != null)
                   Container(
                     margin: const EdgeInsets.all(10.0),
@@ -383,7 +383,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                             children: [
                               Text(
                                 _previewFile!.path.split('/').last,
-                          
+
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 5),
@@ -409,10 +409,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                       ],
                     ),
                   ),
-              
+
                 if (_isRecording)
                   const RecordingWidget(),
-          
+
                 const Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
@@ -426,7 +426,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     );
   }
 
- 
+
   Widget _buildTextComposer() {
     return IconTheme(
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
@@ -578,7 +578,7 @@ void _showProgressDialog() {
     });
   }
 
- 
+
   void _transferMessage(String messageId) async {
       print('messaage : $messageId');
        Navigator.push<Contact>(

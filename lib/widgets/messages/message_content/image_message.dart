@@ -6,13 +6,14 @@ import '../cached_image.dart';
 class ImageMessage extends StatelessWidget {
   final String imageUrl;
   final String messageId;
-  final VoidCallback onSave;
+// image_message.dart
+  final VoidCallback? onSave;
 
   const ImageMessage({
     super.key,
     required this.imageUrl,
     required this.messageId,
-    required this.onSave,
+    this.onSave,
   });
 
   @override
@@ -56,7 +57,7 @@ class ImageMessage extends StatelessWidget {
                 icon: const Icon(Icons.download_rounded, color: Colors.white),
                 onPressed: () {
                   Navigator.pop(context);
-                  onSave();
+                  onSave?.call();
                 },
               ),
             ],

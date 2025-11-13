@@ -6,7 +6,7 @@ import '../../theme/app_theme.dart';
 class MessageOptionsSheet {
   static void show(
     BuildContext context, {
-    required DirectMessage message,
+    required dynamic message, // dynamic ou MessageBase
     required bool isContact,
     required VoidCallback onCopy,
     required Function(String) onTransfer,

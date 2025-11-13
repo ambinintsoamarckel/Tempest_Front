@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/direct_message.dart';
 import '../../utils/downloader.dart';
 import '../../theme/app_theme.dart';
+import '../../models/user.dart';
 import 'message_avatar.dart';
 import 'message_content/text_message.dart';
 import 'message_content/file_message.dart';

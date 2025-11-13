@@ -4,12 +4,12 @@ import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
-import '../screens/direct_chat_screen.dart';
+import 'direct/direct_chat_screen.dart';
 
 class ContactScreen extends StatefulWidget {
   final GlobalKey<ContactScreenState> contactScreenKey;
   const ContactScreen({required this.contactScreenKey}) : super(key: contactScreenKey);
-  
+
   @override
   ContactScreenState createState() => ContactScreenState();
 
@@ -86,7 +86,7 @@ class ContactScreenState extends State<ContactScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DirectChatScreen(id: contact.id),
+          builder: (context) => DirectChatScreen(contactId: contact.id),
         ),
       );
     }

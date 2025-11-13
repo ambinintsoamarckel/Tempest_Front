@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart'; // Pour la gestion des formats de date
 import '../models/messages.dart';
-import '../screens/direct_chat_screen.dart';
+import '../screens/direct/direct_chat_screen.dart';
 import '../screens/group_chat_screen.dart';
 import '../screens/all_screen.dart';
 
@@ -40,7 +40,7 @@ class ConversationWidget extends StatelessWidget {
     );
   }
 
-  
+
 Widget _buildAvatar(Contact contact, BuildContext context) {
   return GestureDetector(
     onTap: () {
@@ -90,7 +90,7 @@ Widget _buildAvatar(Contact contact, BuildContext context) {
 Widget _buildStatus(Contact user) {
   print('ato leka ${user.presence}');
 
-  
+
   // Vérifiez si user.story n'est pas vide
   if (user.presence!='inactif') {
     return Positioned(
@@ -125,7 +125,7 @@ Widget _buildStatus(Contact user) {
             leading:Stack(
                         children: [
                           _buildAvatar(conversation.contact,context),
-                          
+
                           _buildStatus(conversation.contact),
                         ],
                       ),
@@ -238,7 +238,7 @@ Widget _buildStatus(Contact user) {
     } else if (conversation.contact.type == "utilisateur") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DirectChatScreen(id: conversation.contact.id)),
+        MaterialPageRoute(builder: (context) => DirectChatScreen(contactId: conversation.contact.id)),
       );
     }
   }
@@ -284,12 +284,12 @@ Widget _buildStatus(Contact user) {
 
     if (difference == 0) {
   final DateTime adjustedDat = date.add(const Duration(hours: 3)); // Ajouter 3 heures pour GMT+3
-    return DateFormat.Hm().format(adjustedDat); 
+    return DateFormat.Hm().format(adjustedDat);
     } else if (difference == 1) {
       return 'Hier';
     } else {
-  return DateFormat('yyyy/MM/dd').format(messageDate); 
-    
+  return DateFormat('yyyy/MM/dd').format(messageDate);
+
     }
   }
 }

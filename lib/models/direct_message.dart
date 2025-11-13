@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'user.dart';
 
 enum MessageType { texte, image, fichier, audio, video }
 
@@ -88,58 +89,5 @@ class DirectMessage {
       'lu': lu,
       'dateLecture': dateLecture?.toIso8601String(),
     };
-  }
-}
-
-class User {
-  final String id;
-  final String nom;
-  final String email;
-  final String? photo;
-  final String presence; // ← AJOUT DU CHAMP PRESENCE
-
-  User({
-    required this.id,
-    required this.nom,
-    required this.email,
-    this.photo,
-    this.presence = 'inactif', // ← Valeur par défaut
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'] ?? '',
-      nom: json['nom'] ?? '',
-      email: json['email'] ?? '',
-      photo: json['photo'],
-      presence: json['presence'] ?? 'inactif', // ← AJOUT
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'nom': nom,
-      'email': email,
-      'photo': photo,
-      'presence': presence, // ← AJOUT
-    };
-  }
-
-  // Méthode utile pour copier avec modifications
-  User copyWith({
-    String? id,
-    String? nom,
-    String? email,
-    String? photo,
-    String? presence,
-  }) {
-    return User(
-      id: id ?? this.id,
-      nom: nom ?? this.nom,
-      email: email ?? this.email,
-      photo: photo ?? this.photo,
-      presence: presence ?? this.presence,
-    );
   }
 }
