@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 
-// Ajoute ce paramètre optionnel
 class MessageFooter extends StatelessWidget {
   final DateTime date;
   final bool isContact;
   final bool? isSending;
   final bool? sendFailed;
   final bool isRead;
-  final bool isGroup; // NOUVEAU
+  final bool isGroup;
 
   const MessageFooter({
     super.key,
@@ -31,10 +30,10 @@ class MessageFooter extends StatelessWidget {
         children: [
           Text(
             _formatDate(date),
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(fontSize: 11, color: Colors.grey.shade600),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                  color: isContact ? Colors.grey.shade600 : Colors.white70,
+                ),
           ),
           if (!isContact) ...[
             const SizedBox(width: 4),
@@ -46,22 +45,42 @@ class MessageFooter extends StatelessWidget {
   }
 
   Widget _buildStatusIcon() {
+    // ❌ Échec d'envoi
     if (sendFailed == true) {
-      return const Icon(Icons.error_outline,
-          color: AppTheme.accentColor, size: 16);
-    } else if (isSending == true) {
-      return const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2));
-    } else if (isGroup) {
-      return Icon(isRead ? Icons.done_all : Icons.done,
-          color: isRead ? Colors.blue : Colors.grey.shade500, size: 16);
-    } else {
-      return Icon(isRead ? Icons.done_all : Icons.done,
-          color: isRead ? AppTheme.secondaryColor : Colors.grey.shade500,
-          size: 16);
+      return const Icon(
+        Icons.error_outline,
+        color: Colors.redAccent,
+        size: 16,
+      );
     }
+
+    // ⏳ En cours d'envoi
+    if (isSending == true) {
+      return const SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+        ),
+      );
+    }
+
+    // ✅✅ Lu (double check bleu)
+    if (isRead) {
+      return Icon(
+        Icons.done_all,
+        color: isGroup ? Colors.blue : AppTheme.secondaryColor,
+        size: 16,
+      );
+    }
+
+    // ✅ Envoyé mais pas lu (simple check gris)
+    return Icon(
+      Icons.done,
+      color: Colors.grey.shade400,
+      size: 16,
+    );
   }
 
   String _formatDate(DateTime date) {

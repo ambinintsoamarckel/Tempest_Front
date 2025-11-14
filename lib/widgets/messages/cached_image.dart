@@ -1,10 +1,17 @@
 // lib/widgets/messages/cached_image.dart
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mini_social_network/theme/app_theme.dart';
 
 class CachedImage extends StatefulWidget {
   final String imageUrl;
-  const CachedImage({super.key, required this.imageUrl});
+  final VoidCallback? onImageLoaded;
+
+  const CachedImage({
+    super.key,
+    required this.imageUrl,
+    this.onImageLoaded,
+  });
 
   @override
   State<CachedImage> createState() => _CachedImageState();
@@ -15,30 +22,45 @@ class _CachedImageState extends State<CachedImage>
   @override
   bool get wantKeepAlive => true;
 
+  bool _hasNotified = false;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Image.network(
-      widget.imageUrl,
+
+    return CachedNetworkImage(
+      imageUrl: widget.imageUrl,
       fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          width: 250,
-          height: 200,
-          color: Colors.grey.shade200,
-          child: Center(
-            child: CircularProgressIndicator(
-              value: progress.expectedTotalBytes != null
-                  ? progress.cumulativeBytesLoaded /
-                      progress.expectedTotalBytes!
-                  : null,
-              color: AppTheme.primaryColor,
-            ),
-          ),
+
+      // ✅ Quand l'image est chargée (cache ou réseau)
+      imageBuilder: (context, imageProvider) {
+        if (!_hasNotified && widget.onImageLoaded != null) {
+          _hasNotified = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onImageLoaded?.call();
+          });
+        }
+
+        return Image(
+          image: imageProvider,
+          fit: BoxFit.cover,
         );
       },
-      errorBuilder: (_, __, ___) => Container(
+
+      // Pendant le chargement
+      placeholder: (context, url) => Container(
+        width: 250,
+        height: 200,
+        color: Colors.grey.shade200,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.primaryColor,
+          ),
+        ),
+      ),
+
+      // En cas d'erreur
+      errorWidget: (context, url, error) => Container(
         width: 250,
         height: 200,
         color: Colors.grey.shade300,
@@ -53,6 +75,13 @@ class _CachedImageState extends State<CachedImage>
           ],
         ),
       ),
+
+      // ✅ Options de cache
+      cacheKey: widget.imageUrl,
+      maxWidthDiskCache: 1000,
+      maxHeightDiskCache: 1000,
+      memCacheWidth: 500,
+      memCacheHeight: 500,
     );
   }
 }

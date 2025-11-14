@@ -6,14 +6,15 @@ import '../cached_image.dart';
 class ImageMessage extends StatelessWidget {
   final String imageUrl;
   final String messageId;
-// image_message.dart
   final VoidCallback? onSave;
+  final VoidCallback? onImageLoaded; // ✅ NOUVEAU
 
   const ImageMessage({
     super.key,
     required this.imageUrl,
     required this.messageId,
     this.onSave,
+    this.onImageLoaded, // ✅ NOUVEAU
   });
 
   @override
@@ -34,7 +35,10 @@ class ImageMessage extends StatelessWidget {
                     offset: const Offset(0, 4))
               ],
             ),
-            child: CachedImage(imageUrl: imageUrl),
+            child: CachedImage(
+              imageUrl: imageUrl,
+              onImageLoaded: onImageLoaded, // ✅ Passe le callback
+            ),
           ),
         ),
       ),

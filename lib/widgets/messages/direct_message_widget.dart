@@ -23,6 +23,8 @@ class DirectMessageWidget extends StatefulWidget {
   final DateTime? previousMessageDate;
   final bool? isSending;
   final bool? sendFailed;
+  final VoidCallback? onImageLoaded;
+
 
   const DirectMessageWidget({
     super.key,
@@ -34,9 +36,11 @@ class DirectMessageWidget extends StatefulWidget {
     this.previousMessageDate,
     this.isSending,
     this.sendFailed,
+    this.onImageLoaded,
   });
 
   @override
+
   State<DirectMessageWidget> createState() => _DirectMessageWidgetState();
 }
 
@@ -66,6 +70,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
           imageUrl: widget.message.contenu.image ?? '',
           messageId: widget.message.id,
           onSave: () => _saveFile(context),
+          onImageLoaded: widget.onImageLoaded, // ✅ AJOUTER
         );
         break;
       case MessageType.audio:

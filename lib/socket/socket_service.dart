@@ -35,7 +35,8 @@ class SocketService {
           String notificationContent;
           switch (message.contenu.type) {
             case direct.MessageType.texte:
-              notificationContent = message.contenu.texte ?? 'Vous avez reçu un nouveau message texte.';
+              notificationContent = message.contenu.texte ??
+                  'Vous avez reçu un nouveau message texte.';
               break;
             case direct.MessageType.image:
               notificationContent = 'Vous avez reçu une nouvelle image.';
@@ -65,23 +66,20 @@ class SocketService {
             final state = DirectChatScreen.directChatScreenKey.currentState;
 
             if (state != null) {
-            if(state.widget.contactId==message.expediteur.id)
-                {
-                  state.widget.reload();
-                }
-
+              if (state.widget.contactId == message.expediteur.id) {
+                state.widget.reloadFromSocket();
+              }
             }
           }
-          if(CurrentScreenManager.currentScreen == 'conversationList')
-          {
+          if (CurrentScreenManager.currentScreen == 'conversationList') {
             final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
-              }
+            }
           }
-
+        }
       }
-    }});
+    });
 
     socket!.on('message_lu_personne', (data) async {
       String? user = await storage.read(key: 'user');
@@ -90,23 +88,22 @@ class SocketService {
         print(data);
         if (user.trim() == data['expediteur'].toString().trim()) {
           print('Matched!');
-            if (CurrentScreenManager.currentScreen == 'directChat') {
+          if (CurrentScreenManager.currentScreen == 'directChat') {
             final state = DirectChatScreen.directChatScreenKey.currentState;
 
             if (state != null) {
-            if(state.widget.contactId==data['destinataire'])
-                {
-                  state.widget.reload();
-                }
+              if (state.widget.contactId == data['destinataire']) {
+                 print('Socket reloaded avant direct chat screen');
+                state.widget.reloadFromSocket();
 
+              }
             }
           }
-          if(CurrentScreenManager.currentScreen == 'conversationList')
-          {
+          if (CurrentScreenManager.currentScreen == 'conversationList') {
             final state = HomeScreenState.conversationListScreen.currentState;
             if (state != null) {
               state.widget.reload();
-              }
+            }
           }
         } else {
           print('Not matched');
@@ -127,56 +124,53 @@ class SocketService {
 
         if (isMember) {
           print('Utilisateur est membre du groupe');
-          if(message.expediteur.id!=user)
-          {
-             String notificationContent;
-          switch (message.contenu.type) {
-            case group.MessageType.texte:
-              notificationContent = message.contenu.texte ?? 'Vous avez reçu un nouveau message texte.';
-              break;
-            case group.MessageType.image:
-              notificationContent = 'Vous avez reçu une nouvelle image.';
-              break;
-            case group.MessageType.fichier:
-              notificationContent = 'Vous avez reçu un nouveau fichier.';
-              break;
-            case group.MessageType.audio:
-              notificationContent = 'Vous avez reçu un nouveau message audio.';
-              break;
-            case group.MessageType.video:
-              notificationContent = 'Vous avez reçu une nouvelle vidéo.';
-              break;
-            default:
-              notificationContent = 'Vous avez reçu un nouveau message.';
-          }
+          if (message.expediteur.id != user) {
+            String notificationContent;
+            switch (message.contenu.type) {
+              case group.MessageType.texte:
+                notificationContent = message.contenu.texte ??
+                    'Vous avez reçu un nouveau message texte.';
+                break;
+              case group.MessageType.image:
+                notificationContent = 'Vous avez reçu une nouvelle image.';
+                break;
+              case group.MessageType.fichier:
+                notificationContent = 'Vous avez reçu un nouveau fichier.';
+                break;
+              case group.MessageType.audio:
+                notificationContent =
+                    'Vous avez reçu un nouveau message audio.';
+                break;
+              case group.MessageType.video:
+                notificationContent = 'Vous avez reçu une nouvelle vidéo.';
+                break;
+              default:
+                notificationContent = 'Vous avez reçu un nouveau message.';
+            }
 
-          await NotificationService().showNotification(
-            0,
-            'Nouveau message de ${message.expediteur.nom}',
-            notificationContent,
-            'group|${message.groupe.id}', // Payload format: 'type|id'
-          );
-          // Vérifier l'écran actuel en utilisant CurrentScreenManager
-          if (CurrentScreenManager.currentScreen == 'groupChat') {
-            final state = GroupChatScreen.groupChatScreenKey.currentState;
+            await NotificationService().showNotification(
+              0,
+              'Nouveau message de ${message.expediteur.nom}',
+              notificationContent,
+              'group|${message.groupe.id}', // Payload format: 'type|id'
+            );
+            // Vérifier l'écran actuel en utilisant CurrentScreenManager
+            if (CurrentScreenManager.currentScreen == 'groupChat') {
+              final state = GroupChatScreen.groupChatScreenKey.currentState;
 
-            if (state != null) {
-            if(state.widget.groupId==message.groupe.id)
-                {
+              if (state != null) {
+                if (state.widget.groupId == message.groupe.id) {
                   state.widget.reload();
                 }
-
+              }
+            }
+            if (CurrentScreenManager.currentScreen == 'conversationList') {
+              final state = HomeScreenState.conversationListScreen.currentState;
+              if (state != null) {
+                state.widget.reload();
+              }
             }
           }
-          if(CurrentScreenManager.currentScreen == 'conversationList')
-          {
-            final state = HomeScreenState.conversationListScreen.currentState;
-            if (state != null) {
-              state.widget.reload();
-              }
-          }
-          }
-
         } else {
           print('Utilisateur n\'est pas membre du groupe');
         }
@@ -194,32 +188,24 @@ class SocketService {
         bool isMember = data['membres'].contains(user);
 
         if (isMember) {
+          if (data['vu'] != user) {
+            if (CurrentScreenManager.currentScreen == 'groupChat') {
+              final state = GroupChatScreen.groupChatScreenKey.currentState;
 
-          if(data['vu']!=user)
-          {
-
-          if (CurrentScreenManager.currentScreen == 'groupChat') {
-            final state = GroupChatScreen.groupChatScreenKey.currentState;
-
-            if (state != null) {
-            if(state.widget.groupId==data['groupe'])
-                {
+              if (state != null) {
+                if (state.widget.groupId == data['groupe']) {
                   state.widget.reload();
                 }
-
+              }
+            }
+            if (CurrentScreenManager.currentScreen == 'conversationList') {
+              final state = HomeScreenState.conversationListScreen.currentState;
+              if (state != null) {
+                state.widget.reload();
+              }
             }
           }
-          if(CurrentScreenManager.currentScreen == 'conversationList')
-          {
-
-            final state = HomeScreenState.conversationListScreen.currentState;
-            if (state != null) {
-              state.widget.reload();
-              }
-          }
-          }
-
-          }else {
+        } else {
           print('Utilisateur n\'est pas membre du groupe');
         }
       } else {
@@ -228,99 +214,89 @@ class SocketService {
     });
 
     socket!.on('utilisateur_cree', (message) {
-     if (CurrentScreenManager.currentScreen == 'contact') {
+      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
-    if(CurrentScreenManager.currentScreen == 'conversationList')
-    {
-
-      final state = HomeScreenState.conversationListScreen.currentState;
-      if (state != null) {
-        state.widget.reload();
+      if (CurrentScreenManager.currentScreen == 'conversationList') {
+        final state = HomeScreenState.conversationListScreen.currentState;
+        if (state != null) {
+          state.widget.reload();
         }
-    }
+      }
     });
 
-
     socket!.on('utilisateur_modifie', (message) {
-     if (CurrentScreenManager.currentScreen == 'contact') {
+      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
-    if(CurrentScreenManager.currentScreen == 'conversationList')
-    {
-
-      final state = HomeScreenState.conversationListScreen.currentState;
-      if (state != null) {
-        state.widget.reload();
+      if (CurrentScreenManager.currentScreen == 'conversationList') {
+        final state = HomeScreenState.conversationListScreen.currentState;
+        if (state != null) {
+          state.widget.reload();
         }
-    }
+      }
     });
 
     socket!.on('utilisateur_supprime', (message) {
-     if (CurrentScreenManager.currentScreen == 'contact') {
+      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
-    if(CurrentScreenManager.currentScreen == 'conversationList')
-    {
-
-      final state = HomeScreenState.conversationListScreen.currentState;
-      if (state != null) {
-        state.widget.reload();
+      if (CurrentScreenManager.currentScreen == 'conversationList') {
+        final state = HomeScreenState.conversationListScreen.currentState;
+        if (state != null) {
+          state.widget.reload();
         }
-    }
+      }
     });
 
     socket!.on('story_ajoutee', (message) {
-     if (CurrentScreenManager.currentScreen == 'story') {
+      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
     });
     socket!.on('story_expire', (message) {
       print('storyyyyyyiiization');
-     if (CurrentScreenManager.currentScreen == 'story') {
+      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
     });
     socket!.on('photo_changee', (message) {
-     if (CurrentScreenManager.currentScreen == 'contact') {
+      if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
-    if(CurrentScreenManager.currentScreen == 'conversationList')
-    {
-
-      final state = HomeScreenState.conversationListScreen.currentState;
-      if (state != null) {
-        state.widget.reload();
+      if (CurrentScreenManager.currentScreen == 'conversationList') {
+        final state = HomeScreenState.conversationListScreen.currentState;
+        if (state != null) {
+          state.widget.reload();
         }
-    }
+      }
     });
 
     socket!.on('story_supprimee', (message) {
-     if (CurrentScreenManager.currentScreen == 'story') {
+      if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
         if (state != null) {
-        state.widget.reload();
+          state.widget.reload();
         }
       }
-
     });
 
     socket!.on('story_vue', (viewers) async {
@@ -353,8 +329,6 @@ class SocketService {
         }
     }
     }); */
-
-
 
     socket!.on('membre_ajoute', (message) {
       print('eto ary $message');

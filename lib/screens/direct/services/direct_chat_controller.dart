@@ -7,42 +7,29 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:mini_social_network/models/direct_message.dart';
+import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/utils/file_picker.dart';
-import 'package:mini_social_network/theme/app_theme.dart';
 
-// ✅ Modèle pour message temporaire avec état d'envoi
-class OptimisticMessage {
-  final String tempId;
-  final DirectMessage? realMessage;
-  final String? text;
-  final File? file;
-  final String? fileType;
-  MessageSendStatus status;
-  double? uploadProgress;
+// ✅ Wrapper pour messages avec état d'envoi
+class MessageWrapper {
+  final DirectMessage message;
+  final bool isSending;
+  final bool sendFailed;
+  final String? tempId;
 
-  OptimisticMessage({
-    required this.tempId,
-    this.realMessage,
-    this.text,
-    this.file,
-    this.fileType,
-    this.status = MessageSendStatus.sending,
-    this.uploadProgress,
+  MessageWrapper({
+    required this.message,
+    this.isSending = false,
+    this.sendFailed = false,
+    this.tempId,
   });
-
-  bool get isSending => status == MessageSendStatus.sending;
-  bool get isFailed => status == MessageSendStatus.failed;
-  bool get isSent => status == MessageSendStatus.sent;
 }
-
-enum MessageSendStatus { sending, sent, failed }
 
 class DirectChatController extends ChangeNotifier {
   final String contactId;
   final MessageService messageService = MessageService();
-  final List<DirectMessage> messages = [];
-  final Map<String, OptimisticMessage> _optimisticMessages = {};
+  final List<MessageWrapper> messages = [];
   final TextEditingController textController = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
@@ -53,6 +40,9 @@ class DirectChatController extends ChangeNotifier {
   String? _previewType;
   bool _isLoading = true;
   bool _showAttachmentMenu = false;
+  User? _currentUser; // Pour créer les messages temporaires
+  int _imagesToLoad = 0; // ✅ Compteur d'images à charger
+  int _imagesLoaded = 0; // ✅ Compteur d'images chargées
 
   DirectChatController(this.contactId) {
     textController.addListener(notifyListeners);
@@ -66,16 +56,13 @@ class DirectChatController extends ChangeNotifier {
   bool get hasText => textController.text.trim().isNotEmpty;
   bool get showAttachmentMenu => _showAttachmentMenu;
 
-  // ✅ Messages combinés (réels + optimistes)
-  List<dynamic> get allMessages {
-    final combined = <dynamic>[...messages];
-    combined.addAll(_optimisticMessages.values);
-    combined.sort((a, b) {
-      final dateA = a is DirectMessage ? a.dateEnvoi : DateTime.now();
-      final dateB = b is DirectMessage ? b.dateEnvoi : DateTime.now();
-      return dateA.compareTo(dateB);
-    });
-    return combined;
+  // ✅ Notifie qu'une image est chargée
+  void onImageLoaded() {
+    _imagesLoaded++;
+    if (_imagesLoaded >= _imagesToLoad && _imagesToLoad > 0) {
+      // Toutes les images sont chargées, scroll maintenant
+      _scrollToBottom();
+    }
   }
 
   void toggleAttachmentMenu() {
@@ -92,11 +79,28 @@ class DirectChatController extends ChangeNotifier {
 
   Future<void> init() async {
     await _initRecorder();
+    await _loadCurrentUser();
     await reload();
+    _scrollToBottom(delayed: true); // ✅ Scroll initial avec délai
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      // Récupère l'utilisateur actuel depuis le service
+      final msgs = await messageService.receiveMessagesFromUrl(contactId);
+      if (msgs.isNotEmpty) {
+        // ✅ L'utilisateur actuel est celui qui N'EST PAS le contact
+        _currentUser = msgs[0].expediteur.id == contactId
+            ? msgs[0].destinataire
+            : msgs[0].expediteur;
+      }
+    } catch (e) {
+      print('❌ Erreur chargement user: $e');
+    }
   }
 
   Future<void> reload() async {
-    print('🔄 [DirectChat] reload() appelé pour contactId: $contactId');
+    print('🔄 [DirectChat] reload() appelé');
 
     try {
       _isLoading = true;
@@ -104,38 +108,43 @@ class DirectChatController extends ChangeNotifier {
 
       final loaded = await messageService
           .receiveMessagesFromUrl(contactId)
-          .timeout(const Duration(seconds: 15), onTimeout: () {
-        print('⏰ [DirectChat] Timeout API !');
-        return <DirectMessage>[];
-      });
+          .timeout(const Duration(seconds: 15),
+              onTimeout: () => <DirectMessage>[]);
 
       print('✅ [DirectChat] Messages reçus: ${loaded.length}');
 
+      // Garde les messages en cours d'envoi
+      final sendingMessages = messages.where((m) => m.isSending).toList();
+
       messages
         ..clear()
-        ..addAll(loaded);
+        ..addAll(loaded.map((m) => MessageWrapper(message: m)))
+        ..addAll(sendingMessages);
 
       _isLoading = false;
       notifyListeners();
-      print('✅ [DirectChat] reload() terminé');
-    } catch (e, s) {
-      print('❌ [DirectChat] Erreur reload(): $e');
-      print(s);
+    } catch (e) {
+      print('❌ [DirectChat] Erreur reload: $e');
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // ✅ Reload silencieux (sans loading, en arrière-plan)
   Future<void> _silentReload() async {
     try {
       final loaded = await messageService.receiveMessagesFromUrl(contactId);
+
+      // Remplace uniquement les messages non-temporaires
+      final sendingMessages = messages.where((m) => m.isSending).toList();
       messages
         ..clear()
-        ..addAll(loaded);
+        ..addAll(loaded.map((m) => MessageWrapper(message: m)))
+        ..addAll(sendingMessages);
+      print('Socket reloaded notify Litsenner direct chat screen');
+
       notifyListeners();
     } catch (e) {
-      print('❌ [DirectChat] Erreur silent reload: $e');
+      print('❌ Erreur silent reload: $e');
     }
   }
 
@@ -150,13 +159,13 @@ class DirectChatController extends ChangeNotifier {
   }
 
   Future<void> pickImage() async {
-    closeAttachmentMenu(); // ✅ Ferme le menu
+    closeAttachmentMenu();
     if (!await _requestPermissions([Permission.storage])) return;
 
     try {
       final file = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85, // Compression pour éviter crash
+        imageQuality: 85,
       );
       if (file != null) _setPreview(File(file.path), 'image');
     } catch (e) {
@@ -165,7 +174,7 @@ class DirectChatController extends ChangeNotifier {
   }
 
   Future<void> takePhoto() async {
-    closeAttachmentMenu(); // ✅ Ferme le menu
+    closeAttachmentMenu();
     if (!await _requestPermissions([Permission.camera])) return;
 
     try {
@@ -181,7 +190,7 @@ class DirectChatController extends ChangeNotifier {
   }
 
   Future<void> pickFile() async {
-    closeAttachmentMenu(); // ✅ Ferme le menu
+    closeAttachmentMenu();
     final path = await FilePickerUtil.pickFile();
     if (path != null) _setPreview(File(path), 'file');
   }
@@ -199,20 +208,33 @@ class DirectChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Envoi de texte optimiste (style WhatsApp)
+  // ✅ Envoi de texte optimiste
   Future<void> sendText(BuildContext context) async {
     final text = textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _currentUser == null) return;
 
-    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     textController.clear();
 
-    // Ajoute message optimiste immédiatement
-    _optimisticMessages[tempId] = OptimisticMessage(
-      tempId: tempId,
-      text: text,
-      status: MessageSendStatus.sending,
+    // Crée message temporaire
+    final tempMessage = DirectMessage(
+      id: tempId,
+      expediteur: _currentUser!, // ✅ Vous êtes l'expéditeur
+      destinataire: User(
+          id: contactId,
+          nom: '',
+          email: '',
+          photo: null), // ✅ Contact est le destinataire
+      contenu: MessageContent(type: MessageType.texte, texte: text),
+      dateEnvoi: DateTime.now(),
+      lu: false,
     );
+
+    messages.add(MessageWrapper(
+      message: tempMessage,
+      isSending: true,
+      tempId: tempId,
+    ));
     notifyListeners();
     _scrollToBottom();
 
@@ -220,60 +242,80 @@ class DirectChatController extends ChangeNotifier {
       await messageService.createMessage(contactId, {"texte": text});
 
       // Marque comme envoyé
-      _optimisticMessages[tempId]?.status = MessageSendStatus.sent;
-      notifyListeners();
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          isSending: false,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
 
-      // Reload silencieux après 500ms pour récupérer le vrai message
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Reload silencieux après 300ms
+      await Future.delayed(const Duration(milliseconds: 300));
       await _silentReload();
-      _optimisticMessages.remove(tempId);
-      notifyListeners();
     } catch (e) {
       // Marque comme échoué
-      _optimisticMessages[tempId]?.status = MessageSendStatus.failed;
-      notifyListeners();
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          sendFailed: true,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Échec de l\'envoi. Appuyez pour réessayer.')
-          ]),
+          content: const Text('Échec de l\'envoi'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'Réessayer',
             textColor: Colors.white,
-            onPressed: () => _retrySendText(tempId, text),
+            onPressed: () => _retryMessage(tempId, text),
           ),
         ),
       );
     }
   }
 
-  Future<void> _retrySendText(String tempId, String text) async {
-    _optimisticMessages[tempId]?.status = MessageSendStatus.sending;
+  Future<void> _retryMessage(String tempId, String text) async {
+    final index = messages.indexWhere((m) => m.tempId == tempId);
+    if (index == -1) return;
+
+    messages[index] = MessageWrapper(
+      message: messages[index].message,
+      isSending: true,
+      tempId: tempId,
+    );
     notifyListeners();
 
     try {
       await messageService.createMessage(contactId, {"texte": text});
-      _optimisticMessages[tempId]?.status = MessageSendStatus.sent;
+      messages[index] = MessageWrapper(
+        message: messages[index].message,
+        isSending: false,
+        tempId: tempId,
+      );
       notifyListeners();
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
       await _silentReload();
-      _optimisticMessages.remove(tempId);
-      notifyListeners();
     } catch (e) {
-      _optimisticMessages[tempId]?.status = MessageSendStatus.failed;
+      messages[index] = MessageWrapper(
+        message: messages[index].message,
+        sendFailed: true,
+        tempId: tempId,
+      );
       notifyListeners();
     }
   }
 
-  // ✅ Envoi de fichier optimiste avec progression
+  // ✅ Envoi de fichier optimiste
   Future<void> sendFile(BuildContext context) async {
-    if (_previewFile == null) return;
+    if (_previewFile == null || _currentUser == null) return;
 
     final size = await _previewFile!.length();
     if (size > 50 * 1024 * 1024) {
@@ -283,89 +325,73 @@ class DirectChatController extends ChangeNotifier {
       return;
     }
 
-    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final file = _previewFile!;
     final type = _previewType!;
 
     clearPreview();
 
-    // Ajoute fichier optimiste avec progression
-    _optimisticMessages[tempId] = OptimisticMessage(
-      tempId: tempId,
-      file: file,
-      fileType: type,
-      status: MessageSendStatus.sending,
-      uploadProgress: 0.0,
+    // Crée message temporaire
+    final contentType =
+        type == 'image' ? MessageType.image : MessageType.fichier;
+    final tempMessage = DirectMessage(
+      id: tempId,
+      expediteur: _currentUser!, // ✅ Vous êtes l'expéditeur
+      destinataire: User(
+          id: contactId,
+          nom: '',
+          email: '',
+          photo: null), // ✅ Contact est le destinataire
+      contenu: MessageContent(
+        type: contentType,
+        image: type == 'image' ? file.path : null,
+        fichier: type != 'image' ? file.path : null,
+      ),
+      dateEnvoi: DateTime.now(),
+      lu: false,
     );
+
+    messages.add(MessageWrapper(
+      message: tempMessage,
+      isSending: true,
+      tempId: tempId,
+    ));
     notifyListeners();
     _scrollToBottom();
 
     try {
-      // Simulation progression (remplacer par vraie progression si API le supporte)
-      _simulateUploadProgress(tempId);
-
       await messageService.sendFileToPerson(contactId, file.path);
 
-      _optimisticMessages[tempId]?.status = MessageSendStatus.sent;
-      _optimisticMessages[tempId]?.uploadProgress = 1.0;
-      notifyListeners();
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          isSending: false,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
 
       await Future.delayed(const Duration(milliseconds: 500));
       await _silentReload();
-      _optimisticMessages.remove(tempId);
-      notifyListeners();
     } catch (e) {
-      _optimisticMessages[tempId]?.status = MessageSendStatus.failed;
-      notifyListeners();
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          sendFailed: true,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Échec de l\'envoi du fichier'),
+        const SnackBar(
+          content: Text('Échec de l\'envoi du fichier'),
           backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Réessayer',
-            onPressed: () => _retrySendFile(tempId, file),
-          ),
         ),
       );
     }
-  }
-
-  Future<void> _retrySendFile(String tempId, File file) async {
-    _optimisticMessages[tempId]?.status = MessageSendStatus.sending;
-    _optimisticMessages[tempId]?.uploadProgress = 0.0;
-    notifyListeners();
-
-    try {
-      _simulateUploadProgress(tempId);
-      await messageService.sendFileToPerson(contactId, file.path);
-
-      _optimisticMessages[tempId]?.status = MessageSendStatus.sent;
-      _optimisticMessages[tempId]?.uploadProgress = 1.0;
-      notifyListeners();
-
-      await Future.delayed(const Duration(milliseconds: 500));
-      await _silentReload();
-      _optimisticMessages.remove(tempId);
-      notifyListeners();
-    } catch (e) {
-      _optimisticMessages[tempId]?.status = MessageSendStatus.failed;
-      notifyListeners();
-    }
-  }
-
-  void _simulateUploadProgress(String tempId) {
-    double progress = 0.0;
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      progress += 0.1;
-      final msg = _optimisticMessages[tempId];
-      if (msg == null || msg.status != MessageSendStatus.sending) {
-        timer.cancel();
-        return;
-      }
-      msg.uploadProgress = progress.clamp(0.0, 0.95);
-      notifyListeners();
-    });
   }
 
   Future<void> startRecording() async {
@@ -396,29 +422,40 @@ class DirectChatController extends ChangeNotifier {
 
   // ✅ Suppression optimiste
   Future<void> deleteMessage(String messageId) async {
-    // Retire immédiatement de la liste
-    messages.removeWhere((m) => m.id == messageId);
+    messages.removeWhere((m) => m.message.id == messageId);
     notifyListeners();
 
     try {
       await messageService.deleteMessage(messageId);
-      // Pas de reload nécessaire
     } catch (e) {
-      // En cas d'erreur, reload pour restaurer
       await _silentReload();
     }
   }
 
-  void _scrollToBottom() {
+  // ✅ Scroll amélioré avec délai pour attendre le chargement des images
+  void _scrollToBottom({bool delayed = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        if (delayed) {
+          // Attends que les images se chargent (500ms)
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (scrollController.hasClients) {
+              scrollController
+                  .jumpTo(scrollController.position.maxScrollExtent);
+            }
+          });
+        } else {
+          scrollController.jumpTo(scrollController.position.maxScrollExtent);
+        }
       }
     });
+  }
+
+  // ✅ Méthode publique pour reload depuis socket
+  Future<void> reloadFromSocket() async {
+    print('Socket reloaded zay vô tena controller direct chat screen');
+    await _silentReload();
+    _scrollToBottom(delayed: true); // Scroll avec délai pour les images
   }
 
   @override
