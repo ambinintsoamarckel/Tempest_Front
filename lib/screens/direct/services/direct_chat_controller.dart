@@ -10,6 +10,7 @@ import 'package:mini_social_network/models/direct_message.dart';
 import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/utils/file_picker.dart';
+import 'package:mini_social_network/services/user_service.dart';
 
 // ✅ Wrapper pour messages avec état d'envoi
 class MessageWrapper {
@@ -86,13 +87,17 @@ class DirectChatController extends ChangeNotifier {
 
   Future<void> _loadCurrentUser() async {
     try {
-      // Récupère l'utilisateur actuel depuis le service
-      final msgs = await messageService.receiveMessagesFromUrl(contactId);
-      if (msgs.isNotEmpty) {
-        // ✅ L'utilisateur actuel est celui qui N'EST PAS le contact
-        _currentUser = msgs[0].expediteur.id == contactId
-            ? msgs[0].destinataire
-            : msgs[0].expediteur;
+      final userService = UserService();
+      _currentUser = await userService.getCurrentUser();
+
+      if (_currentUser == null) {
+        // Fallback si l'utilisateur n'est pas connecté
+        _currentUser = User(
+          id: '',
+          nom: "Utilisateur",
+          email: "email@example.com",
+          photo: null,
+        );
       }
     } catch (e) {
       print('❌ Erreur chargement user: $e');
@@ -313,7 +318,7 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  // ✅ Envoi de fichier optimiste
+// ✅ Envoi de fichier optimiste - VERSION CORRIGÉE
   Future<void> sendFile(BuildContext context) async {
     if (_previewFile == null || _currentUser == null) return;
 
@@ -331,21 +336,49 @@ class DirectChatController extends ChangeNotifier {
 
     clearPreview();
 
+    // ✅ Détermine le type et assigne le bon champ
+    MessageType contentType;
+    String? imagePath;
+    String? fichierPath;
+    String? audioPath;
+    String? videoPath;
+
+    switch (type) {
+      case 'image':
+        contentType = MessageType.image;
+        imagePath = file.path;
+        break;
+      case 'audio':
+        contentType = MessageType.audio;
+        audioPath = file.path;
+        break;
+      case 'video':
+        contentType = MessageType.video;
+        videoPath = file.path;
+        break;
+      case 'file':
+      default:
+        contentType = MessageType.fichier;
+        fichierPath = file.path;
+        break;
+    }
+
     // Crée message temporaire
-    final contentType =
-        type == 'image' ? MessageType.image : MessageType.fichier;
     final tempMessage = DirectMessage(
       id: tempId,
-      expediteur: _currentUser!, // ✅ Vous êtes l'expéditeur
+      expediteur: _currentUser!,
       destinataire: User(
-          id: contactId,
-          nom: '',
-          email: '',
-          photo: null), // ✅ Contact est le destinataire
+        id: contactId,
+        nom: '',
+        email: '',
+        photo: null,
+      ),
       contenu: MessageContent(
         type: contentType,
-        image: type == 'image' ? file.path : null,
-        fichier: type != 'image' ? file.path : null,
+        image: imagePath,
+        fichier: fichierPath,
+        audio: audioPath,
+        video: videoPath,
       ),
       dateEnvoi: DateTime.now(),
       lu: false,
@@ -360,8 +393,16 @@ class DirectChatController extends ChangeNotifier {
     _scrollToBottom();
 
     try {
-      await messageService.sendFileToPerson(contactId, file.path);
+      // ✅ Envoie le fichier
+      final success =
+          await messageService.sendFileToPerson(contactId, file.path);
 
+      // ✅ Vérifie si l'envoi a réussi
+      if (!success) {
+        throw Exception('File upload failed');
+      }
+
+      // ✅ Marque comme envoyé
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -372,9 +413,14 @@ class DirectChatController extends ChangeNotifier {
         notifyListeners();
       }
 
+      // ✅ Reload silencieux après succès
       await Future.delayed(const Duration(milliseconds: 500));
       await _silentReload();
     } catch (e) {
+      print('❌ Erreur sendFile: $e');
+
+      // ✅ NE PAS faire de silent reload ici !
+      // Garde le message avec l'indicateur d'échec
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -385,12 +431,64 @@ class DirectChatController extends ChangeNotifier {
         notifyListeners();
       }
 
+      // ✅ Affiche l'erreur avec option de réessayer
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Échec de l\'envoi du fichier'),
+        SnackBar(
+          content: Text('Échec de l\'envoi du fichier: ${e.toString()}'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Réessayer',
+            textColor: Colors.white,
+            onPressed: () => _retryFileMessage(tempId, file.path, type),
+          ),
         ),
       );
+    }
+  }
+
+// ✅ Nouvelle méthode pour réessayer l'envoi d'un fichier
+  Future<void> _retryFileMessage(
+      String tempId, String filePath, String type) async {
+    final index = messages.indexWhere((m) => m.tempId == tempId);
+    if (index == -1) return;
+
+    // Remet en mode "envoi en cours"
+    messages[index] = MessageWrapper(
+      message: messages[index].message,
+      isSending: true,
+      tempId: tempId,
+    );
+    notifyListeners();
+
+    try {
+      final success =
+          await messageService.sendFileToPerson(contactId, filePath);
+
+      if (!success) {
+        throw Exception('File upload failed');
+      }
+
+      // Marque comme envoyé
+      messages[index] = MessageWrapper(
+        message: messages[index].message,
+        isSending: false,
+        tempId: tempId,
+      );
+      notifyListeners();
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _silentReload();
+    } catch (e) {
+      print('❌ Erreur retry file: $e');
+
+      // Marque comme échoué à nouveau
+      messages[index] = MessageWrapper(
+        message: messages[index].message,
+        sendFailed: true,
+        tempId: tempId,
+      );
+      notifyListeners();
     }
   }
 

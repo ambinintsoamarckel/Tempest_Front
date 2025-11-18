@@ -1,4 +1,4 @@
-// lib/screens/direct/direct_chat_screen.dart
+// lib/screens/direct/direct_chat_screen.dart - Version avec logs debug
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +13,7 @@ import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/screens/direct/widgets/message_date_badge.dart';
 import 'package:mini_social_network/screens/direct/services/direct_chat_controller.dart';
 import 'widgets/direct_chat_app_bar.dart';
+import 'package:mini_social_network/services/current_screen_manager.dart'; // ✅ AJOUT CRITIQUE
 
 class DirectChatScreen extends StatefulWidget {
   final String contactId;
@@ -20,17 +21,20 @@ class DirectChatScreen extends StatefulWidget {
       GlobalKey<_DirectChatScreenState>();
 
   DirectChatScreen({required this.contactId}) : super(key: directChatScreenKey);
+
   @override
   _DirectChatScreenState createState() => _DirectChatScreenState();
 
   void reload() {
     final state = directChatScreenKey.currentState;
+    print('🔵 [DirectChatScreen] reload() appelé depuis l\'extérieur');
     state?._reload();
   }
 
   void reloadFromSocket() {
     final state = directChatScreenKey.currentState;
-    print('Socket reloaded  anaty direct chat screen');
+    print(
+        '🔌 [DirectChatScreen] reloadFromSocket() appelé depuis SocketService');
     state?._reloadFromSocket();
   }
 }
@@ -38,37 +42,73 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   late final DirectChatController controller;
   DateTime? _previousDate;
+  int _updateCount = 0;
 
   @override
   void initState() {
     super.initState();
+    print('🟢 [DirectChatScreen] initState() - contactId: ${widget.contactId}');
+
+    // ✅ CRITIQUE : Mise à jour du current screen
+    CurrentScreenManager.currentScreen = 'directChat';
+    print(
+        '📍 [DirectChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
+
     controller = DirectChatController(widget.contactId)..init();
     controller.addListener(_onControllerUpdate);
+    print('✅ [DirectChatScreen] Listener ajouté au controller');
+
+    // ✅ Vérifier que le GlobalKey fonctionne
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final keyState = DirectChatScreen.directChatScreenKey.currentState;
+      if (keyState != null) {
+        print('✅ [DirectChatScreen] GlobalKey.currentState est accessible');
+      } else {
+        print('❌ [DirectChatScreen] GlobalKey.currentState est NULL !');
+      }
+    });
   }
 
   void _onControllerUpdate() {
-    print('Socket reloaded tonga à destination direct chat screen');
-    if (mounted) setState(() {});
+    _updateCount++;
+    print(
+        '🔔 [DirectChatScreen] _onControllerUpdate() appelé (#$_updateCount)');
+    print('   📊 Nombre de messages: ${controller.messages.length}');
+    print('   📍 Stack trace: ${StackTrace.current}');
+
+    if (mounted) {
+      print('   ✅ Widget mounted - setState() appelé');
+      setState(() {});
+    } else {
+      print('   ⚠️ Widget NOT mounted - setState() ignoré');
+    }
   }
 
   @override
   void dispose() {
+    print('🔴 [DirectChatScreen] dispose() - removing listener');
     controller.removeListener(_onControllerUpdate);
     controller.dispose();
     super.dispose();
   }
 
   Future<void> _reload() async {
+    print('🔄 [DirectChatScreen] _reload() appelé');
     await controller.reload();
+    print('✅ [DirectChatScreen] _reload() terminé');
   }
 
   Future<void> _reloadFromSocket() async {
-    print('Socket reloaded anaty controller direct chat screen');
+    print('🔌 [DirectChatScreen] _reloadFromSocket() appelé');
     await controller.reloadFromSocket();
+    print('✅ [DirectChatScreen] _reloadFromSocket() terminé');
   }
 
   @override
   Widget build(BuildContext context) {
+    print(
+        '🎨 [DirectChatScreen] build() appelé - messages: ${controller.messages.length}');
+
     return Scaffold(
       appBar: DirectChatAppBar(contactId: widget.contactId),
       body: Column(
@@ -114,6 +154,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       );
     }
 
+    print(
+        '📝 [DirectChatScreen] Rendering ${controller.messages.length} messages');
+
     return ListView.builder(
       controller: controller.scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -124,7 +167,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         final showDate = _shouldShowDate(msg.dateEnvoi);
         _previousDate = msg.dateEnvoi;
 
-        // ✅ Trouve le contact (celui qui N'EST PAS l'expéditeur du message)
         final contact = _getContact(msg);
 
         return Column(
@@ -151,7 +193,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         DateTime(_previousDate!.year, _previousDate!.month, _previousDate!.day);
   }
 
-  // ✅ Retourne le contact (celui avec contactId)
   User _getContact(DirectMessage msg) {
     return msg.expediteur.id == widget.contactId
         ? msg.expediteur

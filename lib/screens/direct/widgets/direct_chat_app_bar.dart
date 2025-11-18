@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mini_social_network/models/user.dart';
 import 'direct_app_bar.dart';
 import 'package:mini_social_network/services/discu_message_service.dart';
+import 'package:mini_social_network/services/user_service.dart';
 
 class DirectChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String contactId;
@@ -17,7 +18,7 @@ class DirectChatAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _DirectChatAppBarState extends State<DirectChatAppBar> {
-  late Future<User> _contactFuture;
+  late Future<User> _contactFuture; // ✅ Enlève le ?
 
   @override
   void initState() {
@@ -26,11 +27,29 @@ class _DirectChatAppBarState extends State<DirectChatAppBar> {
   }
 
   Future<User> _loadContact() async {
-    final service = MessageService();
-    final msgs = await service.receiveMessagesFromUrl(widget.contactId);
-    return msgs.isNotEmpty && msgs[0].expediteur.id == widget.contactId
-        ? msgs[0].expediteur
-        : msgs[0].destinataire;
+    // ✅ Enlève le ?
+    try {
+      final userService = UserService();
+      final contact = await userService.getContactById(widget.contactId);
+
+      // ✅ Utilise ?? pour garantir un retour non-null
+      return contact ??
+          User(
+            id: widget.contactId,
+            nom: "Contact inconnu",
+            email: "inconnu@example.com",
+            photo: null,
+          );
+    } catch (e) {
+      print('❌ Erreur chargement contact: $e');
+      // Retourne un user par défaut au lieu de null
+      return User(
+        id: widget.contactId,
+        nom: "Contact inconnu",
+        email: "inconnu@example.com",
+        photo: null,
+      );
+    }
   }
 
   @override

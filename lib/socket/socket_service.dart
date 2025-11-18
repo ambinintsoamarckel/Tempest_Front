@@ -1,3 +1,5 @@
+// socket_service.dart - REMPLACEZ votre fichier par celui-ci
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/direct_message.dart' as direct;
@@ -7,13 +9,23 @@ import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mini_social_network/screens/direct/direct_chat_screen.dart';
 import 'notification_service.dart';
-import '../services/current_screen_manager.dart'; // Importez le CurrentScreenManager
+import '../services/current_screen_manager.dart';
 
 class SocketService {
   IO.Socket? socket;
   final storage = const FlutterSecureStorage();
+  String? _currentUserId; // ✅ Cache l'ID utilisateur
 
-  void initializeSocket(id) {
+  void initializeSocket(id) async {
+    // ✅ Charge l'ID utilisateur UNE SEULE FOIS au démarrage
+    _currentUserId = await storage.read(key: 'user');
+    if (_currentUserId != null) {
+      _currentUserId = _currentUserId!.replaceAll('"', '').trim();
+      print('👤 [SocketService] Current user ID: $_currentUserId');
+    } else {
+      print('⚠️ [SocketService] Pas d\'ID utilisateur trouvé dans storage');
+    }
+
     socket = IO.io(dotenv.env['SOCKET_URL']!, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
@@ -22,313 +34,308 @@ class SocketService {
     socket!.connect();
 
     socket!.on('connect', (_) {
+      print('✅ Socket connecté');
       socket!.emit('user_connected', id);
     });
 
-    socket!.on('message_envoye_personne', (data) async {
-      String? user = await storage.read(key: 'user');
-      direct.DirectMessage message = direct.DirectMessage.fromJson(data);
+    // ✅ CORRECTION CRITIQUE : Message lu par une personne
+    socket!.on('message_lu_personne', (data) async {
+      try {
+        print('📖 [SocketService] message_lu_personne reçu');
+        print('   📦 Data brut: $data');
+        print('   👤 Current user: $_currentUserId');
 
-      if (user != null) {
-        user = user.replaceAll('"', '');
-        if (user.trim() == message.destinataire.id.trim()) {
-          String notificationContent;
-          switch (message.contenu.type) {
-            case direct.MessageType.texte:
-              notificationContent = message.contenu.texte ??
-                  'Vous avez reçu un nouveau message texte.';
-              break;
-            case direct.MessageType.image:
-              notificationContent = 'Vous avez reçu une nouvelle image.';
-              break;
-            case direct.MessageType.fichier:
-              notificationContent = 'Vous avez reçu un nouveau fichier.';
-              break;
-            case direct.MessageType.audio:
-              notificationContent = 'Vous avez reçu un nouveau message audio.';
-              break;
-            case direct.MessageType.video:
-              notificationContent = 'Vous avez reçu une nouvelle vidéo.';
-              break;
-            default:
-              notificationContent = 'Vous avez reçu un nouveau message.';
+        // ✅ Vérification si vous êtes l'expéditeur
+        final expediteur = data['expediteur'].toString().trim();
+        final destinataire = data['destinataire'].toString().trim();
+
+        print('   📤 Expéditeur du message: $expediteur');
+        print('   📥 Destinataire du message: $destinataire');
+
+        if (_currentUserId == null) {
+          print(
+              '❌ [SocketService] _currentUserId est null, impossible de comparer');
+          return;
+        }
+
+        if (_currentUserId == expediteur) {
+          print(
+              '✅ [SocketService] VOUS ÊTES L\'EXPÉDITEUR - Reload nécessaire!');
+          print('   🎯 Destinataire: $destinataire');
+          print('   📍 Current screen: ${CurrentScreenManager.currentScreen}');
+
+          // ✅ Reload direct chat si ouvert avec ce destinataire
+          if (CurrentScreenManager.currentScreen == 'directChat') {
+            print('🔄 [SocketService] Tentative reload direct chat...');
+            _reloadDirectChat(destinataire);
+          } else {
+            print(
+                '⚠️ [SocketService] Pas sur directChat (${CurrentScreenManager.currentScreen}), pas de reload');
           }
 
+          // ✅ Reload conversation list
+          if (CurrentScreenManager.currentScreen == 'conversationList') {
+            print('🔄 [SocketService] Reload conversation list');
+            _reloadConversationList();
+          }
+        } else {
+          print('⚠️ [SocketService] Vous n\'êtes PAS l\'expéditeur');
+          print('   Expéditeur attendu: $_currentUserId');
+          print('   Expéditeur reçu: $expediteur');
+        }
+      } catch (e, stack) {
+        print('❌ [SocketService] Erreur message_lu_personne: $e');
+        print('   Stack: $stack');
+      }
+    });
+
+    // ✅ Message envoyé à une personne
+    socket!.on('message_envoye_personne', (data) async {
+      try {
+        print('📩 [SocketService] message_envoye_personne reçu');
+        direct.DirectMessage message = direct.DirectMessage.fromJson(data);
+
+        if (_currentUserId != null &&
+            _currentUserId == message.destinataire.id.trim()) {
+          print('📩 Message reçu de ${message.expediteur.nom}');
+
+          // Notification
+          String notificationContent =
+              _getNotificationContent(message.contenu.type);
           await NotificationService().showNotification(
             0,
             'Nouveau message de ${message.expediteur.nom}',
             notificationContent,
-            'direct|${message.expediteur.id}', // Payload format: 'type|id'
+            'direct|${message.expediteur.id}',
           );
 
-          // Vérifier l'écran actuel en utilisant CurrentScreenManager
+          // ✅ Reload direct chat si ouvert avec ce contact
           if (CurrentScreenManager.currentScreen == 'directChat') {
-            final state = DirectChatScreen.directChatScreenKey.currentState;
-
-            if (state != null) {
-              if (state.widget.contactId == message.expediteur.id) {
-                state.widget.reloadFromSocket();
-              }
-            }
+            _reloadDirectChat(message.expediteur.id);
           }
+
+          // ✅ Reload conversation list
           if (CurrentScreenManager.currentScreen == 'conversationList') {
-            final state = HomeScreenState.conversationListScreen.currentState;
-            if (state != null) {
-              state.widget.reload();
-            }
+            _reloadConversationList();
           }
         }
+      } catch (e) {
+        print('❌ [SocketService] Erreur message_envoye_personne: $e');
       }
     });
 
-    socket!.on('message_lu_personne', (data) async {
-      String? user = await storage.read(key: 'user');
-      if (user != null) {
-        user = user.replaceAll('"', '');
-        print(data);
-        if (user.trim() == data['expediteur'].toString().trim()) {
-          print('Matched!');
-          if (CurrentScreenManager.currentScreen == 'directChat') {
-            final state = DirectChatScreen.directChatScreenKey.currentState;
-
-            if (state != null) {
-              if (state.widget.contactId == data['destinataire']) {
-                 print('Socket reloaded avant direct chat screen');
-                state.widget.reloadFromSocket();
-
-              }
-            }
-          }
-          if (CurrentScreenManager.currentScreen == 'conversationList') {
-            final state = HomeScreenState.conversationListScreen.currentState;
-            if (state != null) {
-              state.widget.reload();
-            }
-          }
-        } else {
-          print('Not matched');
-        }
-      } else {
-        print('User is null');
-      }
-    });
-
+    // Messages groupe (gardez votre code existant)
     socket!.on('message_envoye_groupe', (data) async {
-      print('Membres du groupe reçus: $data');
+      try {
+        group.GroupMessage message = group.GroupMessage.fromJson(data);
 
-      String? user = await storage.read(key: 'user');
-      group.GroupMessage message = group.GroupMessage.fromJson(data);
-      if (user != null) {
-        user = user.replaceAll('"', '').trim();
-        bool isMember = message.isUserInGroup(user);
+        if (_currentUserId != null) {
+          bool isMember = message.isUserInGroup(_currentUserId!);
 
-        if (isMember) {
-          print('Utilisateur est membre du groupe');
-          if (message.expediteur.id != user) {
-            String notificationContent;
-            switch (message.contenu.type) {
-              case group.MessageType.texte:
-                notificationContent = message.contenu.texte ??
-                    'Vous avez reçu un nouveau message texte.';
-                break;
-              case group.MessageType.image:
-                notificationContent = 'Vous avez reçu une nouvelle image.';
-                break;
-              case group.MessageType.fichier:
-                notificationContent = 'Vous avez reçu un nouveau fichier.';
-                break;
-              case group.MessageType.audio:
-                notificationContent =
-                    'Vous avez reçu un nouveau message audio.';
-                break;
-              case group.MessageType.video:
-                notificationContent = 'Vous avez reçu une nouvelle vidéo.';
-                break;
-              default:
-                notificationContent = 'Vous avez reçu un nouveau message.';
-            }
+          if (isMember && message.expediteur.id != _currentUserId) {
+            String notificationContent =
+                _getGroupNotificationContent(message.contenu.type);
 
             await NotificationService().showNotification(
               0,
               'Nouveau message de ${message.expediteur.nom}',
               notificationContent,
-              'group|${message.groupe.id}', // Payload format: 'type|id'
+              'group|${message.groupe.id}',
             );
-            // Vérifier l'écran actuel en utilisant CurrentScreenManager
+
             if (CurrentScreenManager.currentScreen == 'groupChat') {
               final state = GroupChatScreen.groupChatScreenKey.currentState;
-
-              if (state != null) {
-                if (state.widget.groupId == message.groupe.id) {
-                  state.widget.reload();
-                }
-              }
-            }
-            if (CurrentScreenManager.currentScreen == 'conversationList') {
-              final state = HomeScreenState.conversationListScreen.currentState;
-              if (state != null) {
+              if (state != null && state.widget.groupId == message.groupe.id) {
                 state.widget.reload();
               }
             }
+
+            if (CurrentScreenManager.currentScreen == 'conversationList') {
+              _reloadConversationList();
+            }
           }
-        } else {
-          print('Utilisateur n\'est pas membre du groupe');
         }
-      } else {
-        print('Utilisateur est null');
+      } catch (e) {
+        print('❌ Erreur message_envoye_groupe: $e');
       }
     });
 
     socket!.on('message_lu_groupe', (data) async {
-      print('Membres du groupe reçus: $data');
+      try {
+        if (_currentUserId != null) {
+          bool isMember = data['membres'].contains(_currentUserId);
 
-      String? user = await storage.read(key: 'user');
-      if (user != null) {
-        user = user.replaceAll('"', '').trim();
-        bool isMember = data['membres'].contains(user);
-
-        if (isMember) {
-          if (data['vu'] != user) {
+          if (isMember && data['vu'] != _currentUserId) {
             if (CurrentScreenManager.currentScreen == 'groupChat') {
               final state = GroupChatScreen.groupChatScreenKey.currentState;
-
-              if (state != null) {
-                if (state.widget.groupId == data['groupe']) {
-                  state.widget.reload();
-                }
-              }
-            }
-            if (CurrentScreenManager.currentScreen == 'conversationList') {
-              final state = HomeScreenState.conversationListScreen.currentState;
-              if (state != null) {
+              if (state != null && state.widget.groupId == data['groupe']) {
                 state.widget.reload();
               }
             }
+
+            if (CurrentScreenManager.currentScreen == 'conversationList') {
+              _reloadConversationList();
+            }
           }
-        } else {
-          print('Utilisateur n\'est pas membre du groupe');
         }
-      } else {
-        print('Utilisateur est null');
+      } catch (e) {
+        print('❌ Erreur message_lu_groupe: $e');
       }
     });
 
+    // ✅ Autres événements (gardez votre code existant)
+    _setupOtherListeners();
+
+    socket!.on('disconnect', (_) {
+      print('🔌 Socket déconnecté');
+      socket!.emit('user_disconnected', id);
+    });
+
+    socket!.on('message', (data) {
+      print('message: $data');
+    });
+  }
+
+  // ✅ Helper pour reload direct chat
+  void _reloadDirectChat(String contactId) {
+    print(
+        '🔍 [SocketService] Tentative reload direct chat avec contactId: $contactId');
+
+    final state = DirectChatScreen.directChatScreenKey.currentState;
+
+    if (state == null) {
+      print('❌ [SocketService] directChatScreenKey.currentState est NULL');
+      return;
+    }
+
+    print(
+        '✅ [SocketService] State trouvé, contactId du widget: ${state.widget.contactId}');
+
+    if (state.widget.contactId == contactId) {
+      print('✅ [SocketService] ContactId correspond! Appel reloadFromSocket()');
+      state.widget.reloadFromSocket();
+    } else {
+      print(
+          '⚠️ [SocketService] ContactId ne correspond pas: ${state.widget.contactId} != $contactId');
+    }
+  }
+
+  // ✅ Helper pour reload conversation list
+  void _reloadConversationList() {
+    final state = HomeScreenState.conversationListScreen.currentState;
+    if (state != null) {
+      print('🔄 Reload conversation list');
+      state.widget.reload();
+    }
+  }
+
+  // ✅ Helper pour notifications direct
+  String _getNotificationContent(direct.MessageType type) {
+    switch (type) {
+      case direct.MessageType.texte:
+        return 'Nouveau message texte';
+      case direct.MessageType.image:
+        return 'Nouvelle image';
+      case direct.MessageType.fichier:
+        return 'Nouveau fichier';
+      case direct.MessageType.audio:
+        return 'Nouveau message audio';
+      case direct.MessageType.video:
+        return 'Nouvelle vidéo';
+      default:
+        return 'Nouveau message';
+    }
+  }
+
+  // ✅ Helper pour notifications groupe
+  String _getGroupNotificationContent(group.MessageType type) {
+    switch (type) {
+      case group.MessageType.texte:
+        return 'Nouveau message texte';
+      case group.MessageType.image:
+        return 'Nouvelle image';
+      case group.MessageType.fichier:
+        return 'Nouveau fichier';
+      case group.MessageType.audio:
+        return 'Nouveau message audio';
+      case group.MessageType.video:
+        return 'Nouvelle vidéo';
+      default:
+        return 'Nouveau message';
+    }
+  }
+
+  void _setupOtherListeners() {
     socket!.on('utilisateur_cree', (message) {
       if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
       if (CurrentScreenManager.currentScreen == 'conversationList') {
-        final state = HomeScreenState.conversationListScreen.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        _reloadConversationList();
       }
     });
 
     socket!.on('utilisateur_modifie', (message) {
       if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
       if (CurrentScreenManager.currentScreen == 'conversationList') {
-        final state = HomeScreenState.conversationListScreen.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        _reloadConversationList();
       }
     });
 
     socket!.on('utilisateur_supprime', (message) {
       if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
       if (CurrentScreenManager.currentScreen == 'conversationList') {
-        final state = HomeScreenState.conversationListScreen.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        _reloadConversationList();
       }
     });
 
     socket!.on('story_ajoutee', (message) {
       if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
     });
+
     socket!.on('story_expire', (message) {
-      print('storyyyyyyiiization');
       if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
     });
+
     socket!.on('photo_changee', (message) {
       if (CurrentScreenManager.currentScreen == 'contact') {
         final state = HomeScreenState.contactScreenState.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
       if (CurrentScreenManager.currentScreen == 'conversationList') {
-        final state = HomeScreenState.conversationListScreen.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        _reloadConversationList();
       }
     });
 
     socket!.on('story_supprimee', (message) {
       if (CurrentScreenManager.currentScreen == 'story') {
         final state = HomeScreenState.storyScreenKey.currentState;
-        if (state != null) {
-          state.widget.reload();
-        }
+        state?.widget.reload();
       }
     });
 
     socket!.on('story_vue', (viewers) async {
-      String? user = await storage.read(key: 'user');
-      if (user != null) {
-        user = user.replaceAll('"', '');
-        if (user.trim() == viewers.toString().trim()) {
+      if (_currentUserId != null) {
+        if (_currentUserId == viewers.toString().trim()) {
           print('Matched!');
         } else {
           print('Not matched');
         }
-      } else {
-        print('User is null');
       }
     });
-
-/*     socket!.on('groupe_supprime', (message) {
-     if (CurrentScreenManager.currentScreen == 'contact') {
-        final state = HomeScreenState.contactScreenState.currentState;
-        if (state != null) {
-        state.widget.reload();
-        }
-      }
-    if(CurrentScreenManager.currentScreen == 'conversationList')
-    {
-
-      final state = HomeScreenState.conversationListScreen.currentState;
-      if (state != null) {
-        state.widget.reload();
-        }
-    }
-    }); */
 
     socket!.on('membre_ajoute', (message) {
       print('eto ary $message');
@@ -345,19 +352,6 @@ class SocketService {
     socket!.on('message_supprime', (message) {
       print('eto ary $message');
     });
-
-    socket!.on('membre_supprime', (message) {
-      print('eto ary $message');
-    });
-
-    socket!.on('disconnect', (_) {
-      print('déconnecté');
-      socket!.emit('user_disconnected', id);
-    });
-
-    socket!.on('message', (data) {
-      print('message: $data');
-    });
   }
 
   void sendMessage(String message) {
@@ -365,6 +359,6 @@ class SocketService {
   }
 
   void disconnect() {
-    socket!.disconnect();
+    socket?.disconnect();
   }
 }
