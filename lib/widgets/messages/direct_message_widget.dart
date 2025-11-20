@@ -25,7 +25,6 @@ class DirectMessageWidget extends StatefulWidget {
   final bool? sendFailed;
   final VoidCallback? onImageLoaded;
 
-
   const DirectMessageWidget({
     super.key,
     required this.message,
@@ -40,7 +39,6 @@ class DirectMessageWidget extends StatefulWidget {
   });
 
   @override
-
   State<DirectMessageWidget> createState() => _DirectMessageWidgetState();
 }
 
@@ -60,10 +58,13 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
         content = TextMessage(
             text: widget.message.contenu.texte ?? '', isContact: isContact);
         break;
+      // Dans la méthode build de DirectMessageWidget, modifier le case MessageType.fichier :
       case MessageType.fichier:
         content = FileMessage(
-            fileUrl: widget.message.contenu.fichier ?? '',
-            isContact: isContact);
+          fileUrl: widget.message.contenu.fichier ?? '',
+          isContact: isContact,
+          onSave: () => _saveFile(context), // ✅ Ajouter cette ligne
+        );
         break;
       case MessageType.image:
         content = ImageMessage(
