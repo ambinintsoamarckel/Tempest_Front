@@ -18,7 +18,7 @@ class GroupMessageWidget extends StatefulWidget {
   final GroupMessage message;
   final String currentUser;
   final VoidCallback? onCopy;
-  final Function(String) onDelete;
+  final Future<void> Function(String) onDelete;
   final Function(String) onTransfer;
   final VoidCallback? onSave;
 

@@ -18,7 +18,7 @@ class DirectMessageWidget extends StatefulWidget {
   final DirectMessage message;
   final User contact;
   final VoidCallback onCopy;
-  final Function(String) onDelete;
+  final Future<void> Function(String) onDelete;
   final Function(String) onTransfer;
   final DateTime? previousMessageDate;
   final bool? isSending;

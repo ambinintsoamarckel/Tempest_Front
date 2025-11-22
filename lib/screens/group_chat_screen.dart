@@ -18,9 +18,11 @@ import 'package:intl/intl.dart';
 import 'group_settings.dart';
 import '../widgets/RecordingWidget.dart';
 import '../main.dart';
+
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
-  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey = GlobalKey<_GroupChatScreenState>();
+  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey =
+      GlobalKey<_GroupChatScreenState>();
 
   GroupChatScreen({required this.groupId}) : super(key: groupChatScreenKey);
 
@@ -35,7 +37,7 @@ class GroupChatScreen extends StatefulWidget {
   }
 }
 
-class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
+class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware {
   final List<GroupMessage> _messages = [];
   final List<GroupMessage> _messagesSaved = [];
   final TextEditingController _textController = TextEditingController();
@@ -57,12 +59,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     super.initState();
 
     _currentUser = _loadCurrentUser();
-      _groupFuture = _loadGroup();
+    _groupFuture = _loadGroup();
 
     screenManager.updateCurrentScreen('groupChat');
-        _initRecorder();
-
-
+    _initRecorder();
   }
 
   Future<String> _loadCurrentUser() async {
@@ -73,11 +73,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
 
   Future<Group> _loadGroup() async {
     try {
-      List<GroupMessage> messages = await _messageService.receiveGroupMessages(widget.groupId);
+      List<GroupMessage> messages =
+          await _messageService.receiveGroupMessages(widget.groupId);
       setState(() {
         _messages.addAll(messages);
       });
-           WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToEnd();
       });
       return messages[0].groupe;
@@ -89,7 +90,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
 
   Future<void> _reload() async {
     try {
-      List<GroupMessage> messages = await _messageService.receiveGroupMessages(widget.groupId);
+      List<GroupMessage> messages =
+          await _messageService.receiveGroupMessages(widget.groupId);
       setState(() {
         _messages.clear();
         _messages.addAll(messages);
@@ -104,17 +106,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
   }
 
   Future<bool> _requestPermissions() async {
-    final List<Permission> permissions = [Permission.camera, Permission.storage];
-    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
+    final List<Permission> permissions = [
+      Permission.camera,
+      Permission.storage
+    ];
+    Map<Permission, PermissionStatus> permissionStatus =
+        await permissions.request();
 
     return permissionStatus[Permission.camera] == PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
   Future<bool> _requestRecorderPermissions() async {
-    final List<Permission> permissions = [Permission.microphone, Permission.storage];
-    Map<Permission, PermissionStatus> permissionStatus = await permissions.request();
-    return permissionStatus[Permission.microphone] == PermissionStatus.granted &&
+    final List<Permission> permissions = [
+      Permission.microphone,
+      Permission.storage
+    ];
+    Map<Permission, PermissionStatus> permissionStatus =
+        await permissions.request();
+    return permissionStatus[Permission.microphone] ==
+            PermissionStatus.granted &&
         permissionStatus[Permission.storage] == PermissionStatus.granted;
   }
 
@@ -126,7 +137,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       return;
     }
 
-    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final XFile? pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
         _previewFile = File(pickedImage.path);
@@ -138,7 +150,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
 
   Future<void> _pickFileAndSend() async {
     try {
-        print('lancement');
+      print('lancement');
       String? filePath = await FilePickerUtil.pickFile();
       if (filePath != null) {
         setState(() {
@@ -153,14 +165,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
   }
 
   Future<void> _takePhoto() async {
-      print('lancement');
+    print('lancement');
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
       print('Permissions not granted');
       return;
     }
 
-    final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.camera);
+    final XFile? pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
       setState(() {
         _previewFile = File(pickedImage.path);
@@ -169,7 +182,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       _scrollToEnd();
     }
   }
-@override
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final ModalRoute? route = ModalRoute.of(context);
@@ -177,24 +191,25 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       routeObserver.subscribe(this, route);
     }
   }
-    @override
+
+  @override
   void didPopNext() {
     super.didPopNext();
     setState(() {
       _messages.clear();
       _groupFuture = _loadGroup();
-
     });
-
   }
- void _handleSubmitted(String text) async {
+
+  void _handleSubmitted(String text) async {
     if (text.isEmpty) return;
 
     _textController.clear();
     FocusScope.of(context).unfocus(); // Fermer le clavier virtuel
 
     try {
-      bool? createdMessage = await _messageService.createMessage(widget.groupId, {"texte": text});
+      bool? createdMessage =
+          await _messageService.createMessage(widget.groupId, {"texte": text});
       if (createdMessage != null) {
         _reload();
         _scrollToEnd();
@@ -214,6 +229,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       ),
     );
   }
+
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -236,7 +252,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     final now = DateTime.now();
 
     final nowDate = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
+    final messageDate =
+        DateTime(adjustedDate.year, adjustedDate.month, adjustedDate.day);
 
     final difference = nowDate.difference(messageDate).inDays;
 
@@ -249,13 +266,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     }
   }
 
-
   bool _isLastReadMessageByCurrentUser(int index) {
     if (_messages.isEmpty || index != _messages.length - 1) return false;
     GroupMessage message = _messages[index];
     return message.luPar!.contains(widget.groupId);
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -271,21 +288,22 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
             }
           },
         ),
-         actions: [
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () async {
-            Group group = await _groupFuture;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => GroupSettingsScreen(groupe: group), // Pass group object
-              ),
-            );
-          },
-        ),
-      ],
-    ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () async {
+              Group group = await _groupFuture;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      GroupSettingsScreen(groupe: group), // Pass group object
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<Group>(
         future: _groupFuture,
         builder: (context, snapshot) {
@@ -300,50 +318,55 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                   child: FutureBuilder<String>(
                     future: _currentUser,
                     builder: (context, userSnapshot) {
-                      if (userSnapshot.connectionState == ConnectionState.waiting) {
+                      if (userSnapshot.connectionState ==
+                          ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (userSnapshot.hasError) {
                         return const Center(child: Text('Failed to load user'));
                       } else {
                         return ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    controller: _scrollController,
-                    itemBuilder: (_, int index) {
-                      GroupMessage message = _messages[index];
-                      bool showDate = _shouldShowDate(message.dateEnvoi);
+                          padding: const EdgeInsets.all(8.0),
+                          controller: _scrollController,
+                          itemBuilder: (_, int index) {
+                            GroupMessage message = _messages[index];
+                            bool showDate = _shouldShowDate(message.dateEnvoi);
 
-                      _previousMessageDate = message.dateEnvoi;
+                            _previousMessageDate = message.dateEnvoi;
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          if (showDate)
-                            Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 5.0),
-                              child: Text(
-                                _formatMessageDate(message.dateEnvoi),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                              ),
-                            ),
-                          GroupMessageWidget(
-                            message: _messages[index],
-                            currentUser: userSnapshot.data!,
-                            onDelete: (messageId) => _deleteMessage(messageId),
-                            onTransfer: _transferMessage,
-                            onCopy: () => _copyMessage(index),
-                          ),
-                        ],
-                      );
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (showDate)
+                                  Container(
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 5.0),
+                                    child: Text(
+                                      _formatMessageDate(message.dateEnvoi),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: Colors.grey),
+                                    ),
+                                  ),
+                                GroupMessageWidget(
+                                  message: _messages[index],
+                                  currentUser: userSnapshot.data!,
+                                  onDelete: (messageId) =>
+                                      _deleteMessage(messageId),
+                                  onTransfer: _transferMessage,
+                                  onCopy: () => _copyMessage(index),
+                                ),
+                              ],
+                            );
+                          },
+                          itemCount: _messages.length,
+                        );
+                      }
                     },
-                    itemCount: _messages.length,
-                  );
-                }
-              },
                   ),
                 ),
-
-            if (_previewFile != null)
+                if (_previewFile != null)
                   Container(
                     margin: const EdgeInsets.all(10.0),
                     padding: const EdgeInsets.all(10.0),
@@ -369,13 +392,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                             height: 70,
                             fit: BoxFit.cover,
                           ),
-                          const SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const SizedBox(
+                              width:
+                                  10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'audio') ...[
-                          const Icon(Icons.audiotrack, size: 100, color: Colors.blue),
-                          const SizedBox(width: 20), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const Icon(Icons.audiotrack,
+                              size: 100, color: Colors.blue),
+                          const SizedBox(
+                              width:
+                                  20), // Augmentation de la distance entre le fichier et le nom du fichier
                         ] else if (_previewType == 'file') ...[
-                          const Icon(Icons.insert_drive_file, size: 95, color: Colors.green),
-                          const SizedBox(width: 10), // Augmentation de la distance entre le fichier et le nom du fichier
+                          const Icon(Icons.insert_drive_file,
+                              size: 95, color: Colors.green),
+                          const SizedBox(
+                              width:
+                                  10), // Augmentation de la distance entre le fichier et le nom du fichier
                         ],
                         Expanded(
                           child: Column(
@@ -383,25 +414,32 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                             children: [
                               Text(
                                 _previewFile!.path.split('/').last,
-
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 5),
                               Center(
-                                child: Row (
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: _clearPreview,
-                                      child: const Icon(Icons.delete, size: 40, color: Colors.redAccent), // Icône pour annuler avec taille augmentée
-                                    ),
-                                    const SizedBox(width: 30), // Augmentation de la distance entre les icônes
-                                    GestureDetector(
-                                      onTap: () => _sendPreview(),
-                                      child: const Icon(Icons.upload, size: 40, color: Colors.greenAccent), // Icône pour envoyer
-                                    ),
-                                  ]
-                                ),
+                                child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: _clearPreview,
+                                        child: const Icon(Icons.delete,
+                                            size: 40,
+                                            color: Colors
+                                                .redAccent), // Icône pour annuler avec taille augmentée
+                                      ),
+                                      const SizedBox(
+                                          width:
+                                              30), // Augmentation de la distance entre les icônes
+                                      GestureDetector(
+                                        onTap: () => _sendPreview(),
+                                        child: const Icon(Icons.upload,
+                                            size: 40,
+                                            color: Colors
+                                                .greenAccent), // Icône pour envoyer
+                                      ),
+                                    ]),
                               ),
                             ],
                           ),
@@ -409,15 +447,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                       ],
                     ),
                   ),
-
-                if (_isRecording)
-                  const RecordingWidget(),
-
+                if (_isRecording) const RecordingWidget(),
                 const Divider(height: 1.0),
                 Container(
                   decoration: BoxDecoration(color: Theme.of(context).cardColor),
                   child: _buildTextComposer(),
-                   ),
+                ),
               ],
             );
           }
@@ -425,7 +460,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       ),
     );
   }
-
 
   Widget _buildTextComposer() {
     return IconTheme(
@@ -447,16 +481,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
               onPressed: () => _pickFileAndSend(),
             ),
             Flexible(
-            child: TextField(
-              controller: _textController,
-              onSubmitted: (text) => _handleSubmitted(text),
-              decoration: const InputDecoration.collapsed(
-                hintText: "Envoyer un message",
+              child: TextField(
+                controller: _textController,
+                onSubmitted: (text) => _handleSubmitted(text),
+                decoration: const InputDecoration.collapsed(
+                  hintText: "Envoyer un message",
+                ),
+                maxLines:
+                    null, // Permet au texte de se redimensionner automatiquement
+                minLines: 1, // Nombre minimum de lignes affichées
               ),
-              maxLines: null, // Permet au texte de se redimensionner automatiquement
-              minLines: 1, // Nombre minimum de lignes affichées
             ),
-          ),
             IconButton(
               icon: const Icon(Icons.send),
               onPressed: () => _handleSubmitted(_textController.text),
@@ -474,6 +509,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       ),
     );
   }
+
   Future<void> _initRecorder() async {
     _recorder = FlutterSoundRecorder();
     await _recorder!.openRecorder();
@@ -486,7 +522,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     }
 
     final Directory appDir = await getApplicationDocumentsDirectory();
-    final String filePath = '${appDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    final String filePath =
+        '${appDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
     await _recorder!.startRecorder(toFile: filePath);
     setState(() {
       _isRecording = true;
@@ -516,61 +553,66 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     });
   }
 
-Future<void> _sendPreview() async {
-  if (_previewFile == null) return;
+  Future<void> _sendPreview() async {
+    if (_previewFile == null) return;
 
-  _showProgressDialog();
+    _showProgressDialog();
 
-  try {
-    if (_previewType == 'image') {
-      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
-    } else if (_previewType == 'audio') {
-      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
-    } else if (_previewType == 'file') {
-      await _messageService.sendFileToGroup(widget.groupId, _previewFile!.path);
+    try {
+      if (_previewType == 'image') {
+        await _messageService.sendFileToGroup(
+            widget.groupId, _previewFile!.path);
+      } else if (_previewType == 'audio') {
+        await _messageService.sendFileToGroup(
+            widget.groupId, _previewFile!.path);
+      } else if (_previewType == 'file') {
+        await _messageService.sendFileToGroup(
+            widget.groupId, _previewFile!.path);
+      }
+
+      setState(() {
+        _previewFile = null;
+        _previewType = null;
+      });
+
+      _reload();
+    } catch (e) {
+      _showErrorSnackBar('Échec de l\'envoi du fichier : $e');
+    } finally {
+      Navigator.of(context).pop(); // Ferme la boîte de dialogue de progression
     }
-
-    setState(() {
-      _previewFile = null;
-      _previewType = null;
-    });
-
-    _reload();
-  } catch (e) {
-    _showErrorSnackBar('Échec de l\'envoi du fichier : $e');
-  } finally {
-    Navigator.of(context).pop(); // Ferme la boîte de dialogue de progression
   }
-}
 
-
-void _showProgressDialog() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return const Dialog(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text("Envoi en cours..."),
-            ],
+  void _showProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Dialog(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("Envoi en cours..."),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _recorder!.closeRecorder();
     super.dispose();
   }
-  void _deleteMessage(String messageId) async {
+
+// ✅ APRÈS
+  Future<void> _deleteMessage(String messageId) async {
     await _messageService.deleteMessage(messageId).catchError((e) {
       print('Failed to delete message: $e');
     }).whenComplete(() {
@@ -578,33 +620,31 @@ void _showProgressDialog() {
     });
   }
 
-
   void _transferMessage(String messageId) async {
-      print('messaage : $messageId');
-       Navigator.push<Contact>(
-        context,
-        MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),
-      );
-
-          _reload();
-
-    }
-
-
-void _copyMessage(int index) {
-  final text = _messages[index].contenu.texte;
-  if (text != null) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message copié dans le presse-papiers')),
+    print('messaage : $messageId');
+    Navigator.push<Contact>(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              ContaScreen(isTransferMode: true, id: messageId)),
     );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Aucun texte à copier')),
-    );
+
+    _reload();
   }
 
-}
+  void _copyMessage(int index) {
+    final text = _messages[index].contenu.texte;
+    if (text != null) {
+      Clipboard.setData(ClipboardData(text: text));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Message copié dans le presse-papiers')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucun texte à copier')),
+      );
+    }
+  }
 
   bool _shouldShowDate(DateTime currentMessageDate) {
     if (_previousMessageDate == null) return true;
@@ -622,10 +662,4 @@ void _copyMessage(int index) {
 
     return currentDate.isAfter(previousDate);
   }
-
-
-
-
-
 }
-
