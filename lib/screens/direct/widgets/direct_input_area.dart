@@ -73,48 +73,71 @@ class DirectInputArea extends StatelessWidget {
                   ),
                   child: TextField(
                     controller: controller.textController,
-                    onSubmitted: (_) => controller.sendText(context),
-                    decoration: const InputDecoration(
-                      hintText: "Message",
+                    onSubmitted: (_) => _handleSend(context),
+                    decoration: InputDecoration(
+                      hintText: controller.previewFile != null
+                          ? "Ajouter une légende (optionnel)"
+                          : "Message",
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     maxLines: null,
                   ),
                 ),
               ),
               const SizedBox(width: 4),
-              controller.hasText
-                  ? GestureDetector(
-                      onTap: () => controller.sendText(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primaryColor,
-                              AppTheme.secondaryColor,
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.send,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    )
-                  : VoiceRecordingButton(
-                      isRecording: controller.isRecording,
-                      onStartRecording: controller.startRecording,
-                      useModernMode: true,
-                    ),
+              _buildSendButton(context),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildSendButton(BuildContext context) {
+    // Si un fichier est en preview OU s'il y a du texte -> bouton send
+    final canSend = controller.previewFile != null || controller.hasText;
+
+    if (canSend) {
+      return GestureDetector(
+        onTap: () => _handleSend(context),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.primaryColor,
+                AppTheme.secondaryColor,
+              ],
+            ),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.send,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+      );
+    }
+
+    // Sinon -> bouton micro
+    return VoiceRecordingButton(
+      isRecording: controller.isRecording,
+      onStartRecording: controller.startRecording,
+      useModernMode: true,
+    );
+  }
+
+  void _handleSend(BuildContext context) {
+    // Si un fichier est en preview, envoyer le fichier (avec légende optionnelle)
+    if (controller.previewFile != null) {
+      controller.sendFile(context);
+    }
+    // Sinon, envoyer le texte
+    else if (controller.hasText) {
+      controller.sendText(context);
+    }
   }
 }
 

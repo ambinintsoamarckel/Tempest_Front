@@ -11,6 +11,7 @@ import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/utils/file_picker.dart';
 import 'package:mini_social_network/services/user_service.dart';
+import 'package:mini_social_network/screens/direct/widgets/file_preview.dart'; // ✅ Import pour detectFileType
 
 // ✅ Wrapper pour messages avec état d'envoi
 class MessageWrapper {
@@ -37,13 +38,12 @@ class DirectChatController extends ChangeNotifier {
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;
   String? _audioPath;
+  Duration _recordingDuration = Duration.zero; // ✅ NOUVEAU
   File? _previewFile;
   String? _previewType;
   bool _isLoading = true;
   bool _showAttachmentMenu = false;
-  User? _currentUser; // Pour créer les messages temporaires
-  int _imagesToLoad = 0; // ✅ Compteur d'images à charger
-  int _imagesLoaded = 0; // ✅ Compteur d'images chargées
+  User? _currentUser;
 
   DirectChatController(this.contactId) {
     textController.addListener(notifyListeners);
@@ -56,15 +56,8 @@ class DirectChatController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get hasText => textController.text.trim().isNotEmpty;
   bool get showAttachmentMenu => _showAttachmentMenu;
-
-  // ✅ Notifie qu'une image est chargée
-  void onImageLoaded() {
-    _imagesLoaded++;
-    if (_imagesLoaded >= _imagesToLoad && _imagesToLoad > 0) {
-      // Toutes les images sont chargées, scroll maintenant
-      _scrollToBottom();
-    }
-  }
+  String? get audioPath => _audioPath; // ✅ NOUVEAU
+  Duration get recordingDuration => _recordingDuration; // ✅ NOUVEAU
 
   void toggleAttachmentMenu() {
     _showAttachmentMenu = !_showAttachmentMenu;
@@ -82,7 +75,7 @@ class DirectChatController extends ChangeNotifier {
     await _initRecorder();
     await _loadCurrentUser();
     await reload();
-    _scrollToBottom(delayed: true); // ✅ Scroll initial avec délai
+    _scrollToBottom(delayed: true);
   }
 
   Future<void> _loadCurrentUser() async {
@@ -91,7 +84,6 @@ class DirectChatController extends ChangeNotifier {
       _currentUser = await userService.getCurrentUser();
 
       if (_currentUser == null) {
-        // Fallback si l'utilisateur n'est pas connecté
         _currentUser = User(
           id: '',
           nom: "Utilisateur",
@@ -118,7 +110,6 @@ class DirectChatController extends ChangeNotifier {
 
       print('✅ [DirectChat] Messages reçus: ${loaded.length}');
 
-      // Garde les messages en cours d'envoi
       final sendingMessages = messages.where((m) => m.isSending).toList();
 
       messages
@@ -139,13 +130,11 @@ class DirectChatController extends ChangeNotifier {
     try {
       final loaded = await messageService.receiveMessagesFromUrl(contactId);
 
-      // Remplace uniquement les messages non-temporaires
       final sendingMessages = messages.where((m) => m.isSending).toList();
       messages
         ..clear()
         ..addAll(loaded.map((m) => MessageWrapper(message: m)))
         ..addAll(sendingMessages);
-      print('Socket reloaded notify Litsenner direct chat screen');
 
       notifyListeners();
     } catch (e) {
@@ -194,10 +183,15 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
+  // ✅ CORRIGÉ : Détecte le vrai type dès la sélection
   Future<void> pickFile() async {
     closeAttachmentMenu();
     final path = await FilePickerUtil.pickFile();
-    if (path != null) _setPreview(File(path), 'file');
+    if (path != null) {
+      // ✅ Détecte automatiquement si c'est image/audio/video/file
+      final realType = FilePreview.detectFileType(path);
+      _setPreview(File(path), realType);
+    }
   }
 
   void _setPreview(File file, String type) {
@@ -209,11 +203,26 @@ class DirectChatController extends ChangeNotifier {
   void clearPreview() {
     _previewFile = null;
     _previewType = null;
-    _audioPath = null;
+    // ✅ Ne pas réinitialiser _audioPath ici
     notifyListeners();
   }
 
-  // ✅ Envoi de texte optimiste
+  // ✅ Méthode séparée pour clear l'audio complètement
+  void clearAudioPreview() {
+    if (_audioPath != null) {
+      try {
+        File(_audioPath!).delete();
+      } catch (e) {
+        print('❌ Erreur suppression audio: $e');
+      }
+    }
+    _audioPath = null;
+    _recordingDuration = Duration.zero;
+    _previewFile = null;
+    _previewType = null;
+    notifyListeners();
+  }
+
   Future<void> sendText(BuildContext context) async {
     final text = textController.text.trim();
     if (text.isEmpty || _currentUser == null) return;
@@ -221,15 +230,10 @@ class DirectChatController extends ChangeNotifier {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     textController.clear();
 
-    // Crée message temporaire
     final tempMessage = DirectMessage(
       id: tempId,
-      expediteur: _currentUser!, // ✅ Vous êtes l'expéditeur
-      destinataire: User(
-          id: contactId,
-          nom: '',
-          email: '',
-          photo: null), // ✅ Contact est le destinataire
+      expediteur: _currentUser!,
+      destinataire: User(id: contactId, nom: '', email: '', photo: null),
       contenu: MessageContent(type: MessageType.texte, texte: text),
       dateEnvoi: DateTime.now(),
       lu: false,
@@ -246,7 +250,6 @@ class DirectChatController extends ChangeNotifier {
     try {
       await messageService.createMessage(contactId, {"texte": text});
 
-      // Marque comme envoyé
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -257,11 +260,9 @@ class DirectChatController extends ChangeNotifier {
         notifyListeners();
       }
 
-      // Reload silencieux après 300ms
       await Future.delayed(const Duration(milliseconds: 300));
       await _silentReload();
     } catch (e) {
-      // Marque comme échoué
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -318,7 +319,7 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-// ✅ Envoi de fichier optimiste - VERSION CORRIGÉE
+  // ✅ CORRIGÉ : Crée le bon type de message dès le début
   Future<void> sendFile(BuildContext context) async {
     if (_previewFile == null || _currentUser == null) return;
 
@@ -332,9 +333,11 @@ class DirectChatController extends ChangeNotifier {
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final file = _previewFile!;
-    final type = _previewType!;
+    final type = _previewType!; // ✅ Maintenant c'est déjà le bon type !
+    final caption = textController.text.trim(); // ✅ Récupère la légende
 
     clearPreview();
+    textController.clear(); // ✅ Vide aussi le texte
 
     // ✅ Détermine le type et assigne le bon champ
     MessageType contentType;
@@ -342,11 +345,13 @@ class DirectChatController extends ChangeNotifier {
     String? fichierPath;
     String? audioPath;
     String? videoPath;
+    String? texte;
 
     switch (type) {
       case 'image':
         contentType = MessageType.image;
         imagePath = file.path;
+        texte = caption.isNotEmpty ? caption : null; // ✅ Légende optionnelle
         break;
       case 'audio':
         contentType = MessageType.audio;
@@ -355,6 +360,7 @@ class DirectChatController extends ChangeNotifier {
       case 'video':
         contentType = MessageType.video;
         videoPath = file.path;
+        texte = caption.isNotEmpty ? caption : null;
         break;
       case 'file':
       default:
@@ -363,7 +369,7 @@ class DirectChatController extends ChangeNotifier {
         break;
     }
 
-    // Crée message temporaire
+    // Crée message temporaire avec le BON type dès le début
     final tempMessage = DirectMessage(
       id: tempId,
       expediteur: _currentUser!,
@@ -379,6 +385,7 @@ class DirectChatController extends ChangeNotifier {
         fichier: fichierPath,
         audio: audioPath,
         video: videoPath,
+        texte: texte, // ✅ Légende si présente
       ),
       dateEnvoi: DateTime.now(),
       lu: false,
@@ -393,16 +400,13 @@ class DirectChatController extends ChangeNotifier {
     _scrollToBottom();
 
     try {
-      // ✅ Envoie le fichier
       final success =
           await messageService.sendFileToPerson(contactId, file.path);
 
-      // ✅ Vérifie si l'envoi a réussi
       if (!success) {
         throw Exception('File upload failed');
       }
 
-      // ✅ Marque comme envoyé
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -413,14 +417,11 @@ class DirectChatController extends ChangeNotifier {
         notifyListeners();
       }
 
-      // ✅ Reload silencieux après succès
       await Future.delayed(const Duration(milliseconds: 500));
       await _silentReload();
     } catch (e) {
       print('❌ Erreur sendFile: $e');
 
-      // ✅ NE PAS faire de silent reload ici !
-      // Garde le message avec l'indicateur d'échec
       final index = messages.indexWhere((m) => m.tempId == tempId);
       if (index != -1) {
         messages[index] = MessageWrapper(
@@ -431,7 +432,6 @@ class DirectChatController extends ChangeNotifier {
         notifyListeners();
       }
 
-      // ✅ Affiche l'erreur avec option de réessayer
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Échec de l\'envoi du fichier: ${e.toString()}'),
@@ -447,13 +447,11 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-// ✅ Nouvelle méthode pour réessayer l'envoi d'un fichier
   Future<void> _retryFileMessage(
       String tempId, String filePath, String type) async {
     final index = messages.indexWhere((m) => m.tempId == tempId);
     if (index == -1) return;
 
-    // Remet en mode "envoi en cours"
     messages[index] = MessageWrapper(
       message: messages[index].message,
       isSending: true,
@@ -469,7 +467,6 @@ class DirectChatController extends ChangeNotifier {
         throw Exception('File upload failed');
       }
 
-      // Marque comme envoyé
       messages[index] = MessageWrapper(
         message: messages[index].message,
         isSending: false,
@@ -482,7 +479,6 @@ class DirectChatController extends ChangeNotifier {
     } catch (e) {
       print('❌ Erreur retry file: $e');
 
-      // Marque comme échoué à nouveau
       messages[index] = MessageWrapper(
         message: messages[index].message,
         sendFailed: true,
@@ -500,25 +496,145 @@ class DirectChatController extends ChangeNotifier {
     await _recorder!.startRecorder(toFile: path);
     _isRecording = true;
     _audioPath = path;
+    _recordingDuration = Duration.zero; // ✅ Reset
     notifyListeners();
   }
 
   Future<void> stopRecording() async {
     await _recorder!.stopRecorder();
     _isRecording = false;
-    if (_audioPath != null) _setPreview(File(_audioPath!), 'audio');
+
+    // ✅ Récupère la durée réelle de l'enregistrement
+    if (_audioPath != null) {
+      // Note: La durée sera approximative basée sur le temps d'enregistrement
+      // Pour une durée exacte, il faudrait utiliser un package audio pour analyser le fichier
+      _setPreview(File(_audioPath!), 'audio');
+    }
     notifyListeners();
   }
 
   Future<void> cancelRecording() async {
     await _recorder!.stopRecorder();
-    if (_audioPath != null) await File(_audioPath!).delete();
+    if (_audioPath != null) {
+      try {
+        await File(_audioPath!).delete();
+      } catch (e) {
+        print('❌ Erreur suppression audio: $e');
+      }
+    }
     _isRecording = false;
     _audioPath = null;
+    _recordingDuration = Duration.zero;
     notifyListeners();
   }
 
-  // ✅ Suppression optimiste
+  // ✅ NOUVEAU : Méthode pour envoyer l'audio depuis le preview
+  Future<void> sendAudioFromPreview(BuildContext context) async {
+    if (_audioPath == null || _currentUser == null) return;
+
+    final audioFile = File(_audioPath!);
+    if (!await audioFile.exists()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fichier audio introuvable')),
+      );
+      return;
+    }
+
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final path = _audioPath!;
+    final duration = _recordingDuration;
+
+    // Clear preview
+    _audioPath = null;
+    _recordingDuration = Duration.zero;
+    notifyListeners();
+
+    // Crée message temporaire
+    final tempMessage = DirectMessage(
+      id: tempId,
+      expediteur: _currentUser!,
+      destinataire: User(
+        id: contactId,
+        nom: '',
+        email: '',
+        photo: null,
+      ),
+      contenu: MessageContent(
+        type: MessageType.audio,
+        audio: path,
+      ),
+      dateEnvoi: DateTime.now(),
+      lu: false,
+    );
+
+    messages.add(MessageWrapper(
+      message: tempMessage,
+      isSending: true,
+      tempId: tempId,
+    ));
+    notifyListeners();
+    _scrollToBottom();
+
+    try {
+      final success = await messageService.sendFileToPerson(contactId, path);
+
+      if (!success) {
+        throw Exception('Audio upload failed');
+      }
+
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          isSending: false,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _silentReload();
+    } catch (e) {
+      print('❌ Erreur sendAudio: $e');
+
+      final index = messages.indexWhere((m) => m.tempId == tempId);
+      if (index != -1) {
+        messages[index] = MessageWrapper(
+          message: tempMessage,
+          sendFailed: true,
+          tempId: tempId,
+        );
+        notifyListeners();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Échec de l\'envoi de l\'audio'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Réessayer',
+            textColor: Colors.white,
+            onPressed: () => _retryFileMessage(tempId, path, 'audio'),
+          ),
+        ),
+      );
+    }
+  }
+
+  // ✅ NOUVEAU : Annuler le preview audio
+  void cancelAudioPreview() {
+    if (_audioPath != null) {
+      try {
+        File(_audioPath!).delete();
+      } catch (e) {
+        print('❌ Erreur suppression: $e');
+      }
+    }
+    _audioPath = null;
+    _recordingDuration = Duration.zero;
+    notifyListeners();
+  }
+
   Future<void> deleteMessage(String messageId) async {
     messages.removeWhere((m) => m.message.id == messageId);
     notifyListeners();
@@ -530,12 +646,10 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  // ✅ Scroll amélioré avec délai pour attendre le chargement des images
   void _scrollToBottom({bool delayed = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
         if (delayed) {
-          // Attends que les images se chargent (500ms)
           Future.delayed(const Duration(milliseconds: 500), () {
             if (scrollController.hasClients) {
               scrollController
@@ -549,11 +663,10 @@ class DirectChatController extends ChangeNotifier {
     });
   }
 
-  // ✅ Méthode publique pour reload depuis socket
   Future<void> reloadFromSocket() async {
-    print('Socket reloaded zay vô tena controller direct chat screen');
+    print('🔌 Socket reload dans controller');
     await _silentReload();
-    _scrollToBottom(delayed: true); // Scroll avec délai pour les images
+    _scrollToBottom(delayed: true);
   }
 
   @override

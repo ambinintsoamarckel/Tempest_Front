@@ -2,46 +2,136 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class FilePreview extends StatelessWidget {
   final File file;
   final String type;
   final VoidCallback onCancel;
-  final VoidCallback onSend;
 
-  const FilePreview(
-      {super.key,
-      required this.file,
-      required this.type,
-      required this.onCancel,
-      required this.onSend});
+  const FilePreview({
+    super.key,
+    required this.file,
+    required this.type,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fileName = file.path.split('/').last;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Bouton fermer à gauche
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: onCancel,
+            tooltip: 'Annuler',
+          ),
+          const SizedBox(width: 8),
+
+          // Preview du fichier
+          Expanded(
+            child: type == 'audio'
+                ? _AudioPreviewContent(file: file)
+                : _FilePreviewContent(
+                    file: file, type: type, fileName: fileName),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Détection du vrai type selon l'extension (statique pour usage externe)
+  static String detectFileType(String filePath) {
+    final ext = filePath.split('.').last.toLowerCase();
+
+    // Images
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].contains(ext)) {
+      return 'image';
+    }
+
+    // Audio
+    if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'wma'].contains(ext)) {
+      return 'audio';
+    }
+
+    // Vidéo
+    if (['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv', 'webm', 'm4v']
+        .contains(ext)) {
+      return 'video';
+    }
+
+    // Sinon c'est un fichier générique
+    return 'file';
+  }
+}
+
+// ✅ Preview pour fichiers normaux (image/video/file)
+class _FilePreviewContent extends StatelessWidget {
+  final File file;
+  final String type;
+  final String fileName;
+
+  const _FilePreviewContent({
+    required this.file,
+    required this.type,
+    required this.fileName,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.previewContainerDecoration(context),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
       child: Row(
         children: [
-          _thumbnail(),
-          const SizedBox(width: 16),
+          // Thumbnail ou icône
+          _buildThumbnail(),
+          const SizedBox(width: 12),
+
+          // Infos fichier
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(file.path.split('/').last,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _actionButton(Icons.close, AppTheme.accentColor, onCancel),
-                    const SizedBox(width: 12),
-                    _actionButton(Icons.send, AppTheme.secondaryColor, onSend),
-                  ],
+                Text(
+                  fileName,
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getFileSize(),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -51,33 +141,277 @@ class FilePreview extends StatelessWidget {
     );
   }
 
-  Widget _thumbnail() {
-    if (type == 'image')
+  Widget _buildThumbnail() {
+    // Vérifier si c'est une image (par type OU par extension)
+    final isImage = type == 'image' || _isImageFile(fileName);
+
+    if (isImage) {
       return ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(file, width: 80, height: 80, fit: BoxFit.cover));
-    if (type == 'audio')
-      return _iconContainer(Icons.audiotrack, AppTheme.primaryColor);
-    return _iconContainer(Icons.insert_drive_file, AppTheme.secondaryColor);
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          file,
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildIconThumbnail(Icons.image, AppTheme.primaryColor);
+          },
+        ),
+      );
+    }
+
+    // Sinon, afficher l'icône correspondante
+    final icon = _getFileIcon(fileName);
+    final color =
+        type == 'video' ? AppTheme.secondaryColor : AppTheme.primaryColor;
+    return _buildIconThumbnail(icon, color);
   }
 
-  Widget _iconContainer(IconData icon, Color color) => Container(
-      width: 80,
-      height: 80,
+  Widget _buildIconThumbnail(IconData icon, Color color) {
+    return Container(
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12)),
-      child: Icon(icon, size: 40, color: color));
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, size: 28, color: color),
+    );
+  }
 
-  Widget _actionButton(IconData icon, Color color, VoidCallback onTap) =>
-      Material(
-        color: color.withOpacity(0.1),
+  bool _isImageFile(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].contains(ext);
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+
+    return switch (ext) {
+      // Documents
+      'pdf' => Icons.picture_as_pdf,
+      'doc' || 'docx' => Icons.description,
+      'txt' => Icons.text_snippet,
+      'rtf' => Icons.text_fields,
+
+      // Tableurs
+      'xls' || 'xlsx' || 'csv' => Icons.table_chart,
+
+      // Présentations
+      'ppt' || 'pptx' => Icons.slideshow,
+
+      // Archives
+      'zip' || 'rar' || '7z' || 'tar' || 'gz' => Icons.folder_zip,
+
+      // Code
+      'html' || 'css' || 'js' || 'jsx' => Icons.code,
+      'dart' || 'java' || 'py' || 'cpp' || 'c' => Icons.code,
+      'json' || 'xml' || 'yaml' => Icons.data_object,
+
+      // Images
+      'jpg' || 'jpeg' || 'png' || 'gif' || 'svg' => Icons.image,
+
+      // Vidéo
+      'mp4' || 'avi' || 'mov' || 'mkv' => Icons.video_file,
+
+      // Exécutables
+      'exe' || 'apk' || 'dmg' => Icons.apps,
+
+      // Défaut
+      _ => Icons.insert_drive_file,
+    };
+  }
+
+  String _getFileSize() {
+    try {
+      final bytes = file.lengthSync();
+      if (bytes < 1024) return '$bytes B';
+      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } catch (e) {
+      return 'Fichier';
+    }
+  }
+}
+
+// 🎵 Preview audio avec player intégré
+class _AudioPreviewContent extends StatefulWidget {
+  final File file;
+
+  const _AudioPreviewContent({required this.file});
+
+  @override
+  State<_AudioPreviewContent> createState() => _AudioPreviewContentState();
+}
+
+class _AudioPreviewContentState extends State<_AudioPreviewContent> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _currentPosition = Duration.zero;
+  Duration _totalDuration = Duration.zero;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAudioPlayer();
+  }
+
+  Future<void> _initAudioPlayer() async {
+    try {
+      // ✅ Charge l'audio pour récupérer la durée
+      await _audioPlayer.setSourceDeviceFile(widget.file.path);
+
+      _audioPlayer.onPlayerStateChanged.listen((state) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = state == PlayerState.playing;
+          });
+        }
+      });
+
+      _audioPlayer.onPositionChanged.listen((position) {
+        if (mounted) {
+          setState(() {
+            _currentPosition = position;
+          });
+        }
+      });
+
+      _audioPlayer.onDurationChanged.listen((duration) {
+        if (mounted) {
+          setState(() {
+            _totalDuration = duration;
+            _isInitialized = true;
+          });
+        }
+      });
+
+      _audioPlayer.onPlayerComplete.listen((_) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _currentPosition = Duration.zero;
+          });
+        }
+      });
+    } catch (e) {
+      print('❌ Erreur init audio: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlayPause() async {
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+      } else {
+        await _audioPlayer.resume();
+      }
+    } catch (e) {
+      print('❌ Erreur play/pause: $e');
+    }
+  }
+
+  Future<void> _seekTo(double value) async {
+    final position =
+        Duration(milliseconds: (value * _totalDuration.inMilliseconds).toInt());
+    await _audioPlayer.seek(position);
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _totalDuration.inMilliseconds > 0
+        ? _currentPosition.inMilliseconds / _totalDuration.inMilliseconds
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Icon(icon, color: color, size: 20))),
-      );
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Bouton play/pause
+          GestureDetector(
+            onTap: _isInitialized ? _togglePlayPause : null,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: AppTheme.primaryColor,
+                size: 24,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Waveform/Progress
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Barre de progression interactive
+                GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    if (_isInitialized && _totalDuration.inMilliseconds > 0) {
+                      final RenderBox box =
+                          context.findRenderObject() as RenderBox;
+                      final localPosition = details.localPosition.dx;
+                      final width = box.size.width;
+                      final value = (localPosition / width).clamp(0.0, 1.0);
+                      _seekTo(value);
+                    }
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor),
+                      minHeight: 4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Durée
+                Text(
+                  _isInitialized
+                      ? '${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}'
+                      : 'Chargement...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

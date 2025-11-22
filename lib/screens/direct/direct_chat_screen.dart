@@ -13,7 +13,7 @@ import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/screens/direct/widgets/message_date_badge.dart';
 import 'package:mini_social_network/screens/direct/services/direct_chat_controller.dart';
 import 'widgets/direct_chat_app_bar.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart'; // ✅ AJOUT CRITIQUE
+import 'package:mini_social_network/services/current_screen_manager.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String contactId;
@@ -114,19 +114,25 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
+
+          // ✅ Preview unifié pour TOUS les fichiers (image/video/file/audio)
           if (controller.previewFile != null)
             FilePreview(
               file: controller.previewFile!,
               type: controller.previewType!,
-              onCancel: controller.clearPreview,
-              onSend: () => controller.sendFile(context),
+              onCancel: controller.previewType == 'audio'
+                  ? controller.clearAudioPreview
+                  : controller.clearPreview,
             ),
+
+          // ✅ Interface d'enregistrement EN COURS
           if (controller.isRecording)
             RecordingInterface(
               onStop: controller.stopRecording,
               onCancel: controller.cancelRecording,
               showDuration: true,
             ),
+
           DirectInputArea(controller: controller),
         ],
       ),
