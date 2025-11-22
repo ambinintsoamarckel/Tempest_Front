@@ -12,6 +12,7 @@ import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/utils/file_picker.dart';
 import 'package:mini_social_network/services/user_service.dart';
 import 'package:mini_social_network/screens/direct/widgets/file_preview.dart'; // ✅ Import pour detectFileType
+import 'package:mini_social_network/models/message_content.dart';
 
 // ✅ Wrapper pour messages avec état d'envoi
 class MessageWrapper {

@@ -1,12 +1,14 @@
 // lib/widgets/messages/message_options_sheet.dart
 import 'package:flutter/material.dart';
 import '../../models/direct_message.dart';
+import '../../models/group_message.dart';
+import 'package:mini_social_network/models/message_content.dart';
 import '../../theme/app_theme.dart';
 
 class MessageOptionsSheet {
   static void show(
     BuildContext context, {
-    required dynamic message,
+    required dynamic message, // ✅ Accepte DirectMessage OU GroupMessage
     required bool isContact,
     required VoidCallback onCopy,
     required Function(String) onTransfer,
@@ -30,7 +32,7 @@ class MessageOptionsSheet {
 }
 
 class _OptionsSheetContent extends StatefulWidget {
-  final DirectMessage message;
+  final dynamic message; // ✅ DirectMessage ou GroupMessage
   final bool isContact;
   final VoidCallback onCopy;
   final Function(String) onTransfer;
@@ -73,6 +75,26 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent>
   void dispose() {
     _animController.dispose();
     super.dispose();
+  }
+
+  // ✅ Getter pour récupérer le type de message
+  MessageType get _messageType {
+    if (widget.message is DirectMessage) {
+      return (widget.message as DirectMessage).contenu.type;
+    } else if (widget.message is GroupMessage) {
+      return (widget.message as GroupMessage).contenu.type;
+    }
+    return MessageType.texte;
+  }
+
+  // ✅ Getter pour récupérer l'ID du message
+  String get _messageId {
+    if (widget.message is DirectMessage) {
+      return (widget.message as DirectMessage).id;
+    } else if (widget.message is GroupMessage) {
+      return (widget.message as GroupMessage).id;
+    }
+    return '';
   }
 
   @override
@@ -129,7 +151,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent>
                 const SizedBox(height: 16),
 
                 // Options avec animations
-                if (widget.message.contenu.type == MessageType.texte)
+                if (_messageType == MessageType.texte)
                   _buildAnimatedOption(
                     icon: Icons.copy_rounded,
                     title: 'Copier',
@@ -150,7 +172,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent>
                   delay: 50,
                   onTap: () {
                     Navigator.pop(context);
-                    widget.onTransfer(widget.message.id);
+                    widget.onTransfer(_messageId);
                   },
                 ),
 
@@ -159,7 +181,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent>
                   MessageType.fichier,
                   MessageType.audio,
                   MessageType.video
-                ].contains(widget.message.contenu.type))
+                ].contains(_messageType))
                   _buildAnimatedOption(
                     icon: Icons.download_rounded,
                     title: 'Télécharger',
@@ -291,7 +313,7 @@ class _OptionsSheetContentState extends State<_OptionsSheetContent>
 
 // ✅ Dialog séparé avec son propre context stable
 class _DeleteConfirmDialog extends StatefulWidget {
-  final DirectMessage message;
+  final dynamic message; // ✅ DirectMessage ou GroupMessage
   final Future<void> Function(String) onDelete;
 
   const _DeleteConfirmDialog({
@@ -305,6 +327,16 @@ class _DeleteConfirmDialog extends StatefulWidget {
 
 class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   bool _isDeleting = false;
+
+  // ✅ Getter pour récupérer l'ID du message
+  String get _messageId {
+    if (widget.message is DirectMessage) {
+      return (widget.message as DirectMessage).id;
+    } else if (widget.message is GroupMessage) {
+      return (widget.message as GroupMessage).id;
+    }
+    return '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -385,8 +417,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                 // Bouton Annuler
                 Expanded(
                   child: TextButton(
-                    onPressed:
-                        _isDeleting ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -452,8 +483,8 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
     setState(() => _isDeleting = true);
 
     try {
-      // ✅ Suppression
-      await widget.onDelete(widget.message.id);
+      // ✅ Suppression avec l'ID récupéré
+      await widget.onDelete(_messageId);
 
       // ✅ Fermer le dialog SI toujours monté
       if (mounted) {

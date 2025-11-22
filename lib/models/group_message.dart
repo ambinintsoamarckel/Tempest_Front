@@ -1,51 +1,8 @@
-import 'package:flutter/foundation.dart';
+// lib/models/group_message.dart
 import 'user.dart';
+import 'message_content.dart'; // ✅ Importer au lieu de redéfinir
 
-enum MessageType { texte, image, fichier, audio, video }
-
-class MessageContent {
-  final MessageType type;
-  final String? texte;
-  final String? image;
-  final String? fichier;
-  final String? audio;
-  final String? video;
-
-  MessageContent({
-    required this.type,
-    this.texte,
-    this.image,
-    this.fichier,
-    this.audio,
-    this.video,
-  });
-
-  factory MessageContent.fromJson(Map<String, dynamic> json) {
-    return MessageContent(
-      type: MessageType.values.firstWhere(
-        (e) => describeEnum(e) == json['type'],
-        orElse: () => MessageType.texte,
-      ),
-      texte: json['texte'],
-      image: json['image'],
-      fichier: json['fichier'],
-      audio: json['audio'],
-      video: json['video'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'type': describeEnum(type),
-      'texte': texte,
-      'image': image,
-      'fichier': fichier,
-      'audio': audio,
-      'video': video,
-    };
-  }
-}
-
+// ❌ SUPPRIMER tout le code de MessageType et MessageContent
 
 class Group {
   final String id;
@@ -55,11 +12,18 @@ class Group {
   final List<User> membres;
   User createur;
 
-  Group({required this.id, required this.nom, required this.description, this.photo, required this.membres, required this.createur});
+  Group(
+      {required this.id,
+      required this.nom,
+      required this.description,
+      this.photo,
+      required this.membres,
+      required this.createur});
 
   factory Group.fromJson(Map<String, dynamic> json) {
     var membresFromJson = json['membres'] as List;
-    List<User> membresList = membresFromJson.map((i) => User.fromJson(i)).toList();
+    List<User> membresList =
+        membresFromJson.map((i) => User.fromJson(i)).toList();
 
     return Group(
       id: json['_id'],
@@ -120,12 +84,12 @@ class GroupMessage {
     required this.notification,
     required this.luPar,
     required this.dateEnvoi,
-
   });
 
   factory GroupMessage.fromJson(Map<String, dynamic> json) {
     var luParFromJson = json['luPar'] as List;
-    List<LuPar> luParList = luParFromJson.map((i) => LuPar.fromJson(i)).toList();
+    List<LuPar> luParList =
+        luParFromJson.map((i) => LuPar.fromJson(i)).toList();
 
     return GroupMessage(
       id: json['_id'],
@@ -137,7 +101,8 @@ class GroupMessage {
       luPar: luParList,
     );
   }
-   bool isUserInGroup(String userId) {
+
+  bool isUserInGroup(String userId) {
     return groupe.membres.any((membre) => membre.id == userId);
   }
 

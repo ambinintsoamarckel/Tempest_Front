@@ -13,7 +13,7 @@ import 'message_content/video_message.dart';
 import 'message_content/unsupported_message.dart';
 import 'message_footer.dart';
 import 'message_options_sheet.dart';
-
+import 'package:mini_social_network/models/message_content.dart';
 class GroupMessageWidget extends StatefulWidget {
   final GroupMessage message;
   final String currentUser;
