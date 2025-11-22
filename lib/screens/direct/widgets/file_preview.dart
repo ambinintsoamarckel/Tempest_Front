@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:mini_social_network/widgets/audio_player_widget.dart'; // ✅ Import du nouveau widget
 
 class FilePreview extends StatelessWidget {
   final File file;
@@ -45,16 +45,23 @@ class FilePreview extends StatelessWidget {
           // Preview du fichier
           Expanded(
             child: type == 'audio'
-                ? _AudioPreviewContent(file: file)
+                ? AudioPlayerWidget(
+                    audioFile: file,
+                    primaryColor: AppTheme.primaryColor,
+                    showFileName: true,
+                  )
                 : _FilePreviewContent(
-                    file: file, type: type, fileName: fileName),
+                    file: file,
+                    type: type,
+                    fileName: fileName,
+                  ),
           ),
         ],
       ),
     );
   }
 
-  // ✅ Détection du vrai type selon l'extension (statique pour usage externe)
+  /// Détection du vrai type selon l'extension (statique pour usage externe)
   static String detectFileType(String filePath) {
     final ext = filePath.split('.').last.toLowerCase();
 
@@ -79,7 +86,7 @@ class FilePreview extends StatelessWidget {
   }
 }
 
-// ✅ Preview pour fichiers normaux (image/video/file)
+/// Preview pour fichiers normaux (image/video/file)
 class _FilePreviewContent extends StatelessWidget {
   final File file;
   final String type;
@@ -231,187 +238,5 @@ class _FilePreviewContent extends StatelessWidget {
     } catch (e) {
       return 'Fichier';
     }
-  }
-}
-
-// 🎵 Preview audio avec player intégré
-class _AudioPreviewContent extends StatefulWidget {
-  final File file;
-
-  const _AudioPreviewContent({required this.file});
-
-  @override
-  State<_AudioPreviewContent> createState() => _AudioPreviewContentState();
-}
-
-class _AudioPreviewContentState extends State<_AudioPreviewContent> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _isPlaying = false;
-  Duration _currentPosition = Duration.zero;
-  Duration _totalDuration = Duration.zero;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initAudioPlayer();
-  }
-
-  Future<void> _initAudioPlayer() async {
-    try {
-      // ✅ Charge l'audio pour récupérer la durée
-      await _audioPlayer.setSourceDeviceFile(widget.file.path);
-
-      _audioPlayer.onPlayerStateChanged.listen((state) {
-        if (mounted) {
-          setState(() {
-            _isPlaying = state == PlayerState.playing;
-          });
-        }
-      });
-
-      _audioPlayer.onPositionChanged.listen((position) {
-        if (mounted) {
-          setState(() {
-            _currentPosition = position;
-          });
-        }
-      });
-
-      _audioPlayer.onDurationChanged.listen((duration) {
-        if (mounted) {
-          setState(() {
-            _totalDuration = duration;
-            _isInitialized = true;
-          });
-        }
-      });
-
-      _audioPlayer.onPlayerComplete.listen((_) {
-        if (mounted) {
-          setState(() {
-            _isPlaying = false;
-            _currentPosition = Duration.zero;
-          });
-        }
-      });
-    } catch (e) {
-      print('❌ Erreur init audio: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  Future<void> _togglePlayPause() async {
-    try {
-      if (_isPlaying) {
-        await _audioPlayer.pause();
-      } else {
-        await _audioPlayer.resume();
-      }
-    } catch (e) {
-      print('❌ Erreur play/pause: $e');
-    }
-  }
-
-  Future<void> _seekTo(double value) async {
-    final position =
-        Duration(milliseconds: (value * _totalDuration.inMilliseconds).toInt());
-    await _audioPlayer.seek(position);
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = _totalDuration.inMilliseconds > 0
-        ? _currentPosition.inMilliseconds / _totalDuration.inMilliseconds
-        : 0.0;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Bouton play/pause
-          GestureDetector(
-            onTap: _isInitialized ? _togglePlayPause : null,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _isPlaying ? Icons.pause : Icons.play_arrow,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Waveform/Progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Barre de progression interactive
-                GestureDetector(
-                  onHorizontalDragUpdate: (details) {
-                    if (_isInitialized && _totalDuration.inMilliseconds > 0) {
-                      final RenderBox box =
-                          context.findRenderObject() as RenderBox;
-                      final localPosition = details.localPosition.dx;
-                      final width = box.size.width;
-                      final value = (localPosition / width).clamp(0.0, 1.0);
-                      _seekTo(value);
-                    }
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppTheme.primaryColor),
-                      minHeight: 4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Durée
-                Text(
-                  _isInitialized
-                      ? '${_formatDuration(_currentPosition)} / ${_formatDuration(_totalDuration)}'
-                      : 'Chargement...',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
