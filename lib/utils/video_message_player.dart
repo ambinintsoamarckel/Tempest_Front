@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import '../../theme/app_theme.dart';
 
 class VideoMessagePlayer extends StatefulWidget {
   final String videoUrl;
@@ -15,54 +16,83 @@ class VideoMessagePlayer extends StatefulWidget {
   _VideoMessagePlayerState createState() => _VideoMessagePlayerState();
 }
 
-class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
+class _VideoMessagePlayerState extends State<VideoMessagePlayer>
+    with SingleTickerProviderStateMixin {
   late VideoPlayerController _controller;
+  late AnimationController _animationController;
   ValueNotifier<bool> _isPlaying = ValueNotifier<bool>(false);
   ValueNotifier<bool> _showControls = ValueNotifier<bool>(true);
   bool _isFullScreen = false;
   ValueNotifier<Duration> _currentPosition = ValueNotifier(Duration.zero);
   Timer? _hideTimer;
+  Timer? _progressTimer;
 
   @override
   void initState() {
     super.initState();
 
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       })
       ..setLooping(true);
 
-    _controller.addListener(() {
-      _currentPosition.value = _controller.value.position;
-      _isPlaying.value = _controller.value.isPlaying;
-      if (_controller.value.isPlaying) {
+    _controller.addListener(_videoListener);
+
+    // Timer pour mettre à jour la progression de manière fluide
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (_controller.value.isInitialized && _controller.value.isPlaying) {
+        _currentPosition.value = _controller.value.position;
+      }
+    });
+  }
+
+  void _videoListener() {
+    if (!mounted) return;
+
+    final isPlaying = _controller.value.isPlaying;
+    if (_isPlaying.value != isPlaying) {
+      _isPlaying.value = isPlaying;
+
+      if (isPlaying) {
         _startHideTimer();
       } else {
         _showControls.value = true;
         _hideTimer?.cancel();
       }
-    });
+    }
   }
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
+    _progressTimer?.cancel();
+    _controller.removeListener(_videoListener);
     _controller.dispose();
     _currentPosition.dispose();
     _isPlaying.dispose();
     _showControls.dispose();
-    _hideTimer?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
   void _togglePlayPause() {
-    setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-      } else {
-        _controller.play();
-      }
-    });
+    if (!_controller.value.isInitialized) return;
+
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+      _animationController.reverse();
+    } else {
+      _controller.play();
+      _animationController.forward();
+    }
   }
 
   void _enterFullScreen() {
@@ -70,19 +100,20 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
       _isFullScreen = true;
     });
 
-    _controller.play(); // Jouer la vidéo avant de passer en plein écran
+    _controller.play();
 
     Navigator.push(
       context,
       PageRouteBuilder(
         opaque: false,
+        transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (BuildContext context, _, __) => WillPopScope(
           onWillPop: () async {
             _controller.pause();
             setState(() {
               _isFullScreen = false;
             });
-            return true; // Permettre le retour
+            return true;
           },
           child: Scaffold(
             backgroundColor: Colors.black,
@@ -96,17 +127,22 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
                       child: VideoPlayer(_controller),
                     ),
                   ),
-                  _buildControls(),
+                  _buildFullScreenControls(),
                 ],
               ),
             ),
           ),
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
     ).then((_) {
-      setState(() {
-        _isPlaying.value = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isPlaying.value = _controller.value.isPlaying;
+        });
+      }
     });
   }
 
@@ -124,38 +160,67 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
   Widget _buildProgressBar() {
     return ValueListenableBuilder<Duration>(
       valueListenable: _currentPosition,
-      builder: (context, value, child) {
+      builder: (context, position, child) {
+        final duration = _controller.value.duration;
+        final progress = duration.inMilliseconds > 0
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0;
+
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
             children: [
-              Text(
-                _formatDuration(value),
-                style: TextStyle(color: Colors.white),
-              ),
-              Expanded(
-                child: Slider(
-                  value: value.inSeconds.toDouble(),
-                  min: 0,
-                  max: _controller.value.duration.inSeconds.toDouble(),
-                  onChanged: (value) {
-                    setState(() {
-                      _controller.seekTo(Duration(seconds: value.toInt()));
-                    });
-                  },
-                  activeColor: Colors.white,
-                  inactiveColor: Colors.grey,
-                ),
-              ),
-              Text(
-                _formatDuration(_controller.value.duration),
-                style: TextStyle(color: Colors.white),
+              Row(
+                children: [
+                  Text(
+                    _formatDuration(position),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 14,
+                        ),
+                        activeTrackColor: AppTheme.primaryColor,
+                        inactiveTrackColor: Colors.white.withOpacity(0.3),
+                        thumbColor: Colors.white,
+                        overlayColor: AppTheme.primaryColor.withOpacity(0.3),
+                      ),
+                      child: Slider(
+                        value: progress.clamp(0.0, 1.0),
+                        onChanged: (value) {
+                          final newPosition = duration * value;
+                          _controller.seekTo(newPosition);
+                          _currentPosition.value = newPosition;
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDuration(duration),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         );
       },
-
     );
   }
 
@@ -168,7 +233,7 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
 
   void _toggleControls() {
     _showControls.value = !_showControls.value;
-    if (_showControls.value) {
+    if (_showControls.value && _controller.value.isPlaying) {
       _startHideTimer();
     } else {
       _hideTimer?.cancel();
@@ -177,45 +242,139 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    _hideTimer = Timer(Duration(seconds: 3), () {
-      _showControls.value = false;
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _controller.value.isPlaying) {
+        _showControls.value = false;
+      }
     });
   }
 
-  Widget _buildControls() {
+  Widget _buildFullScreenControls() {
     return ValueListenableBuilder<bool>(
       valueListenable: _showControls,
       builder: (context, show, child) {
         return AnimatedOpacity(
           opacity: show ? 1.0 : 0.0,
-          duration: Duration(milliseconds: 300),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _buildProgressBar(),
-              ValueListenableBuilder<bool>(
-                valueListenable: _isPlaying,
-                builder: (context, isPlaying, child) {
-                  return FullScreenControls(
-                    isPlaying: isPlaying,
-                    onPlayPause: _togglePlayPause,
-                    onStop: () {
-                      _controller.pause();
-                      _controller.seekTo(Duration.zero);
-                      setState(() {
-                        _isPlaying.value = false;
-                      });
-                      _exitFullScreen();
-                    },
-                    onExitFullScreen: _exitFullScreen,
-                    onDownload: _downloadVideo,
-                  );
-                },
+          duration: const Duration(milliseconds: 300),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.transparent,
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.8),
+                ],
+                stops: const [0.0, 0.2, 0.7, 1.0],
               ),
-            ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Header avec bouton retour
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            onTap: _exitFullScreen,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Contrôles en bas
+                Column(
+                  children: [
+                    _buildProgressBar(),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _isPlaying,
+                      builder: (context, isPlaying, child) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildControlButton(
+                                icon:
+                                    isPlaying ? Icons.pause : Icons.play_arrow,
+                                onTap: _togglePlayPause,
+                                size: 32,
+                              ),
+                              _buildControlButton(
+                                icon: Icons.stop,
+                                onTap: () {
+                                  _controller.pause();
+                                  _controller.seekTo(Duration.zero);
+                                  _currentPosition.value = Duration.zero;
+                                  _exitFullScreen();
+                                },
+                              ),
+                              _buildControlButton(
+                                icon: Icons.file_download_outlined,
+                                onTap: _downloadVideo,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    double size = 24,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: size,
+          ),
+        ),
+      ),
     );
   }
 
@@ -224,39 +383,118 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
     return _controller.value.isInitialized
         ? GestureDetector(
             onTap: _enterFullScreen,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 300,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: AspectRatio(
+            child: Container(
+              width: 300,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.black.withOpacity(0.8),
+                    Colors.black.withOpacity(0.6),
+                  ],
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AspectRatio(
                       aspectRatio: _controller.value.aspectRatio,
                       child: VideoPlayer(_controller),
                     ),
-                  ),
+                    // Overlay avec gradient
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.4),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Bouton play central
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
+                    // Durée en bas à droite
+                    Positioned(
+                      bottom: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.videocam,
+                              color: AppTheme.primaryColor,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _formatDuration(_controller.value.duration),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.play_arrow,
-                  size: 70,
-                  color: Colors.white,
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Text(
-                    _formatDuration(_controller.value.duration),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ],
+              ),
             ),
           )
-        : CircularProgressIndicator();
+        : Container(
+            width: 300,
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.grey[900],
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryColor,
+                strokeWidth: 3,
+              ),
+            ),
+          );
   }
 
-  Future<void> downloadFile(BuildContext context, String url, String type) async {
+  Future<void> downloadFile(
+      BuildContext context, String url, String type) async {
     var status = await Permission.storage.status;
     if (!status.isGranted) {
       status = await Permission.storage.request();
@@ -266,10 +504,12 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
       try {
         final directory = await getExternalStorageDirectory();
         if (directory == null) {
-          throw Exception("Impossible d'obtenir le répertoire de stockage externe.");
+          throw Exception(
+              "Impossible d'obtenir le répertoire de stockage externe.");
         }
 
-        final downloadDirectory = Directory('${directory.path}/houatsapy/$type');
+        final downloadDirectory =
+            Directory('${directory.path}/houatsapy/$type');
 
         if (!await downloadDirectory.exists()) {
           await downloadDirectory.create(recursive: true);
@@ -281,73 +521,76 @@ class _VideoMessagePlayerState extends State<VideoMessagePlayer> {
         final response = await http.get(Uri.parse(url));
         if (response.statusCode == 200) {
           await file.writeAsBytes(response.bodyBytes);
-          print('Fichier téléchargé à: ${file.path}');
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$type téléchargé sous le nom $fileName dans ${downloadDirectory.path}')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Vidéo téléchargée avec succès',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppTheme.secondaryColor,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.all(16),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Échec du téléchargement de $type')),
-          );
+          throw Exception('Échec du téléchargement');
         }
       } catch (e) {
-        print('Erreur lors du téléchargement : $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du téléchargement : $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('Erreur : ${e.toString()}'),
+                ],
+              ),
+              backgroundColor: AppTheme.accentColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Permission de stockage refusée')),
-      );
-    }
-
-
-  }
-}
-
-class FullScreenControls extends StatelessWidget {
-  final bool isPlaying;
-  final VoidCallback onPlayPause;
-  final VoidCallback onStop;
-  final VoidCallback onExitFullScreen;
-  final VoidCallback onDownload;
-
-  FullScreenControls({
-    required this.isPlaying,
-    required this.onPlayPause,
-    required this.onStop,
-    required this.onExitFullScreen,
-    required this.onDownload,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black54,
-      padding: EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          IconButton(
-            icon: Icon(
-              isPlaying ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.block, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Permission de stockage refusée'),
+              ],
             ),
-            onPressed: onPlayPause,
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
           ),
-          IconButton(
-            icon: Icon(Icons.stop, color: Colors.white),
-            onPressed: onStop,
-          ),
-          IconButton(
-            icon: Icon(Icons.download, color: Colors.white),
-            onPressed: onDownload,
-          ),
-        ],
-      ),
-    );
-
+        );
+      }
+    }
   }
 }
