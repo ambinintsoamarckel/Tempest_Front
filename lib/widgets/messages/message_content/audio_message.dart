@@ -4,22 +4,19 @@ import '../../../utils/audio_message_player.dart';
 
 class AudioMessage extends StatelessWidget {
   final String audioUrl;
+  final bool isContact;
 
-  const AudioMessage({super.key, required this.audioUrl});
+  const AudioMessage({
+    super.key,
+    required this.audioUrl,
+    this.isContact = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: AudioMessagePlayer(audioUrl: audioUrl),
+    return AudioMessagePlayer(
+      audioUrl: audioUrl,
+      isContact: isContact,
     );
   }
 }

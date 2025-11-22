@@ -136,7 +136,10 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
           onSave: widget.onSave != null ? () => _saveFile(context) : null,
         );
       case MessageType.audio:
-        return AudioMessage(audioUrl: widget.message.contenu.audio ?? '');
+        return AudioMessage(
+          audioUrl: widget.message.contenu.audio ?? '',
+          isContact: !isCurrentUser,
+        );
       case MessageType.video:
         return VideoMessage(videoUrl: widget.message.contenu.video ?? '');
       default:
