@@ -15,6 +15,9 @@ class DirectInputArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Bloquer le champ texte si un fichier est en preview
+    final bool isTextFieldBlocked = controller.previewFile != null;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
@@ -54,30 +57,48 @@ class DirectInputArea extends StatelessWidget {
             ),
           Row(
             children: [
-              IconButton(
-                icon: Icon(
-                  controller.showAttachmentMenu
-                      ? Icons.close
-                      : Icons.add_circle_outline,
+              // ✅ Masquer le bouton + quand un fichier est en preview
+              if (!isTextFieldBlocked)
+                IconButton(
+                  icon: Icon(
+                    controller.showAttachmentMenu
+                        ? Icons.close
+                        : Icons.add_circle_outline,
+                  ),
+                  onPressed: controller.toggleAttachmentMenu,
                 ),
-                onPressed: controller.toggleAttachmentMenu,
-              ),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF2C2C2C)
-                        : Colors.grey.shade100,
+                    color: isTextFieldBlocked
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? const Color(
+                                0xFF1C1C1C) // ✅ Plus sombre si bloqué (dark mode)
+                            : Colors.grey
+                                .shade200) // ✅ Plus gris si bloqué (light mode)
+                        : (Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2C2C2C)
+                            : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: TextField(
                     controller: controller.textController,
+                    enabled:
+                        !isTextFieldBlocked, // ✅ Désactivé si fichier présent
                     onSubmitted: (_) => _handleSend(context),
+                    style: TextStyle(
+                      color: isTextFieldBlocked
+                          ? Colors.grey.shade500 // ✅ Texte grisé si bloqué
+                          : null,
+                    ),
                     decoration: InputDecoration(
-                      hintText: controller.previewFile != null
-                          ? "Ajouter une légende (optionnel)"
-                          : "Message",
+                      hintText: _getHintText(), // ✅ Hint dynamique
+                      hintStyle: TextStyle(
+                        color: isTextFieldBlocked
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade500,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
@@ -94,13 +115,55 @@ class DirectInputArea extends StatelessWidget {
     );
   }
 
-  Widget _buildSendButton(BuildContext context) {
-    // Si un fichier est en preview OU s'il y a du texte -> bouton send
-    final canSend = controller.previewFile != null || controller.hasText;
+  // ✅ NOUVEAU : Hint dynamique selon le type de preview
+  String _getHintText() {
+    if (controller.previewFile == null) {
+      return "Message";
+    }
 
-    if (canSend) {
+    switch (controller.previewType) {
+      case 'image':
+        return "Image prête à envoyer";
+      case 'video':
+        return "Vidéo prête à envoyer";
+      case 'audio':
+        return "Audio prêt à envoyer";
+      case 'file':
+        return "Fichier prêt à envoyer";
+      default:
+        return "Fichier prêt à envoyer";
+    }
+  }
+
+  Widget _buildSendButton(BuildContext context) {
+    // Si un fichier est en preview -> bouton send
+    if (controller.previewFile != null) {
       return GestureDetector(
-        onTap: () => _handleSend(context),
+        onTap: () => controller.sendFile(context),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.primaryColor,
+                AppTheme.secondaryColor,
+              ],
+            ),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.send,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+      );
+    }
+
+    // Si du texte est présent -> bouton send
+    if (controller.hasText) {
+      return GestureDetector(
+        onTap: () => controller.sendText(context),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: const BoxDecoration(
@@ -130,12 +193,9 @@ class DirectInputArea extends StatelessWidget {
   }
 
   void _handleSend(BuildContext context) {
-    // Si un fichier est en preview, envoyer le fichier (avec légende optionnelle)
-    if (controller.previewFile != null) {
-      controller.sendFile(context);
-    }
-    // Sinon, envoyer le texte
-    else if (controller.hasText) {
+    // Cette méthode n'est appelée que par onSubmitted du TextField
+    // Donc uniquement quand pas de fichier
+    if (controller.hasText && controller.previewFile == null) {
       controller.sendText(context);
     }
   }

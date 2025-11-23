@@ -319,6 +319,9 @@ class DirectChatController extends ChangeNotifier {
     await _silentReload();
   }
 
+// lib/screens/direct/services/direct_chat_controller.dart
+// ✅ MODIFICATION dans sendFile() - Suppression complète des légendes
+
   Future<void> sendFile(BuildContext context) async {
     if (_previewFile == null || _currentUser == null) return;
 
@@ -333,23 +336,23 @@ class DirectChatController extends ChangeNotifier {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final file = _previewFile!;
     final type = _previewType!;
-    final caption = textController.text.trim();
+
+    // ✅ SUPPRIMÉ : Toute gestion de caption/légende
+    // Les fichiers n'ont jamais de texte associé
 
     clearPreview();
-    textController.clear();
+    textController.clear(); // ✅ Clear le texte même s'il y en avait
 
     MessageType contentType;
     String? imagePath;
     String? fichierPath;
     String? audioPath;
     String? videoPath;
-    String? texte;
 
     switch (type) {
       case 'image':
         contentType = MessageType.image;
         imagePath = file.path;
-        texte = caption.isNotEmpty ? caption : null;
         break;
       case 'audio':
         contentType = MessageType.audio;
@@ -358,7 +361,6 @@ class DirectChatController extends ChangeNotifier {
       case 'video':
         contentType = MessageType.video;
         videoPath = file.path;
-        texte = caption.isNotEmpty ? caption : null;
         break;
       case 'file':
       default:
@@ -382,7 +384,7 @@ class DirectChatController extends ChangeNotifier {
         fichier: fichierPath,
         audio: audioPath,
         video: videoPath,
-        texte: texte,
+        texte: null, // ✅ TOUJOURS null pour les fichiers
       ),
       dateEnvoi: DateTime.now(),
       lu: false,
@@ -394,7 +396,6 @@ class DirectChatController extends ChangeNotifier {
       tempId: tempId,
     ));
     notifyListeners();
-    // ✅ SUPPRIMÉ : _scrollToBottom();
 
     try {
       final success =
