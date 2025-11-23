@@ -140,7 +140,10 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
           isContact: !isCurrentUser,
         );
       case MessageType.video:
-        return VideoMessage(videoUrl: widget.message.contenu.video ?? '');
+        return VideoMessage(
+          videoUrl: widget.message.contenu.video ?? '',
+          onSave: () => _saveFile(context), // ✅ Ajouter ce callback
+        );
       default:
         return const UnsupportedMessage();
     }

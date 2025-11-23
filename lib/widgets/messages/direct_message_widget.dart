@@ -84,8 +84,11 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
         );
         break;
       case MessageType.video:
-        content = VideoMessage(videoUrl: widget.message.contenu.video ?? '');
-        break;
+              content = VideoMessage(
+                videoUrl: widget.message.contenu.video ?? '',
+                onSave: () => _saveFile(context), // ✅ Ajouter ce callback
+              );
+              break;
       default:
         content = const UnsupportedMessage();
     }
