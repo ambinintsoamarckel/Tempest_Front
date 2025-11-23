@@ -1,4 +1,4 @@
-// lib/screens/direct/direct_chat_screen.dart - Version avec logs debug
+// lib/screens/direct/direct_chat_screen.dart - Version avec Reverse ListView
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,7 +41,6 @@ class DirectChatScreen extends StatefulWidget {
 
 class _DirectChatScreenState extends State<DirectChatScreen> {
   late final DirectChatController controller;
-  DateTime? _previousDate;
   int _updateCount = 0;
 
   @override
@@ -49,7 +48,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     super.initState();
     print('🟢 [DirectChatScreen] initState() - contactId: ${widget.contactId}');
 
-    // ✅ CRITIQUE : Mise à jour du current screen
     CurrentScreenManager.currentScreen = 'directChat';
     print(
         '📍 [DirectChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
@@ -58,7 +56,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     controller.addListener(_onControllerUpdate);
     print('✅ [DirectChatScreen] Listener ajouté au controller');
 
-    // ✅ Vérifier que le GlobalKey fonctionne
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final keyState = DirectChatScreen.directChatScreenKey.currentState;
       if (keyState != null) {
@@ -114,8 +111,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
-
-          // ✅ Preview unifié pour TOUS les fichiers (image/video/file/audio)
           if (controller.previewFile != null)
             FilePreview(
               file: controller.previewFile!,
@@ -124,15 +119,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                   ? controller.clearAudioPreview
                   : controller.clearPreview,
             ),
-
-          // ✅ Interface d'enregistrement EN COURS
           if (controller.isRecording)
             RecordingInterface(
               onStop: controller.stopRecording,
               onCancel: controller.cancelRecording,
               showDuration: true,
             ),
-
           DirectInputArea(controller: controller),
         ],
       ),
@@ -163,15 +155,29 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     print(
         '📝 [DirectChatScreen] Rendering ${controller.messages.length} messages');
 
+    // ✅ Inverse l'ordre des messages
+    final reversedMessages = controller.messages.reversed.toList();
+
     return ListView.builder(
       controller: controller.scrollController,
+      reverse: true,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: controller.messages.length,
+      itemCount: reversedMessages.length,
       itemBuilder: (context, i) {
-        final wrapper = controller.messages[i];
+        final wrapper = reversedMessages[i];
         final msg = wrapper.message;
-        final showDate = _shouldShowDate(msg.dateEnvoi);
-        _previousDate = msg.dateEnvoi;
+
+        // ✅ NOUVEAU : Compare avec le message SUIVANT dans la liste inversée
+        // (= message PRÉCÉDENT chronologiquement)
+        final bool showDate;
+        if (i == reversedMessages.length - 1) {
+          // Premier message chronologique → toujours afficher le badge
+          showDate = true;
+        } else {
+          // Comparer avec le message suivant dans la liste
+          final nextMsg = reversedMessages[i + 1].message;
+          showDate = _isDifferentDay(msg.dateEnvoi, nextMsg.dateEnvoi);
+        }
 
         final contact = _getContact(msg);
 
@@ -193,10 +199,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
-  bool _shouldShowDate(DateTime date) {
-    if (_previousDate == null) return true;
-    return DateTime(date.year, date.month, date.day) !=
-        DateTime(_previousDate!.year, _previousDate!.month, _previousDate!.day);
+  // ✅ NOUVEAU : Méthode plus claire pour comparer les dates
+  bool _isDifferentDay(DateTime date1, DateTime date2) {
+    return DateTime(date1.year, date1.month, date1.day) !=
+        DateTime(date2.year, date2.month, date2.day);
   }
 
   User _getContact(DirectMessage msg) {
@@ -222,6 +228,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         builder: (_) => ContaScreen(isTransferMode: true, id: id),
       ),
     );
-    await controller.reload();
+    await controller.reloadSilently();
   }
 }

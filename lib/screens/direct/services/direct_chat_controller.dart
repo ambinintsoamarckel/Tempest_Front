@@ -11,10 +11,9 @@ import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/utils/file_picker.dart';
 import 'package:mini_social_network/services/user_service.dart';
-import 'package:mini_social_network/screens/direct/widgets/file_preview.dart'; // ✅ Import pour detectFileType
+import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/models/message_content.dart';
 
-// ✅ Wrapper pour messages avec état d'envoi
 class MessageWrapper {
   final DirectMessage message;
   final bool isSending;
@@ -39,7 +38,7 @@ class DirectChatController extends ChangeNotifier {
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;
   String? _audioPath;
-  Duration _recordingDuration = Duration.zero; // ✅ NOUVEAU
+  Duration _recordingDuration = Duration.zero;
   File? _previewFile;
   String? _previewType;
   bool _isLoading = true;
@@ -57,8 +56,8 @@ class DirectChatController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get hasText => textController.text.trim().isNotEmpty;
   bool get showAttachmentMenu => _showAttachmentMenu;
-  String? get audioPath => _audioPath; // ✅ NOUVEAU
-  Duration get recordingDuration => _recordingDuration; // ✅ NOUVEAU
+  String? get audioPath => _audioPath;
+  Duration get recordingDuration => _recordingDuration;
 
   void toggleAttachmentMenu() {
     _showAttachmentMenu = !_showAttachmentMenu;
@@ -76,7 +75,7 @@ class DirectChatController extends ChangeNotifier {
     await _initRecorder();
     await _loadCurrentUser();
     await reload();
-    _scrollToBottom(delayed: true);
+    // ✅ SUPPRIMÉ : _scrollToBottom(delayed: true);
   }
 
   Future<void> _loadCurrentUser() async {
@@ -184,12 +183,10 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  // ✅ CORRIGÉ : Détecte le vrai type dès la sélection
   Future<void> pickFile() async {
     closeAttachmentMenu();
     final path = await FilePickerUtil.pickFile();
     if (path != null) {
-      // ✅ Détecte automatiquement si c'est image/audio/video/file
       final realType = FilePreview.detectFileType(path);
       _setPreview(File(path), realType);
     }
@@ -204,11 +201,9 @@ class DirectChatController extends ChangeNotifier {
   void clearPreview() {
     _previewFile = null;
     _previewType = null;
-    // ✅ Ne pas réinitialiser _audioPath ici
     notifyListeners();
   }
 
-  // ✅ Méthode séparée pour clear l'audio complètement
   void clearAudioPreview() {
     if (_audioPath != null) {
       try {
@@ -246,7 +241,7 @@ class DirectChatController extends ChangeNotifier {
       tempId: tempId,
     ));
     notifyListeners();
-    _scrollToBottom();
+    // ✅ SUPPRIMÉ : _scrollToBottom();
 
     try {
       await messageService.createMessage(contactId, {"texte": text});
@@ -320,7 +315,10 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  // ✅ CORRIGÉ : Crée le bon type de message dès le début
+  Future<void> reloadSilently() async {
+    await _silentReload();
+  }
+
   Future<void> sendFile(BuildContext context) async {
     if (_previewFile == null || _currentUser == null) return;
 
@@ -334,13 +332,12 @@ class DirectChatController extends ChangeNotifier {
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final file = _previewFile!;
-    final type = _previewType!; // ✅ Maintenant c'est déjà le bon type !
-    final caption = textController.text.trim(); // ✅ Récupère la légende
+    final type = _previewType!;
+    final caption = textController.text.trim();
 
     clearPreview();
-    textController.clear(); // ✅ Vide aussi le texte
+    textController.clear();
 
-    // ✅ Détermine le type et assigne le bon champ
     MessageType contentType;
     String? imagePath;
     String? fichierPath;
@@ -352,7 +349,7 @@ class DirectChatController extends ChangeNotifier {
       case 'image':
         contentType = MessageType.image;
         imagePath = file.path;
-        texte = caption.isNotEmpty ? caption : null; // ✅ Légende optionnelle
+        texte = caption.isNotEmpty ? caption : null;
         break;
       case 'audio':
         contentType = MessageType.audio;
@@ -370,7 +367,6 @@ class DirectChatController extends ChangeNotifier {
         break;
     }
 
-    // Crée message temporaire avec le BON type dès le début
     final tempMessage = DirectMessage(
       id: tempId,
       expediteur: _currentUser!,
@@ -386,7 +382,7 @@ class DirectChatController extends ChangeNotifier {
         fichier: fichierPath,
         audio: audioPath,
         video: videoPath,
-        texte: texte, // ✅ Légende si présente
+        texte: texte,
       ),
       dateEnvoi: DateTime.now(),
       lu: false,
@@ -398,7 +394,7 @@ class DirectChatController extends ChangeNotifier {
       tempId: tempId,
     ));
     notifyListeners();
-    _scrollToBottom();
+    // ✅ SUPPRIMÉ : _scrollToBottom();
 
     try {
       final success =
@@ -497,7 +493,7 @@ class DirectChatController extends ChangeNotifier {
     await _recorder!.startRecorder(toFile: path);
     _isRecording = true;
     _audioPath = path;
-    _recordingDuration = Duration.zero; // ✅ Reset
+    _recordingDuration = Duration.zero;
     notifyListeners();
   }
 
@@ -505,10 +501,7 @@ class DirectChatController extends ChangeNotifier {
     await _recorder!.stopRecorder();
     _isRecording = false;
 
-    // ✅ Récupère la durée réelle de l'enregistrement
     if (_audioPath != null) {
-      // Note: La durée sera approximative basée sur le temps d'enregistrement
-      // Pour une durée exacte, il faudrait utiliser un package audio pour analyser le fichier
       _setPreview(File(_audioPath!), 'audio');
     }
     notifyListeners();
@@ -529,7 +522,6 @@ class DirectChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ NOUVEAU : Méthode pour envoyer l'audio depuis le preview
   Future<void> sendAudioFromPreview(BuildContext context) async {
     if (_audioPath == null || _currentUser == null) return;
 
@@ -545,12 +537,10 @@ class DirectChatController extends ChangeNotifier {
     final path = _audioPath!;
     final duration = _recordingDuration;
 
-    // Clear preview
     _audioPath = null;
     _recordingDuration = Duration.zero;
     notifyListeners();
 
-    // Crée message temporaire
     final tempMessage = DirectMessage(
       id: tempId,
       expediteur: _currentUser!,
@@ -574,7 +564,7 @@ class DirectChatController extends ChangeNotifier {
       tempId: tempId,
     ));
     notifyListeners();
-    _scrollToBottom();
+    // ✅ SUPPRIMÉ : _scrollToBottom();
 
     try {
       final success = await messageService.sendFileToPerson(contactId, path);
@@ -622,7 +612,6 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  // ✅ NOUVEAU : Annuler le preview audio
   void cancelAudioPreview() {
     if (_audioPath != null) {
       try {
@@ -647,27 +636,13 @@ class DirectChatController extends ChangeNotifier {
     }
   }
 
-  void _scrollToBottom({bool delayed = false}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        if (delayed) {
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (scrollController.hasClients) {
-              scrollController
-                  .jumpTo(scrollController.position.maxScrollExtent);
-            }
-          });
-        } else {
-          scrollController.jumpTo(scrollController.position.maxScrollExtent);
-        }
-      }
-    });
-  }
+  // ✅ MÉTHODE COMPLÈTEMENT SUPPRIMÉE
+  // void _scrollToBottom({bool delayed = false}) { ... }
 
   Future<void> reloadFromSocket() async {
     print('🔌 Socket reload dans controller');
     await _silentReload();
-    _scrollToBottom(delayed: true);
+    // ✅ SUPPRIMÉ : _scrollToBottom(delayed: true);
   }
 
   @override
