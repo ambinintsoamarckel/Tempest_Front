@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
@@ -10,7 +11,8 @@ import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import './socket/notification_service.dart';
 import 'utils/connectivity.dart';
-import 'theme/app_theme.dart'; // Importer le nouveau thème
+import 'theme/app_theme.dart'; 
+import 'providers/theme_provider.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -20,7 +22,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  runApp(const MyApp());
+  // Envelopper l'app avec ChangeNotifierProvider
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class NoConnectionApp extends StatelessWidget {
@@ -28,65 +36,71 @@ class NoConnectionApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pas de connexion',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Pas de connexion'),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.wifi_off,
-                size: 80,
-                color: AppTheme.accentColor.withOpacity(0.6),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Pas de connexion Internet',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  'Vérifiez votre connexion et réessayez',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+    // Utiliser Consumer pour accéder au thème
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Pas de connexion',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          home: Scaffold(
+            appBar: AppBar(
+              title: const Text('Pas de connexion'),
+              centerTitle: true,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.wifi_off,
+                    size: 80,
+                    color: AppTheme.accentColor.withOpacity(0.6),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Pas de connexion Internet',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      'Vérifiez votre connexion et réessayez',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Redémarrer l'app ou réessayer la connexion
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SplashScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer'),
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Redémarrer l'app ou réessayer la connexion
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SplashScreen()),
-                  );
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Réessayer'),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -100,31 +114,38 @@ class MyApp extends StatelessWidget {
     notificationService.setNavigatorKey(navigatorKey);
     notificationService.init(context);
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      navigatorObservers: [routeObserver],
-      title: 'Houatsappy',
-      debugShowCheckedModeBanner: false,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        print('🏗️ MyApp rebuild - ThemeMode: ${themeProvider.themeMode}');
+        print('🏗️ isDarkMode: ${themeProvider.isDarkMode}');
+        
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [routeObserver],
+          title: 'Houatsappy',
+          debugShowCheckedModeBanner: false,
 
-      // Utilisation du nouveau système de thème
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Suit le thème du système
+          // Utilisation du nouveau système de thème
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode, // Utilise le thème du provider
 
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/profile': (context) {
-          final user = ModalRoute.of(context)!.settings.arguments as UserModel;
-          return ProfileScreen();
-        },
-        '/register': (context) => const RegisterScreen(),
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/home': (context) => const HomeScreen(),
+            '/profile': (context) {
+              final user = ModalRoute.of(context)!.settings.arguments as UserModel;
+              return const ProfileScreen();
+            },
+            '/register': (context) => const RegisterScreen(),
+          },
+          onUnknownRoute: (settings) => MaterialPageRoute(
+            builder: (context) => const NoConnectionApp(),
+          ),
+        );
       },
-      onUnknownRoute: (settings) => MaterialPageRoute(
-        builder: (context) => const NoConnectionApp(),
-      ),
     );
   }
 }

@@ -6,8 +6,10 @@ import 'package:mini_social_network/screens/stories_screen.dart';
 import '../services/user_service.dart';
 import 'archive_screen.dart' as archive;
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../models/profile.dart';
 import '../socket/socket_service.dart';
+import '../providers/theme_provider.dart';
 import 'all_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -277,8 +279,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+    Widget _buildThemeToggle(ThemeProvider themeProvider) {
+      print('🔍 Build theme toggle - isDarkMode: ${themeProvider.isDarkMode}');
+      print('🔍 Current ThemeMode: ${themeProvider.themeMode}');
+      
+      return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          leading: Icon(
+            themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            color: Theme.of(context).primaryColor,
+          ),
+          title: const Text('Thème de l\'application'),
+          subtitle: Text(
+            themeProvider.isDarkMode ? 'Mode sombre activé' : 'Mode clair activé',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          trailing: Switch(
+            value: themeProvider.isDarkMode,
+            onChanged: (value) {
+              print('👆 Switch cliqué - Nouvelle valeur: $value');
+              themeProvider.toggleTheme();
+            },
+            activeColor: Theme.of(context).primaryColor,
+          ),
+          onTap: () {
+            print('👆 ListTile cliqué');
+            themeProvider.toggleTheme();
+          },
+        ),
+      );
+    }
+
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
       body: Stack(
@@ -374,6 +413,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   const SizedBox(height: 20.0),
+
+                  // Section pour le thème
+                  _buildThemeToggle(themeProvider),
+                  const SizedBox(height: 20.0),
+
                   ListTile(
                     leading: const Icon(Icons.lock),
                     title: const Text('Modifier le mot de passe'),
@@ -467,5 +511,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
+
 }
 

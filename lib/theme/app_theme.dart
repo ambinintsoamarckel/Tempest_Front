@@ -25,8 +25,8 @@ class AppTheme {
   static const Color textPrimaryDark = Color(0xFFFFFFFF);
   static const Color textSecondaryDark = Color(0xFFB2BEC3);
 
-  // Thème clair
-  static ThemeData lightTheme = ThemeData(
+  // Thème clair - GETTER au lieu de variable statique
+  static ThemeData get lightTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     primaryColor: primaryColor,
@@ -93,8 +93,8 @@ class AppTheme {
     ),
   );
 
-  // Thème sombre
-  static ThemeData darkTheme = ThemeData(
+  // Thème sombre - GETTER au lieu de variable statique
+  static ThemeData get darkTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     primaryColor: primaryColor,
