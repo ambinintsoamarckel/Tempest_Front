@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/user.dart';
+import '../../theme/app_theme.dart';
 import 'package:mini_social_network/models/group_message.dart';
 import 'package:mini_social_network/utils/downloader.dart';
 import 'message_avatar.dart';
@@ -14,6 +15,7 @@ import 'message_content/unsupported_message.dart';
 import 'message_footer.dart';
 import 'message_options_sheet.dart';
 import 'package:mini_social_network/models/message_content.dart';
+
 class GroupMessageWidget extends StatefulWidget {
   final GroupMessage message;
   final String currentUser;
@@ -37,13 +39,8 @@ class GroupMessageWidget extends StatefulWidget {
 }
 
 class _GroupMessageWidgetState extends State<GroupMessageWidget> {
-  ScaffoldMessengerState? _scaffoldMessenger;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _scaffoldMessenger = ScaffoldMessenger.of(context);
-  }
+  // ✅ Flag pour bloquer les téléchargements multiples
+  bool _isDownloading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +62,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
         onCopy: widget.onCopy ?? () {},
         onTransfer: widget.onTransfer,
         onDelete: widget.onDelete,
-        onSave: widget.onSave ?? () {},
+        onSave: () => _saveFile(context), // ✅ Utilise la nouvelle méthode
       ),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -107,7 +104,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
                       isSending: false,
                       sendFailed: false,
                       isRead: widget.message.luPar?.isNotEmpty ?? false,
-                      isGroup: true, // Pour afficher done_all si luPar non vide
+                      isGroup: true,
                     ),
                   ],
                 ),
@@ -127,13 +124,15 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
             isContact: !isCurrentUser);
       case MessageType.fichier:
         return FileMessage(
-            fileUrl: widget.message.contenu.fichier ?? '',
-            isContact: !isCurrentUser);
+          fileUrl: widget.message.contenu.fichier ?? '',
+          isContact: !isCurrentUser,
+          onSave: () => _saveFile(context), // ✅ Ajout du callback
+        );
       case MessageType.image:
         return ImageMessage(
           imageUrl: widget.message.contenu.image ?? '',
           messageId: widget.message.id,
-          onSave: widget.onSave != null ? () => _saveFile(context) : null,
+          onSave: () => _saveFile(context),
         );
       case MessageType.audio:
         return AudioMessage(
@@ -149,8 +148,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
 
   Widget _buildNotification() {
     final content = widget.message.contenu.texte ?? '';
-    final isCurrentUser =
-        widget.message.expediteur.id == widget.currentUser; // RECALCULÉ ICI
+    final isCurrentUser = widget.message.expediteur.id == widget.currentUser;
     final display = isCurrentUser
         ? 'Vous avez $content'
         : '${widget.message.expediteur.nom} a $content';
@@ -172,16 +170,66 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
     );
   }
 
+  // ✅ NOUVELLE VERSION : Gère les notifications proprement + bloque les téléchargements multiples
   Future<void> _saveFile(BuildContext context) async {
-    final url = _getFileUrl();
-    if (url.isEmpty) return;
+    // ✅ Bloquer si un téléchargement est déjà en cours
+    if (_isDownloading) {
+      _showSnackBar(context, 'Téléchargement déjà en cours', isError: true);
+      return;
+    }
+
+    final fileUrl = _getFileUrl();
+    if (fileUrl.isEmpty) {
+      _showSnackBar(context, 'Aucun fichier à télécharger', isError: true);
+      return;
+    }
+
+    // ✅ Marquer comme "en cours de téléchargement"
+    setState(() => _isDownloading = true);
+
+    // ✅ Garder une référence au ScaffoldMessenger
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    // ✅ Afficher "Téléchargement en cours..." AVANT
+    _showSnackBar(context, 'Téléchargement en cours...',
+        isError: false, isLoading: true);
 
     try {
-      await downloadFile(_scaffoldMessenger!, url, _getFileType());
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Échec du téléchargement')),
+      // ✅ Télécharger le fichier
+      final filePath = await downloadFile(fileUrl, _getFileType());
+
+      // ✅ FERMER immédiatement le SnackBar "en cours"
+      scaffoldMessenger.clearSnackBars();
+
+      // ✅ Extraire le nom du fichier
+      final fileName = filePath.split('/').last;
+
+      // ✅ Afficher le succès
+      _showSnackBar(
+        context,
+        'Téléchargé : $fileName',
+        isError: false,
       );
+    } catch (e) {
+      // ✅ FERMER immédiatement le SnackBar "en cours"
+      scaffoldMessenger.clearSnackBars();
+
+      // ✅ Gérer les erreurs
+      String errorMessage = 'Échec du téléchargement';
+
+      if (e.toString().contains('Permission')) {
+        errorMessage = 'Permission de stockage refusée';
+      } else if (e.toString().contains('Code')) {
+        errorMessage = 'Fichier introuvable sur le serveur';
+      }
+
+      _showSnackBar(context, errorMessage, isError: true);
+      print('❌ Erreur téléchargement: $e');
+    } finally {
+      // ✅ Toujours débloquer à la fin
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
     }
   }
 
@@ -203,5 +251,45 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       MessageType.fichier => "file",
       _ => "file",
     };
+  }
+
+  void _showSnackBar(
+    BuildContext context,
+    String message, {
+    required bool isError,
+    bool isLoading = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                isError ? Icons.error_outline : Icons.check_circle,
+                color: Colors.white,
+              ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError
+            ? AppTheme.accentColor
+            : (isLoading ? Colors.blue : AppTheme.secondaryColor),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        // ✅ Positionner en HAUT pour ne pas bloquer l'input area
+        margin: const EdgeInsets.only(top: 100, left: 16, right: 16),
+        duration: Duration(seconds: isLoading ? 30 : 1),
+      ),
+    );
   }
 }

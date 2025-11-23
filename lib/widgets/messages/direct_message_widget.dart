@@ -14,6 +14,7 @@ import 'message_content/unsupported_message.dart';
 import 'message_footer.dart';
 import 'message_options_sheet.dart';
 import 'package:mini_social_network/models/message_content.dart';
+
 class DirectMessageWidget extends StatefulWidget {
   final DirectMessage message;
   final User contact;
@@ -47,6 +48,9 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
   @override
   bool get wantKeepAlive => true;
 
+  // ✅ Flag pour bloquer les téléchargements multiples
+  bool _isDownloading = false;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -58,12 +62,11 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
         content = TextMessage(
             text: widget.message.contenu.texte ?? '', isContact: isContact);
         break;
-      // Dans la méthode build de DirectMessageWidget, modifier le case MessageType.fichier :
       case MessageType.fichier:
         content = FileMessage(
           fileUrl: widget.message.contenu.fichier ?? '',
           isContact: isContact,
-          onSave: () => _saveFile(context), // ✅ Ajouter cette ligne
+          onSave: () => _saveFile(context),
         );
         break;
       case MessageType.image:
@@ -71,7 +74,7 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
           imageUrl: widget.message.contenu.image ?? '',
           messageId: widget.message.id,
           onSave: () => _saveFile(context),
-          onImageLoaded: widget.onImageLoaded, // ✅ AJOUTER
+          onImageLoaded: widget.onImageLoaded,
         );
         break;
       case MessageType.audio:
@@ -160,18 +163,64 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
   }
 
   Future<void> _saveFile(BuildContext context) async {
+    // ✅ Bloquer si un téléchargement est déjà en cours
+    if (_isDownloading) {
+      _showSnackBar(context, 'Téléchargement déjà en cours', isError: true);
+      return;
+    }
+
     final fileUrl = _getFileUrl();
     if (fileUrl.isEmpty) {
       _showSnackBar(context, 'Aucun fichier à télécharger', isError: true);
       return;
     }
 
+    // ✅ Marquer comme "en cours de téléchargement"
+    setState(() => _isDownloading = true);
+
+    // ✅ Garder une référence au ScaffoldMessenger
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    // ✅ Afficher "Téléchargement en cours..." AVANT le téléchargement
+    _showSnackBar(context, 'Téléchargement en cours...',
+        isError: false, isLoading: true);
+
     try {
-      await downloadFile(
-          ScaffoldMessenger.of(context), fileUrl, _getFileType());
-      _showSnackBar(context, 'Téléchargement démarré', isError: false);
+      // ✅ Télécharger le fichier (fonction pure)
+      final filePath = await downloadFile(fileUrl, _getFileType());
+
+      // ✅ FERMER immédiatement le SnackBar "en cours"
+      scaffoldMessenger.clearSnackBars();
+
+      // ✅ Extraire juste le nom du fichier pour l'affichage
+      final fileName = filePath.split('/').last;
+
+      // ✅ Afficher le succès APRÈS le téléchargement
+      _showSnackBar(
+        context,
+        'Téléchargé : $fileName',
+        isError: false,
+      );
     } catch (e) {
-      _showSnackBar(context, 'Échec du téléchargement', isError: true);
+      // ✅ FERMER immédiatement le SnackBar "en cours"
+      scaffoldMessenger.clearSnackBars();
+
+      // ✅ Afficher l'erreur avec un message clair
+      String errorMessage = 'Échec du téléchargement';
+
+      if (e.toString().contains('Permission')) {
+        errorMessage = 'Permission de stockage refusée';
+      } else if (e.toString().contains('Code')) {
+        errorMessage = 'Fichier introuvable sur le serveur';
+      }
+
+      _showSnackBar(context, errorMessage, isError: true);
+      print('❌ Erreur téléchargement: $e');
+    } finally {
+      // ✅ Toujours débloquer à la fin
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
     }
   }
 
@@ -195,24 +244,42 @@ class _DirectMessageWidgetState extends State<DirectMessageWidget>
     };
   }
 
-  void _showSnackBar(BuildContext context, String message,
-      {required bool isError}) {
+  void _showSnackBar(
+    BuildContext context,
+    String message, {
+    required bool isError,
+    bool isLoading = false,
+  }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(isError ? Icons.error_outline : Icons.check_circle,
-                color: Colors.white),
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                isError ? Icons.error_outline : Icons.check_circle,
+                color: Colors.white,
+              ),
             const SizedBox(width: 12),
-            Text(message),
+            Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor:
-            isError ? AppTheme.accentColor : AppTheme.secondaryColor,
+        backgroundColor: isError
+            ? AppTheme.accentColor
+            : (isLoading ? Colors.blue : AppTheme.secondaryColor),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
+        // ✅ Positionner en HAUT pour ne pas bloquer l'input area
+        margin: const EdgeInsets.only(top: 100, left: 16, right: 16),
+        duration: Duration(seconds: isLoading ? 30 : 1),
       ),
     );
   }
