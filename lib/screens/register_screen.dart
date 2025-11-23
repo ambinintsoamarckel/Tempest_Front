@@ -30,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (email.isEmpty || password.isEmpty || nom.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields.')),
+          const SnackBar(content: Text('Veuillez remplir tous les champs.')),
         );
         setState(() {
           _isLoading = false;
@@ -44,12 +44,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushReplacementNamed(context, '/home', arguments: user);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to register. Please try again.')),
+          const SnackBar(content: Text('L\'inscription à échoué, veuillez réessayer')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to register: $e')),
+        SnackBar(content: Text('Inscription à échoué: $e')),
       );
     } finally {
       setState(() {
@@ -70,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Inscription')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -82,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Image.asset('assets/images/manga_transparent.png', height: 250),
               ),
               const Text(
-                'Create an Account!',
+                'Créer un compte!',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -91,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Please fill the form to create an account',
+                'Veuillez remplir le formulaire pour s\'inscrire',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -100,25 +100,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 40),
               CustomTextField(
                 controller: _emailController,
-                labelText: 'Email',
+                labelText: 'E-mail',
                 icon: Icons.email,
               ),
               const SizedBox(height: 20),
               CustomTextField(
                 controller: _passwordController,
-                labelText: 'Password',
+                labelText: 'Mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
               const SizedBox(height: 20),
               CustomTextField(
                 controller: _nameController,
-                labelText: 'Name',
+                labelText: 'Nom d\'utilisateur',
                 icon: Icons.person,
               ),
               const SizedBox(height: 20),
               CustomButton(
-                text: 'Register',
+                text: 'S\'inscrire',
                 onPressed: _register,
                 isLoading: _isLoading,
               ),

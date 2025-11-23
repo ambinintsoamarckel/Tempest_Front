@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Image.asset('assets/images/manga_transparent.png', height: 250),
               ),
               const Text(
-                'Welcome Back!',
+                'Content de vous revoir!',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -87,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Please login to your account',
+                'Veuillez vous connecter à votre compte',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -96,25 +96,25 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 40),
               CustomTextField(
                 controller: _emailController,
-                labelText: 'Email',
+                labelText: 'E-mail',
                 icon: Icons.email,
               ),
               const SizedBox(height: 20),
               CustomTextField(
                 controller: _passwordController,
-                labelText: 'Password',
+                labelText: 'Mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
               const SizedBox(height: 30),
               CustomButton(
-                text: 'Login',
+                text: 'Se connecter',
                 onPressed: _signIn,
                 isLoading: _isLoading,
               ),
               TextButton(
                 onPressed: _navigateToRegister,
-                child: const Text('Create an account'),
+                child: const Text('Créer un compte'),
               ),
             ],
           ),

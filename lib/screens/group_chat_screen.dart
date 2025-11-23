@@ -82,7 +82,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       });
       return messages[0].groupe;
     } catch (e) {
-      print('Failed to load messages: $e');
+      print('Echec du chargement des messages: $e');
       rethrow;
     }
   }
@@ -98,7 +98,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
         _scrollToEnd();
       });
     } catch (e) {
-      print('Failed to load messages: $e');
+      print('Echec du chargement des messages: $e');
       rethrow;
     }
   }
@@ -122,7 +122,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
     print('lancement');
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions not granted');
+      print('Autorisation non-accordé');
       return;
     }
 
@@ -148,7 +148,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
         _scrollToEnd();
       }
     } catch (e) {
-      print('Failed to pick and send file: $e');
+      print('Echec de la sélection et de l\'envoi du fichier: $e');
     }
   }
 
@@ -156,7 +156,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
       print('lancement');
     final bool hasPermission = await _requestPermissions();
     if (!hasPermission) {
-      print('Permissions not granted');
+      print('Autorisation non-accordé');
       return;
     }
 
@@ -263,11 +263,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
           future: _groupFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('Loading...');
+              return const Text('Chargement...');
             } else if (snapshot.hasError) {
-              return const Text('Error');
+              return const Text('Erreur');
             } else {
-              return Text(snapshot.data?.nom ?? 'Chat');
+              return Text(snapshot.data?.nom ?? 'Discussion');
             }
           },
         ),
@@ -292,7 +292,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return const Center(child: Text('Failed to load chat'));
+            return const Center(child: Text('Echec de chargement du discussion'));
           } else {
             return Column(
               children: <Widget>[
@@ -303,7 +303,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
                       if (userSnapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (userSnapshot.hasError) {
-                        return const Center(child: Text('Failed to load user'));
+                        return const Center(child: Text('Echec de chargement de l\'utilisateur'));
                       } else {
                         return ListView.builder(
                     padding: const EdgeInsets.all(8.0),
@@ -481,7 +481,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> with RouteAware{
 
   Future<void> _startRecording() async {
     if (!await _requestRecorderPermissions()) {
-      print('Permissions not granted');
+      print('Autorisation non-accordé');
       return;
     }
 
@@ -572,7 +572,7 @@ void _showProgressDialog() {
   }
   void _deleteMessage(String messageId) async {
     await _messageService.deleteMessage(messageId).catchError((e) {
-      print('Failed to delete message: $e');
+      print('Echec de la suppression du message: $e');
     }).whenComplete(() {
       _reload();
     });
@@ -580,7 +580,7 @@ void _showProgressDialog() {
 
 
   void _transferMessage(String messageId) async {
-      print('messaage : $messageId');
+      print('message : $messageId');
        Navigator.push<Contact>(
         context,
         MaterialPageRoute(builder: (context) => ContaScreen(isTransferMode: true,id: messageId)),

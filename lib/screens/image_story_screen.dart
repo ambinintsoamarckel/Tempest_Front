@@ -62,7 +62,7 @@ class _ImageStoryScreenState extends State<ImageStoryScreen> {
           TextButton(
             onPressed: _submitStory,
             child: const Text(
-              'GLAM',
+              'PARTAGER',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,

@@ -114,7 +114,7 @@ Future<void> _submitStory() async {
           TextButton(
             onPressed: _submitStory,
             child: const Text(
-              'GLAM',
+              'PARTAGER',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
