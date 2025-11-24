@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart'; // Pour la gestion des formats de date
 import '../models/messages.dart';
 import '../screens/direct/direct_chat_screen.dart';
-import '../screens/group_chat_screen.dart';
+import '../screens/group/group_chat_screen.dart';
 import '../screens/all_screen.dart';
 
 class ConversationWidget extends StatelessWidget {

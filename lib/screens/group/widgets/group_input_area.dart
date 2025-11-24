@@ -1,15 +1,15 @@
-// lib/screens/direct/widgets/direct_input_area.dart
+// lib/screens/group/widgets/group_input_area.dart
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/widgets/voice_recording_widget.dart';
-import 'attachment_menu.dart';
+import 'package:mini_social_network/screens/direct/widgets/attachment_menu.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
-import 'package:mini_social_network/screens/direct/services/direct_chat_controller.dart';
+import 'package:mini_social_network/screens/group/services/group_chat_controller.dart';
 import 'package:mini_social_network/models/attachment_option.dart';
 
-class DirectInputArea extends StatelessWidget {
-  final DirectChatController controller;
+class GroupInputArea extends StatelessWidget {
+  final GroupChatController controller;
 
-  const DirectInputArea({
+  const GroupInputArea({
     super.key,
     required this.controller,
   });
@@ -116,10 +116,10 @@ class DirectInputArea extends StatelessWidget {
     );
   }
 
-  // ✅ NOUVEAU : Hint dynamique selon le type de preview
+  // ✅ Hint dynamique selon le type de preview
   String _getHintText() {
     if (controller.previewFile == null) {
-      return "Message";
+      return "Message du groupe";
     }
 
     switch (controller.previewType) {
@@ -201,3 +201,4 @@ class DirectInputArea extends StatelessWidget {
     }
   }
 }
+

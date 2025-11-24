@@ -1,7 +1,7 @@
 // lib/screens/direct/widgets/attachment_menu.dart
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
-import 'direct_input_area.dart';
+import 'package:mini_social_network/models/attachment_option.dart';
 
 class AttachmentMenu extends StatelessWidget {
   final List<AttachmentOption> options;

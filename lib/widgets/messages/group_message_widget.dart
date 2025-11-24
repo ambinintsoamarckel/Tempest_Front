@@ -21,6 +21,8 @@ class GroupMessageWidget extends StatefulWidget {
   final Future<void> Function(String) onDelete;
   final Function(String) onTransfer;
   final VoidCallback? onSave;
+  final bool? isSending;
+  final bool? sendFailed;
 
   const GroupMessageWidget({
     super.key,
@@ -30,6 +32,8 @@ class GroupMessageWidget extends StatefulWidget {
     required this.onDelete,
     required this.onTransfer,
     this.onSave,
+    this.isSending,
+    this.sendFailed,
   });
 
   @override
@@ -37,7 +41,6 @@ class GroupMessageWidget extends StatefulWidget {
 }
 
 class _GroupMessageWidgetState extends State<GroupMessageWidget> {
-  // ✅ Flag pour bloquer les téléchargements multiples
   bool _isDownloading = false;
 
   @override
@@ -49,66 +52,91 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       return _buildNotification();
     }
 
-    // --- Contenu du message ---
     Widget content = _buildContent(isCurrentUser);
 
-    return GestureDetector(
-      onLongPress: () => MessageOptionsSheet.show(
-        context,
-        message: widget.message,
-        isContact: !isCurrentUser,
-        onCopy: widget.onCopy ?? () {},
-        onTransfer: widget.onTransfer,
-        onDelete: widget.onDelete,
-        onSave: () => _saveFile(context), // ✅ Utilise la nouvelle méthode
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          mainAxisAlignment:
-              isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isCurrentUser) ...[
-              MessageAvatar(contact: widget.message.expediteur),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.75),
-                child: Column(
-                  crossAxisAlignment: isCurrentUser
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
-                  children: [
-                    // Nom de l'expéditeur (uniquement si contact)
-                    if (!isCurrentUser)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8, bottom: 2),
-                        child: Text(
-                          widget.message.expediteur.nom ?? 'Anonyme',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey),
+    // ✅ Applique l'opacité si en cours d'envoi (comme DirectMessage)
+    return Opacity(
+      opacity: widget.isSending == true ? 0.6 : 1.0,
+      child: GestureDetector(
+        // ✅ Désactive long press si en cours d'envoi
+        onLongPress: widget.isSending == true
+            ? null
+            : () => MessageOptionsSheet.show(
+                  context,
+                  message: widget.message,
+                  isContact: !isCurrentUser,
+                  onCopy: widget.onCopy ?? () {},
+                  onTransfer: widget.onTransfer,
+                  onDelete: widget.onDelete,
+                  onSave: () => _saveFile(context),
+                ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisAlignment:
+                isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isCurrentUser) ...[
+                MessageAvatar(contact: widget.message.expediteur),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Container(
+                  constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.75),
+                  child: Column(
+                    crossAxisAlignment: isCurrentUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      if (!isCurrentUser)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8, bottom: 2),
+                          child: Text(
+                            widget.message.expediteur.nom ?? 'Anonyme',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey),
+                          ),
                         ),
+                      // ✅ Ajoute un Stack avec loader pour les fichiers (comme DirectMessage)
+                      Stack(
+                        children: [
+                          content,
+                          if (widget.isSending == true &&
+                              widget.message.contenu.type != MessageType.texte)
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(16.0),
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    content,
-                    const SizedBox(height: 4),
-                    MessageFooter(
-                      date: widget.message.dateEnvoi,
-                      isContact: !isCurrentUser,
-                      isSending: false,
-                      sendFailed: false,
-                      isRead: widget.message.luPar?.isNotEmpty ?? false,
-                      isGroup: true,
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      // ✅ FIX: Utilise les props au lieu de hardcoder
+                      MessageFooter(
+                        date: widget.message.dateEnvoi,
+                        isContact: !isCurrentUser,
+                        isSending: widget.isSending,
+                        sendFailed: widget.sendFailed,
+                        isRead: widget.message.luPar?.isNotEmpty ?? false,
+                        isGroup: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -124,7 +152,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
         return FileMessage(
           fileUrl: widget.message.contenu.fichier ?? '',
           isContact: !isCurrentUser,
-          onSave: () => _saveFile(context), // ✅ Ajout du callback
+          onSave: () => _saveFile(context),
         );
       case MessageType.image:
         return ImageMessage(
@@ -140,7 +168,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       case MessageType.video:
         return VideoMessage(
           videoUrl: widget.message.contenu.video ?? '',
-          onSave: () => _saveFile(context), // ✅ Ajouter ce callback
+          onSave: () => _saveFile(context),
         );
       default:
         return const UnsupportedMessage();
@@ -171,9 +199,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
     );
   }
 
-  // ✅ NOUVELLE VERSION : Gère les notifications proprement + bloque les téléchargements multiples
   Future<void> _saveFile(BuildContext context) async {
-    // ✅ Bloquer si un téléchargement est déjà en cours
     if (_isDownloading) {
       _showSnackBar(context, 'Téléchargement déjà en cours', isError: true);
       return;
@@ -185,39 +211,22 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       return;
     }
 
-    // ✅ Marquer comme "en cours de téléchargement"
     setState(() => _isDownloading = true);
-
-    // ✅ Garder une référence au ScaffoldMessenger
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    // ✅ Afficher "Téléchargement en cours..." AVANT
     _showSnackBar(context, 'Téléchargement en cours...',
         isError: false, isLoading: true);
 
     try {
-      // ✅ Télécharger le fichier
       final filePath = await downloadFile(fileUrl, _getFileType());
-
-      // ✅ FERMER immédiatement le SnackBar "en cours"
       scaffoldMessenger.clearSnackBars();
 
-      // ✅ Extraire le nom du fichier
       final fileName = filePath.split('/').last;
-
-      // ✅ Afficher le succès
-      _showSnackBar(
-        context,
-        'Téléchargé : $fileName',
-        isError: false,
-      );
+      _showSnackBar(context, 'Téléchargé : $fileName', isError: false);
     } catch (e) {
-      // ✅ FERMER immédiatement le SnackBar "en cours"
       scaffoldMessenger.clearSnackBars();
 
-      // ✅ Gérer les erreurs
       String errorMessage = 'Échec du téléchargement';
-
       if (e.toString().contains('Permission')) {
         errorMessage = 'Permission de stockage refusée';
       } else if (e.toString().contains('Code')) {
@@ -227,7 +236,6 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       _showSnackBar(context, errorMessage, isError: true);
       print('❌ Erreur téléchargement: $e');
     } finally {
-      // ✅ Toujours débloquer à la fin
       if (mounted) {
         setState(() => _isDownloading = false);
       }
@@ -287,7 +295,6 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
             : (isLoading ? Colors.blue : AppTheme.secondaryColor),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        // ✅ Positionner en HAUT pour ne pas bloquer l'input area
         margin: const EdgeInsets.only(top: 100, left: 16, right: 16),
         duration: Duration(seconds: isLoading ? 30 : 1),
       ),
