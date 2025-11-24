@@ -30,12 +30,12 @@ class _LoginFormState extends State<LoginForm> {
           TextFormField(
             controller: _emailController,
             decoration: const InputDecoration(
-              labelText: 'Email',
+              labelText: 'E-mail',
             ),
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your email';
+                return 'Veuillez saisir votre e-mail';
               }
               return null;
             },
@@ -44,12 +44,12 @@ class _LoginFormState extends State<LoginForm> {
           TextFormField(
             controller: _passwordController,
             decoration: const InputDecoration(
-              labelText: 'Password',
+              labelText: 'Mot de passe',
             ),
             obscureText: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your password';
+                return 'Veuillez saisir votre mot de passe';
               }
               return null;
             },
@@ -57,7 +57,7 @@ class _LoginFormState extends State<LoginForm> {
           const SizedBox(height: 32.0),
           ElevatedButton(
             onPressed: _submit,
-            child: const Text('Login'),
+            child: const Text('Se connecter'),
           ),
         ],
       ),
