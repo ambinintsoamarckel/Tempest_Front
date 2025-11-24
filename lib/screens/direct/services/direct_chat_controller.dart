@@ -536,7 +536,6 @@ class DirectChatController extends ChangeNotifier {
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final path = _audioPath!;
-    final duration = _recordingDuration;
 
     _audioPath = null;
     _recordingDuration = Duration.zero;
