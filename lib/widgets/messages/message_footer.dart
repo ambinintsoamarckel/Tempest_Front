@@ -70,7 +70,7 @@ class MessageFooter extends StatelessWidget {
     if (isRead) {
       return Icon(
         Icons.done_all,
-        color: isGroup ? Colors.blue : AppTheme.secondaryColor,
+        color: AppTheme.primaryColor,
         size: 16,
       );
     }

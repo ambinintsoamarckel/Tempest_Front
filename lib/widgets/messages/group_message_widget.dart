@@ -1,7 +1,6 @@
 // lib/widgets/messages/group_message_widget.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../models/user.dart';
+import '../../theme/app_theme.dart';
 import 'package:mini_social_network/models/group_message.dart';
 import 'package:mini_social_network/utils/downloader.dart';
 import 'message_avatar.dart';
@@ -13,14 +12,17 @@ import 'message_content/video_message.dart';
 import 'message_content/unsupported_message.dart';
 import 'message_footer.dart';
 import 'message_options_sheet.dart';
+import 'package:mini_social_network/models/message_content.dart';
 
 class GroupMessageWidget extends StatefulWidget {
   final GroupMessage message;
   final String currentUser;
   final VoidCallback? onCopy;
-  final Function(String) onDelete;
+  final Future<void> Function(String) onDelete;
   final Function(String) onTransfer;
   final VoidCallback? onSave;
+  final bool? isSending;
+  final bool? sendFailed;
 
   const GroupMessageWidget({
     super.key,
@@ -30,6 +32,8 @@ class GroupMessageWidget extends StatefulWidget {
     required this.onDelete,
     required this.onTransfer,
     this.onSave,
+    this.isSending,
+    this.sendFailed,
   });
 
   @override
@@ -37,13 +41,7 @@ class GroupMessageWidget extends StatefulWidget {
 }
 
 class _GroupMessageWidgetState extends State<GroupMessageWidget> {
-  ScaffoldMessengerState? _scaffoldMessenger;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _scaffoldMessenger = ScaffoldMessenger.of(context);
-  }
+  bool _isDownloading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -54,66 +52,91 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       return _buildNotification();
     }
 
-    // --- Contenu du message ---
     Widget content = _buildContent(isCurrentUser);
 
-    return GestureDetector(
-      onLongPress: () => MessageOptionsSheet.show(
-        context,
-        message: widget.message,
-        isContact: !isCurrentUser,
-        onCopy: widget.onCopy ?? () {},
-        onTransfer: widget.onTransfer,
-        onDelete: widget.onDelete,
-        onSave: widget.onSave ?? () {},
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          mainAxisAlignment:
-              isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isCurrentUser) ...[
-              MessageAvatar(contact: widget.message.expediteur),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.75),
-                child: Column(
-                  crossAxisAlignment: isCurrentUser
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
-                  children: [
-                    // Nom de l'expéditeur (uniquement si contact)
-                    if (!isCurrentUser)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8, bottom: 2),
-                        child: Text(
-                          widget.message.expediteur.nom ?? 'Anonyme',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey),
+    // ✅ Applique l'opacité si en cours d'envoi (comme DirectMessage)
+    return Opacity(
+      opacity: widget.isSending == true ? 0.6 : 1.0,
+      child: GestureDetector(
+        // ✅ Désactive long press si en cours d'envoi
+        onLongPress: widget.isSending == true
+            ? null
+            : () => MessageOptionsSheet.show(
+                  context,
+                  message: widget.message,
+                  isContact: !isCurrentUser,
+                  onCopy: widget.onCopy ?? () {},
+                  onTransfer: widget.onTransfer,
+                  onDelete: widget.onDelete,
+                  onSave: () => _saveFile(context),
+                ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisAlignment:
+                isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isCurrentUser) ...[
+                MessageAvatar(contact: widget.message.expediteur),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Container(
+                  constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.75),
+                  child: Column(
+                    crossAxisAlignment: isCurrentUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      if (!isCurrentUser)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8, bottom: 2),
+                          child: Text(
+                            widget.message.expediteur.nom ?? 'Anonyme',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey),
+                          ),
                         ),
+                      // ✅ Ajoute un Stack avec loader pour les fichiers (comme DirectMessage)
+                      Stack(
+                        children: [
+                          content,
+                          if (widget.isSending == true &&
+                              widget.message.contenu.type != MessageType.texte)
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(16.0),
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    content,
-                    const SizedBox(height: 4),
-                    MessageFooter(
-                      date: widget.message.dateEnvoi,
-                      isContact: !isCurrentUser,
-                      isSending: false,
-                      sendFailed: false,
-                      isRead: widget.message.luPar?.isNotEmpty ?? false,
-                      isGroup: true, // Pour afficher done_all si luPar non vide
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      // ✅ FIX: Utilise les props au lieu de hardcoder
+                      MessageFooter(
+                        date: widget.message.dateEnvoi,
+                        isContact: !isCurrentUser,
+                        isSending: widget.isSending,
+                        sendFailed: widget.sendFailed,
+                        isRead: widget.message.luPar?.isNotEmpty ?? false,
+                        isGroup: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -127,13 +150,15 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
             isContact: !isCurrentUser);
       case MessageType.fichier:
         return FileMessage(
-            fileUrl: widget.message.contenu.fichier ?? '',
-            isContact: !isCurrentUser);
+          fileUrl: widget.message.contenu.fichier ?? '',
+          isContact: !isCurrentUser,
+          onSave: () => _saveFile(context),
+        );
       case MessageType.image:
         return ImageMessage(
           imageUrl: widget.message.contenu.image ?? '',
           messageId: widget.message.id,
-          onSave: widget.onSave != null ? () => _saveFile(context) : null,
+          onSave: () => _saveFile(context),
         );
       case MessageType.audio:
         return AudioMessage(
@@ -141,7 +166,10 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
           isContact: !isCurrentUser,
         );
       case MessageType.video:
-        return VideoMessage(videoUrl: widget.message.contenu.video ?? '');
+        return VideoMessage(
+          videoUrl: widget.message.contenu.video ?? '',
+          onSave: () => _saveFile(context),
+        );
       default:
         return const UnsupportedMessage();
     }
@@ -149,8 +177,7 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
 
   Widget _buildNotification() {
     final content = widget.message.contenu.texte ?? '';
-    final isCurrentUser =
-        widget.message.expediteur.id == widget.currentUser; // RECALCULÉ ICI
+    final isCurrentUser = widget.message.expediteur.id == widget.currentUser;
     final display = isCurrentUser
         ? 'Vous avez $content'
         : '${widget.message.expediteur.nom} a $content';
@@ -173,15 +200,45 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
   }
 
   Future<void> _saveFile(BuildContext context) async {
-    final url = _getFileUrl();
-    if (url.isEmpty) return;
+    if (_isDownloading) {
+      _showSnackBar(context, 'Téléchargement déjà en cours', isError: true);
+      return;
+    }
+
+    final fileUrl = _getFileUrl();
+    if (fileUrl.isEmpty) {
+      _showSnackBar(context, 'Aucun fichier à télécharger', isError: true);
+      return;
+    }
+
+    setState(() => _isDownloading = true);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    _showSnackBar(context, 'Téléchargement en cours...',
+        isError: false, isLoading: true);
 
     try {
-      await downloadFile(_scaffoldMessenger!, url, _getFileType());
+      final filePath = await downloadFile(fileUrl, _getFileType());
+      scaffoldMessenger.clearSnackBars();
+
+      final fileName = filePath.split('/').last;
+      _showSnackBar(context, 'Téléchargé : $fileName', isError: false);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Échec du téléchargement')),
-      );
+      scaffoldMessenger.clearSnackBars();
+
+      String errorMessage = 'Échec du téléchargement';
+      if (e.toString().contains('Permission')) {
+        errorMessage = 'Permission de stockage refusée';
+      } else if (e.toString().contains('Code')) {
+        errorMessage = 'Fichier introuvable sur le serveur';
+      }
+
+      _showSnackBar(context, errorMessage, isError: true);
+      print('❌ Erreur téléchargement: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
     }
   }
 
@@ -203,5 +260,44 @@ class _GroupMessageWidgetState extends State<GroupMessageWidget> {
       MessageType.fichier => "file",
       _ => "file",
     };
+  }
+
+  void _showSnackBar(
+    BuildContext context,
+    String message, {
+    required bool isError,
+    bool isLoading = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                isError ? Icons.error_outline : Icons.check_circle,
+                color: Colors.white,
+              ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError
+            ? AppTheme.accentColor
+            : (isLoading ? Colors.blue : AppTheme.secondaryColor),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.only(top: 100, left: 16, right: 16),
+        duration: Duration(seconds: isLoading ? 30 : 1),
+      ),
+    );
   }
 }

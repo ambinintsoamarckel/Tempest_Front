@@ -4,12 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/direct_message.dart' as direct;
 import 'package:mini_social_network/models/group_message.dart' as group;
-import 'package:mini_social_network/screens/group_chat_screen.dart';
+import 'package:mini_social_network/screens/group/group_chat_screen.dart';
 import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:mini_social_network/screens/direct/direct_chat_screen.dart';
 import 'notification_service.dart';
 import '../services/current_screen_manager.dart';
+import 'package:mini_social_network/models/message_content.dart';
 
 class SocketService {
   IO.Socket? socket;
@@ -134,7 +135,7 @@ class SocketService {
 
           if (isMember && message.expediteur.id != _currentUserId) {
             String notificationContent =
-                _getGroupNotificationContent(message.contenu.type);
+                _getNotificationContent(message.contenu.type);
 
             await NotificationService().showNotification(
               0,
@@ -229,39 +230,19 @@ class SocketService {
     }
   }
 
-  // ✅ Helper pour notifications direct
-  String _getNotificationContent(direct.MessageType type) {
+// ✅ Une seule fonction pour les deux types de messages
+  String _getNotificationContent(MessageType type) {
     switch (type) {
-      case direct.MessageType.texte:
+      case MessageType.texte:
         return 'Nouveau message texte';
-      case direct.MessageType.image:
+      case MessageType.image:
         return 'Nouvelle image';
-      case direct.MessageType.fichier:
+      case MessageType.fichier:
         return 'Nouveau fichier';
-      case direct.MessageType.audio:
+      case MessageType.audio:
         return 'Nouveau message audio';
-      case direct.MessageType.video:
+      case MessageType.video:
         return 'Nouvelle vidéo';
-      default:
-        return 'Nouveau message';
-    }
-  }
-
-  // ✅ Helper pour notifications groupe
-  String _getGroupNotificationContent(group.MessageType type) {
-    switch (type) {
-      case group.MessageType.texte:
-        return 'Nouveau message texte';
-      case group.MessageType.image:
-        return 'Nouvelle image';
-      case group.MessageType.fichier:
-        return 'Nouveau fichier';
-      case group.MessageType.audio:
-        return 'Nouveau message audio';
-      case group.MessageType.video:
-        return 'Nouvelle vidéo';
-      default:
-        return 'Nouveau message';
     }
   }
 

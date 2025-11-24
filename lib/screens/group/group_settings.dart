@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/screens/membre_screen.dart';
-import '../models/group_message.dart';
-import '../services/discu_group_service.dart';
+import '../../../models/group_message.dart';
+import '../../../services/discu_group_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mini_social_network/models/user.dart';
 

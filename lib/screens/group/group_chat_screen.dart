@@ -1,77 +1,72 @@
-// lib/screens/direct/direct_chat_screen.dart - Version avec Reverse ListView
-import 'dart:async';
+// lib/screens/group/group_chat_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:mini_social_network/models/direct_message.dart';
-import 'package:mini_social_network/models/user.dart';
-import 'package:mini_social_network/widgets/messages/direct_message_widget.dart';
+import 'package:mini_social_network/models/group_message.dart';
+import 'package:mini_social_network/widgets/messages/group_message_widget.dart';
 import 'package:mini_social_network/widgets/voice_recording_widget.dart';
 import 'package:mini_social_network/screens/ctt_screen.dart';
-import 'package:mini_social_network/screens/direct/widgets/direct_input_area.dart';
+import 'package:mini_social_network/screens/group/services/group_chat_controller.dart';
+import 'package:mini_social_network/screens/group/widgets/group_chat_app_bar.dart';
+import 'package:mini_social_network/screens/group/widgets/group_input_area.dart';
 import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/screens/direct/widgets/message_date_badge.dart';
-import 'package:mini_social_network/screens/direct/services/direct_chat_controller.dart';
-import 'widgets/direct_chat_app_bar.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 
-class DirectChatScreen extends StatefulWidget {
-  final String contactId;
-  static final GlobalKey<_DirectChatScreenState> directChatScreenKey =
-      GlobalKey<_DirectChatScreenState>();
+class GroupChatScreen extends StatefulWidget {
+  final String groupId;
+  static final GlobalKey<_GroupChatScreenState> groupChatScreenKey =
+      GlobalKey<_GroupChatScreenState>();
 
-  DirectChatScreen({required this.contactId}) : super(key: directChatScreenKey);
+  GroupChatScreen({required this.groupId}) : super(key: groupChatScreenKey);
 
   @override
-  _DirectChatScreenState createState() => _DirectChatScreenState();
+  _GroupChatScreenState createState() => _GroupChatScreenState();
 
   void reload() {
-    final state = directChatScreenKey.currentState;
-    print('🔵 [DirectChatScreen] reload() appelé depuis l\'extérieur');
+    final state = groupChatScreenKey.currentState;
+    print('🔵 [GroupChatScreen] reload() appelé depuis l\'extérieur');
     state?._reload();
   }
 
   void reloadFromSocket() {
-    final state = directChatScreenKey.currentState;
+    final state = groupChatScreenKey.currentState;
     print(
-        '🔌 [DirectChatScreen] reloadFromSocket() appelé depuis SocketService');
+        '🔌 [GroupChatScreen] reloadFromSocket() appelé depuis SocketService');
     state?._reloadFromSocket();
   }
 }
 
-class _DirectChatScreenState extends State<DirectChatScreen> {
-  late final DirectChatController controller;
+class _GroupChatScreenState extends State<GroupChatScreen> {
+  late final GroupChatController controller;
   int _updateCount = 0;
 
   @override
   void initState() {
     super.initState();
-    print('🟢 [DirectChatScreen] initState() - contactId: ${widget.contactId}');
+    print('🟢 [GroupChatScreen] initState() - groupId: ${widget.groupId}');
 
-    CurrentScreenManager.currentScreen = 'directChat';
+    CurrentScreenManager.currentScreen = 'groupChat';
     print(
-        '📍 [DirectChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
+        '📍 [GroupChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
 
-    controller = DirectChatController(widget.contactId)..init();
+    controller = GroupChatController(widget.groupId)..init();
     controller.addListener(_onControllerUpdate);
-    print('✅ [DirectChatScreen] Listener ajouté au controller');
+    print('✅ [GroupChatScreen] Listener ajouté au controller');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final keyState = DirectChatScreen.directChatScreenKey.currentState;
+      final keyState = GroupChatScreen.groupChatScreenKey.currentState;
       if (keyState != null) {
-        print('✅ [DirectChatScreen] GlobalKey.currentState est accessible');
+        print('✅ [GroupChatScreen] GlobalKey.currentState est accessible');
       } else {
-        print('❌ [DirectChatScreen] GlobalKey.currentState est NULL !');
+        print('❌ [GroupChatScreen] GlobalKey.currentState est NULL !');
       }
     });
   }
 
   void _onControllerUpdate() {
     _updateCount++;
-    print(
-        '🔔 [DirectChatScreen] _onControllerUpdate() appelé (#$_updateCount)');
+    print('🔔 [GroupChatScreen] _onControllerUpdate() appelé (#$_updateCount)');
     print('   📊 Nombre de messages: ${controller.messages.length}');
-    print('   📍 Stack trace: ${StackTrace.current}');
 
     if (mounted) {
       print('   ✅ Widget mounted - setState() appelé');
@@ -83,31 +78,33 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
   @override
   void dispose() {
-    print('🔴 [DirectChatScreen] dispose() - removing listener');
+    print('🔴 [GroupChatScreen] dispose() - removing listener');
     controller.removeListener(_onControllerUpdate);
     controller.dispose();
     super.dispose();
   }
 
   Future<void> _reload() async {
-    print('🔄 [DirectChatScreen] _reload() appelé');
+    print('🔄 [GroupChatScreen] _reload() appelé');
     await controller.reload();
-    print('✅ [DirectChatScreen] _reload() terminé');
+    print('✅ [GroupChatScreen] _reload() terminé');
   }
 
   Future<void> _reloadFromSocket() async {
-    print('🔌 [DirectChatScreen] _reloadFromSocket() appelé');
+    print('🔌 [GroupChatScreen] _reloadFromSocket() appelé');
     await controller.reloadFromSocket();
-    print('✅ [DirectChatScreen] _reloadFromSocket() terminé');
+    print('✅ [GroupChatScreen] _reloadFromSocket() terminé');
   }
 
   @override
   Widget build(BuildContext context) {
     print(
-        '🎨 [DirectChatScreen] build() appelé - messages: ${controller.messages.length}');
+        '🎨 [GroupChatScreen] build() appelé - messages: ${controller.messages.length}');
 
     return Scaffold(
-      appBar: DirectChatAppBar(contactId: widget.contactId),
+      appBar: GroupChatAppBar(
+        controller: controller,
+      ),
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
@@ -125,7 +122,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
               onCancel: controller.cancelRecording,
               showDuration: true,
             ),
-          DirectInputArea(controller: controller),
+          GroupInputArea(controller: controller),
         ],
       ),
     );
@@ -153,9 +150,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
 
     print(
-        '📝 [DirectChatScreen] Rendering ${controller.messages.length} messages');
+        '📝 [GroupChatScreen] Rendering ${controller.messages.length} messages');
 
-    // ✅ Inverse l'ordre des messages
+    // ✅ Inverse l'ordre des messages pour le reverse ListView
     final reversedMessages = controller.messages.reversed.toList();
 
     return ListView.builder(
@@ -167,31 +164,26 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         final wrapper = reversedMessages[i];
         final msg = wrapper.message;
 
-        // ✅ NOUVEAU : Compare avec le message SUIVANT dans la liste inversée
-        // (= message PRÉCÉDENT chronologiquement)
+        // ✅ Compare avec le message SUIVANT dans la liste inversée
         final bool showDate;
         if (i == reversedMessages.length - 1) {
-          // Premier message chronologique → toujours afficher le badge
           showDate = true;
         } else {
-          // Comparer avec le message suivant dans la liste
           final nextMsg = reversedMessages[i + 1].message;
           showDate = _isDifferentDay(msg.dateEnvoi, nextMsg.dateEnvoi);
         }
 
-        final contact = _getContact(msg);
-
         return Column(
           children: [
             if (showDate) MessageDateBadge(date: msg.dateEnvoi),
-            DirectMessageWidget(
+            GroupMessageWidget(
               message: msg,
-              contact: contact,
+              currentUser: controller.currentUser?.id ?? '',
               isSending: wrapper.isSending,
               sendFailed: wrapper.sendFailed,
-              onCopy: () => _copy(msg),
               onDelete: (id) => controller.deleteMessage(id),
               onTransfer: _transfer,
+              onCopy: () => _copy(msg),
             ),
           ],
         );
@@ -199,26 +191,26 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
-  // ✅ NOUVEAU : Méthode plus claire pour comparer les dates
   bool _isDifferentDay(DateTime date1, DateTime date2) {
     return DateTime(date1.year, date1.month, date1.day) !=
         DateTime(date2.year, date2.month, date2.day);
   }
 
-  User _getContact(DirectMessage msg) {
-    return msg.expediteur.id == widget.contactId
-        ? msg.expediteur
-        : msg.destinataire;
-  }
-
-  Future<void> _copy(DirectMessage msg) async {
-    await Clipboard.setData(ClipboardData(text: msg.contenu.texte ?? ''));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copié'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+  Future<void> _copy(GroupMessage msg) async {
+    final text = msg.contenu.texte;
+    if (text != null) {
+      await Clipboard.setData(ClipboardData(text: text));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Message copié'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucun texte à copier')),
+      );
+    }
   }
 
   Future<void> _transfer(String id) async {

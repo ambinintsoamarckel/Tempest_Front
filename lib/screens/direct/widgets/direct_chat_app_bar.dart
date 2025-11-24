@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/models/user.dart';
 import 'direct_app_bar.dart';
-import 'package:mini_social_network/services/discu_message_service.dart';
 import 'package:mini_social_network/services/user_service.dart';
 
 class DirectChatAppBar extends StatefulWidget implements PreferredSizeWidget {

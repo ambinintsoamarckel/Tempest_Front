@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mini_social_network/screens/group_chat_screen.dart';
+import 'package:mini_social_network/screens/group/group_chat_screen.dart';
 import 'package:mini_social_network/services/current_screen_manager.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';

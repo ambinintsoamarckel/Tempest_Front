@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../screens/direct/direct_chat_screen.dart';
-import '../screens/group_chat_screen.dart';
+import '../screens/group/group_chat_screen.dart';
 
 class NotificationService {
   static final NotificationService _notificationService = NotificationService._internal();

@@ -1,13 +1,19 @@
 // lib/widgets/messages/message_avatar.dart
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-import '../../models/direct_message.dart';
 import '../../models/user.dart';
+import '../../theme/app_theme.dart';
+import '../common/user_avatar.dart';
 
+/// Avatar pour les messages avec ombre élégante
 class MessageAvatar extends StatelessWidget {
   final User contact;
+  final double radius;
 
-  const MessageAvatar({super.key, required this.contact});
+  const MessageAvatar({
+    super.key,
+    required this.contact,
+    this.radius = 18.0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,21 +28,12 @@ class MessageAvatar extends StatelessWidget {
           ),
         ],
       ),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-        backgroundImage:
-            contact.photo != null ? NetworkImage(contact.photo!) : null,
-        child: contact.photo == null
-            ? Text(
-                contact.nom.substring(0, 1).toUpperCase(),
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              )
-            : null,
+      child: UserAvatar(
+        photoUrl: contact.photo,
+        name: contact.nom,
+        radius: radius,
+        showPresence: false,
+        hasStory: false,
       ),
     );
   }

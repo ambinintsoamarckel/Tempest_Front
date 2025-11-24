@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
+import 'package:mini_social_network/widgets/common/user_avatar.dart';
 
 class DirectAppBar extends StatelessWidget implements PreferredSizeWidget {
   final User contact;
@@ -13,44 +14,56 @@ class DirectAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: onBack),
+        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        onPressed: onBack,
+      ),
       title: Row(
         children: [
-          CircleAvatar(
+          UserAvatar(
+            photoUrl: contact.photo,
+            name: contact.nom,
             radius: 20,
-            backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-            backgroundImage:
-                contact.photo != null ? NetworkImage(contact.photo!) : null,
-            child: contact.photo == null
-                ? Text(contact.nom[0].toUpperCase(),
-                    style: const TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.bold))
-                : null,
+            showPresence: false,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(contact.nom,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  contact.nom,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 2),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                            color: _presenceColor(contact.presence),
-                            shape: BoxShape.circle)),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _presenceColor(contact.presence),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     const SizedBox(width: 6),
-                    Text(_presenceText(contact.presence),
+                    Flexible(
+                      child: Text(
+                        _presenceText(contact.presence),
                         style: TextStyle(
-                            fontSize: 12,
-                            color: _presenceColor(contact.presence))),
+                          fontSize: 12,
+                          color: _presenceColor(contact.presence),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -83,4 +96,25 @@ class DirectAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class ActionIcon extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const ActionIcon({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 22),
+      onPressed: onPressed,
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(),
+    );
+  }
 }
