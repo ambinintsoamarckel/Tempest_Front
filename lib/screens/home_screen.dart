@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'contacts_screen.dart';
 import 'messages_screen.dart';
 import 'stories_screen.dart';
-import 'profile_screen.dart';
+import 'profile/profile_screen.dart';
 import '../models/user.dart';
 import 'custom_search_delegate.dart';
 import '../utils/connectivity.dart'; // Importation du fichier centralisé

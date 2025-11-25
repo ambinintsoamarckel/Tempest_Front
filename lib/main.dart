@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/profile/profile_screen.dart';
 import 'models/user.dart';
 import 'services/user_service.dart';
 import 'screens/register_screen.dart';
@@ -11,7 +11,7 @@ import 'socket/socket_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import './socket/notification_service.dart';
 import 'utils/connectivity.dart';
-import 'theme/app_theme.dart'; 
+import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -118,7 +118,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         print('🏗️ MyApp rebuild - ThemeMode: ${themeProvider.themeMode}');
         print('🏗️ isDarkMode: ${themeProvider.isDarkMode}');
-        
+
         return MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: [routeObserver],

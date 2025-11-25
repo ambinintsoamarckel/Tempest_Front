@@ -377,12 +377,7 @@ class ContactScreenState extends State<ContactScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         )
-                      : const Text(
-                          'Contacts',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      : null, // 🔧 Suppression du texte "Contacts"
                   leading: _isSelectionMode
                       ? IconButton(
                           icon: const Icon(Icons.close),
@@ -400,7 +395,6 @@ class ContactScreenState extends State<ContactScreen>
                         ]
                       : null,
                 ),
-
                 // Barre de recherche
                 SliverToBoxAdapter(
                   child: Padding(

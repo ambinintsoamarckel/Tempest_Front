@@ -293,8 +293,8 @@ class ConversationWidget extends StatelessWidget {
                                 ],
                                 Expanded(
                                   child: isMessageSentByUser
-                                      ? _buildSentMessage(userId)
-                                      : _buildReceivedMessage(userId),
+                                      ? _buildSentMessage(context, userId)
+                                      : _buildReceivedMessage(context, userId),
                                 ),
                               ],
                             ),
@@ -326,13 +326,15 @@ class ConversationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSentMessage(String userId) {
+  Widget _buildSentMessage(BuildContext context, String userId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final message = conversation.dernierMessage;
     final content = _getContentSubtitle(message.contenu, true);
+
     return Text(
       content,
       style: TextStyle(
-        color: Colors.grey.shade600,
+        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
         fontWeight: FontWeight.normal,
         fontSize: 14,
       ),
@@ -340,7 +342,8 @@ class ConversationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildReceivedMessage(String userId) {
+  Widget _buildReceivedMessage(BuildContext context, String userId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final message = conversation.dernierMessage;
     final content = _getContentSubtitle(message.contenu, false);
     final isRead = message is DernierMessageUtilisateur
@@ -352,7 +355,10 @@ class ConversationWidget extends StatelessWidget {
     return Text(
       content,
       style: TextStyle(
-        color: isRead ? Colors.grey.shade600 : Colors.black87,
+        // 🔧 FIX: Couleur adaptée au mode dark pour les messages non lus
+        color: isRead
+            ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+            : (isDark ? Colors.white : Colors.black87),
         fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
         fontSize: 14,
       ),
