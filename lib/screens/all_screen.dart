@@ -112,10 +112,11 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   final user = _currentStory!.vues[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: user.photo != null ? NetworkImage(user.photo!):null,
+                      backgroundImage:
+                          user.photo != null ? NetworkImage(user.photo!) : null,
                       child: user.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+                          ? const Icon(Icons.person, size: 24.0)
+                          : null,
                     ),
                     title: Text(user.name),
                   );
@@ -186,7 +187,9 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               bottom: MediaQuery.of(context).padding.bottom + 16,
               left: 16,
               child: GestureDetector(
-                onTap: _currentStory != null && _currentStory!.vues.isNotEmpty ? _showViews : null,
+                onTap: _currentStory != null && _currentStory!.vues.isNotEmpty
+                    ? _showViews
+                    : null,
                 child: Row(
                   children: [
                     const Icon(
@@ -208,10 +211,12 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
-                  child:  _currentStory?.user.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+                  backgroundImage: _currentStory?.user.photo != ''
+                      ? NetworkImage(_currentStory?.user.photo ?? '')
+                      : null,
+                  child: _currentStory?.user.photo == null
+                      ? const Icon(Icons.person, size: 24.0)
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -225,36 +230,36 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       ),
     );
   }
-Widget buildStoryContent(Story story) {
-  final bool isTextStory = story.contenu.type == StoryType.texte;
-  final Color backgroundColor = colors[Random().nextInt(colors.length)];
 
-  return Container(
-    decoration: BoxDecoration(
-      color: isTextStory ? backgroundColor : null,
-      image: !isTextStory
-          ? DecorationImage(
-              image: NetworkImage(story.contenu.image ?? story.contenu.video ?? ''),
-              fit: BoxFit.contain, // Adapter l'image à l'écran
-              alignment: Alignment.center, // Centrer l'image
-            )
-          : null,
-    ),
-    child: Center(
-      child: isTextStory
-          ? Text(
-              story.contenu.texte ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 24.0,
-              ),
-            )
-          : null,
-    ),
-  );
-}
+  Widget buildStoryContent(Story story) {
+    final bool isTextStory = story.contenu.type == StoryType.texte;
+    final Color backgroundColor = colors[Random().nextInt(colors.length)];
 
-
+    return Container(
+      decoration: BoxDecoration(
+        color: isTextStory ? backgroundColor : null,
+        image: !isTextStory
+            ? DecorationImage(
+                image: NetworkImage(
+                    story.contenu.image ?? story.contenu.video ?? ''),
+                fit: BoxFit.contain, // Adapter l'image à l'écran
+                alignment: Alignment.center, // Centrer l'image
+              )
+            : null,
+      ),
+      child: Center(
+        child: isTextStory
+            ? Text(
+                story.contenu.texte ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24.0,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
 }

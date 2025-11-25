@@ -5,6 +5,7 @@ import '../models/messages.dart';
 import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
 import '../main.dart';
+import '../theme/app_theme.dart';
 import 'all_screen.dart';
 import 'direct/direct_chat_screen.dart';
 import 'group/group_chat_screen.dart';
@@ -20,46 +21,89 @@ class ConversationListScreen extends StatefulWidget {
   void reload() {
     final state = conversationListScreenKey.currentState;
     if (state != null) {
-      state._reload();
+      state._silentReload();
     }
   }
 }
 
 class ConversationListScreenState extends State<ConversationListScreen>
-    with RouteAware {
+    with RouteAware, SingleTickerProviderStateMixin {
   final List<Conversation> _conversations = [];
   final MessageService _messageService = MessageService();
   final CurrentScreenManager screenManager = CurrentScreenManager();
 
+  bool _isInitialLoading = true;
+  bool _isSilentLoading = false;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+    );
+
     _loadConversations();
     screenManager.updateCurrentScreen('conversationList');
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    routeObserver.unsubscribe(this);
+    super.dispose();
   }
 
   Future<void> _loadConversations() async {
     try {
       List<Conversation> contactConversations =
           await _messageService.getConversationsWithContact();
-      setState(() {
-        _conversations.addAll(contactConversations);
-      });
+
+      if (mounted) {
+        setState(() {
+          _conversations
+            ..clear()
+            ..addAll(contactConversations);
+          _isInitialLoading = false;
+        });
+        _fadeController.forward();
+      }
     } catch (e) {
-      print('Failed to load conversations: $e');
+      print('❌ Failed to load conversations: $e');
+      if (mounted) {
+        setState(() => _isInitialLoading = false);
+      }
     }
   }
 
-  Future<void> _reload() async {
+  /// 🔇 Silent reload - pas de loader visible
+  Future<void> _silentReload() async {
+    if (_isSilentLoading) return;
+
+    setState(() => _isSilentLoading = true);
+
     try {
       List<Conversation> contactConversations =
           await _messageService.getConversationsWithContact();
-      setState(() {
-        _conversations.clear();
-        _conversations.addAll(contactConversations);
-      });
+
+      if (mounted) {
+        setState(() {
+          _conversations
+            ..clear()
+            ..addAll(contactConversations);
+          _isSilentLoading = false;
+        });
+      }
     } catch (e) {
-      print('Failed to load conversations: $e');
+      print('❌ Failed to silent reload conversations: $e');
+      if (mounted) {
+        setState(() => _isSilentLoading = false);
+      }
     }
   }
 
@@ -73,40 +117,75 @@ class ConversationListScreenState extends State<ConversationListScreen>
   }
 
   @override
-  void dispose() {
-    routeObserver.unsubscribe(this);
-    super.dispose();
-  }
-
-  @override
   void didPopNext() {
     super.didPopNext();
     screenManager.updateCurrentScreen('conversationList');
-    _reload();
+    _silentReload();
   }
 
   Widget _buildAvatar(Contact contact, BuildContext context) {
+    final hasStory = contact.story.isNotEmpty;
+
     return GestureDetector(
       onTap: () {
-        _navigateToChatScreen(context, contact);
+        if (hasStory) {
+          _navigateToAllStoriesScreen(context, contact);
+        } else {
+          _navigateToChatScreen(context, contact);
+        }
       },
       child: Container(
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+          gradient: hasStory
+              ? const LinearGradient(
+                  colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          border: hasStory
+              ? null
+              : Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
+                  width: 2,
+                ),
         ),
-        child: CircleAvatar(
-            radius: 24.0,
-            child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: contact.photo ?? '',
-                placeholder: (context, url) => CircularProgressIndicator(),
-                errorWidget: (context, url, error) =>
-                    Icon(Icons.person, size: 24.0),
-                fit: BoxFit.cover,
-                width: 48.0,
-                height: 48.0,
+        padding: EdgeInsets.all(hasStory ? 2.5 : 0),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Theme.of(context).scaffoldBackgroundColor,
+          ),
+          padding: EdgeInsets.all(hasStory ? 2 : 0),
+          child: ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: contact.photo ?? '',
+              placeholder: (context, url) => Container(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
+                  ),
+                ),
               ),
-            )),
+              errorWidget: (context, url, error) => Container(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                child: const Icon(
+                  Icons.person,
+                  size: 28,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              fit: BoxFit.cover,
+              fadeInDuration: const Duration(milliseconds: 200),
+              fadeOutDuration: const Duration(milliseconds: 200),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -115,32 +194,41 @@ class ConversationListScreenState extends State<ConversationListScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => AllStoriesScreen(
-                storyIds: contact.story,
-                initialIndex: 0,
-              )),
+        builder: (context) => AllStoriesScreen(
+          storyIds: contact.story,
+          initialIndex: 0,
+        ),
+      ),
     );
   }
 
   Widget _buildStatus(Contact user) {
-    // Vérifiez si user.story n'est pas vide
     if (user.presence != 'inactif') {
       return Positioned(
-        right: 0,
-        bottom: 0,
+        right: 2,
+        bottom: 2,
         child: Container(
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Color.fromARGB(255, 25, 234, 42),
+            color: AppTheme.secondaryColor,
+            border: Border.all(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.secondaryColor.withOpacity(0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
         ),
       );
-    } else {
-      // Si user.story est vide, retournez un widget vide
-      return SizedBox.shrink();
     }
+    return const SizedBox.shrink();
   }
 
   void _navigateToChatScreen(BuildContext context, Contact contact) {
@@ -148,67 +236,207 @@ class ConversationListScreenState extends State<ConversationListScreen>
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => GroupChatScreen(groupId: contact.id)),
+          builder: (context) => GroupChatScreen(groupId: contact.id),
+        ),
       );
     } else if (contact.type == "utilisateur") {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => DirectChatScreen(contactId: contact.id)),
+          builder: (context) => DirectChatScreen(contactId: contact.id),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(110.0),
-        child: AppBar(
-          backgroundColor: Color.fromARGB(0, 252, 252, 252),
-          flexibleSpace: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _conversations.map((conversation) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Stack(
-                          children: [
-                            _buildAvatar(conversation.contact, context),
-                            _buildStatus(conversation.contact),
-                          ],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: _isInitialLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor:
+                        const AlwaysStoppedAnimation(AppTheme.primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Chargement des conversations...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
-                        const SizedBox(height: 4),
-                        Flexible(
-                          child: Text(
-                            conversation.contact.nom,
-                            style: const TextStyle(
-                                fontSize: 14,
-                                color: Color.fromARGB(255, 0, 0, 0)),
-                            overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            )
+          : CustomScrollView(
+              slivers: [
+                // Header avec stories
+                SliverAppBar(
+                  expandedHeight: 120,
+                  floating: false,
+                  pinned: false,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  elevation: 0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: SafeArea(
+                      child: _conversations.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Aucune conversation',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            )
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              itemCount: _conversations.length,
+                              itemBuilder: (context, index) {
+                                final conversation = _conversations[index];
+                                return Container(
+                                  width: 72,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          _buildAvatar(
+                                            conversation.contact,
+                                            context,
+                                          ),
+                                          _buildStatus(conversation.contact),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Flexible(
+                                        child: Text(
+                                          conversation.contact.nom,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 11,
+                                                height: 1.2,
+                                              ),
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+                ),
+
+                // Divider subtil
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : Colors.black.withOpacity(0.05),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Liste des conversations
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 8),
+                  sliver: _conversations.isEmpty
+                      ? SliverFillRemaining(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: Theme.of(context)
+                                      .iconTheme
+                                      .color
+                                      ?.withOpacity(0.3),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Aucune conversation',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              return FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: ConversationWidget(
+                                  conversation: _conversations[index],
+                                ),
+                              );
+                            },
+                            childCount: _conversations.length,
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-      body: ListView.builder(
-        itemCount: _conversations.length,
-        itemBuilder: (context, index) {
-          return ConversationWidget(conversation: _conversations[index]);
-        },
-      ),
+
+      // Indicateur de silent reload subtil
+      floatingActionButton: _isSilentLoading
+          ? Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
