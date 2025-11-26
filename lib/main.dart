@@ -91,8 +91,8 @@ class NoConnectionApp extends StatelessWidget {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Réessayer'),
                     style: ElevatedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
                     ),
                   ),
                 ],
@@ -136,7 +136,8 @@ class MyApp extends StatelessWidget {
             '/login': (context) => const LoginScreen(),
             '/home': (context) => const HomeScreen(),
             '/profile': (context) {
-              final user = ModalRoute.of(context)!.settings.arguments as UserModel;
+              final user =
+                  ModalRoute.of(context)!.settings.arguments as UserModel;
               return const ProfileScreen();
             },
             '/register': (context) => const RegisterScreen(),
@@ -272,10 +273,11 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.chat_bubble,
-                        size: 60,
-                        color: Colors.white,
+                      child: Image.asset(
+                        'assets/images/icon.png',
+                        height: 180,
+                        width: 180,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 32),
