@@ -217,7 +217,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ContaScreen(isTransferMode: true, id: id),
+        builder: (_) => ContaScreen(isTransferMode: true, messageId: id),
       ),
     );
     await controller.reloadSilently();

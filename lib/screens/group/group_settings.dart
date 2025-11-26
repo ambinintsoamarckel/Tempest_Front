@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mini_social_network/screens/membre_screen.dart';
+import 'package:mini_social_network/screens/ctt_screen.dart';
 import '../../../models/group_message.dart';
 import 'package:mini_social_network/theme/app_theme.dart';
 import 'group_logic.dart';
@@ -228,7 +228,8 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen>
     final addedContacts = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ContaScreen(groupId: _logic.group!.id),
+        builder: (context) =>
+            ContaScreen(isTransferMode: false, groupId: _logic.group!.id),
       ),
     );
     if (addedContacts != null) {
@@ -787,4 +788,3 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen>
     );
   }
 }
-

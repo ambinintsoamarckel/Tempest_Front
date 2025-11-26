@@ -225,7 +225,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ContaScreen(isTransferMode: true, id: id),
+        builder: (_) => ContaScreen(isTransferMode: true, messageId: id),
       ),
     );
     await controller.reloadSilently();
