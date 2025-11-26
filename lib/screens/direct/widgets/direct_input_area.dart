@@ -1,4 +1,3 @@
-// lib/screens/direct/widgets/direct_input_area.dart
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/widgets/voice_recording_widget.dart';
 import 'attachment_menu.dart';
@@ -14,9 +13,143 @@ class DirectInputArea extends StatelessWidget {
     required this.controller,
   });
 
+  // --- Widgets qui dépendent UNIQUEMENT de l'état du contrôleur de texte/fichier ---
+
+  Widget _buildTextField(BuildContext context, bool isTextFieldBlocked) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isTextFieldBlocked
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1C1C1C)
+                : Colors.grey.shade200)
+            : (Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF2C2C2C)
+                : Colors.grey.shade100),
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: TextField(
+        controller: controller.textController,
+        // ✅ IMPORTANT : Le TextField gère sa propre reconstruction du texte.
+        // On n'a pas besoin de rebuild le parent pour cela.
+        enabled: !isTextFieldBlocked,
+        onSubmitted: (_) => _handleSend(context),
+        style: TextStyle(
+          color: isTextFieldBlocked ? Colors.grey.shade500 : null,
+        ),
+        decoration: InputDecoration(
+          hintText: _getHintText(),
+          hintStyle: TextStyle(
+            color: isTextFieldBlocked
+                ? Colors.grey.shade400
+                : Colors.grey.shade500,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+        maxLines: null,
+      ),
+    );
+  }
+
+  // Ce widget utilise ValueListenableBuilder pour écouter le contrôleur de texte
+  // et ne reconstruire QUE le bouton d'envoi/micro.
+  Widget _buildSendButton(BuildContext context) {
+    // ValueListenableBuilder écoute les changements de la propriété 'value'
+    // du TextEditingController sans rebuild le DirectInputArea entier.
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller.textController,
+      builder: (context, value, child) {
+        final bool isTextPresent = value.text.trim().isNotEmpty;
+
+        // 1. Si un fichier est en preview (cette vérification ne change que via un autre notifier)
+        if (controller.previewFile != null) {
+          return GestureDetector(
+            onTap: () => controller.sendFile(context),
+            child: _SendButtonIcon(),
+          );
+        }
+
+        // 2. Si du texte est présent -> bouton send
+        if (isTextPresent) {
+          return GestureDetector(
+            onTap: () => controller.sendText(context),
+            child: _SendButtonIcon(),
+          );
+        }
+
+        // 3. Sinon -> bouton micro
+        // NOTE: Si controller.isRecording est un autre état géré par un ChangeNotifier,
+        // vous devrez envelopper VoiceRecordingButton dans un Consumer/Listener
+        // de ce ChangeNotifier pour qu'il se mette à jour correctement.
+        return VoiceRecordingButton(
+          isRecording: controller.isRecording,
+          onStartRecording: controller.startRecording,
+          useModernMode: true,
+        );
+      },
+    );
+  }
+
+  // Widget interne pour le style du bouton d'envoi
+  Widget _SendButtonIcon() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor,
+            AppTheme.secondaryColor,
+          ],
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.send,
+        color: Colors.white,
+        size: 20,
+      ),
+    );
+  }
+
+  // ✅ NOUVEAU : Hint dynamique selon le type de preview
+  String _getHintText() {
+    if (controller.previewFile == null) {
+      return "Message";
+    }
+
+    switch (controller.previewType) {
+      case 'image':
+        return "Image prête à envoyer";
+      case 'video':
+        return "Vidéo prête à envoyer";
+      case 'audio':
+        return "Audio prêt à envoyer";
+      case 'file':
+        return "Fichier prêt à envoyer";
+      default:
+        return "Fichier prêt à envoyer";
+    }
+  }
+
+  void _handleSend(BuildContext context) {
+    // Cette méthode n'est appelée que par onSubmitted du TextField
+    if (controller.textController.text.trim().isNotEmpty &&
+        controller.previewFile == null) {
+      controller.sendText(context);
+    }
+  }
+
+  // --- Méthode Build Principale ---
+
   @override
   Widget build(BuildContext context) {
-    // ✅ Bloquer le champ texte si un fichier est en preview
+    // Si vous utilisez un package de gestion d'état, ce widget devrait
+    // être enveloppé pour écouter les changements sur `showAttachmentMenu`
+    // et `previewFile` uniquement (pas le texte).
+
+    // Pour l'instant, on assume que tout changement dans le DirectChatController
+    // déclenche un rebuild de DirectInputArea (via un Consumer ou autre dans le parent).
     final bool isTextFieldBlocked = controller.previewFile != null;
 
     return Container(
@@ -33,6 +166,7 @@ class DirectInputArea extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // L'AttachmentMenu se reconstruit si showAttachmentMenu change
           if (controller.showAttachmentMenu)
             AttachmentMenu(
               options: [
@@ -69,135 +203,15 @@ class DirectInputArea extends StatelessWidget {
                   onPressed: controller.toggleAttachmentMenu,
                 ),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: isTextFieldBlocked
-                        ? (Theme.of(context).brightness == Brightness.dark
-                            ? const Color(
-                                0xFF1C1C1C) // ✅ Plus sombre si bloqué (dark mode)
-                            : Colors.grey
-                                .shade200) // ✅ Plus gris si bloqué (light mode)
-                        : (Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF2C2C2C)
-                            : Colors.grey.shade100),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: TextField(
-                    controller: controller.textController,
-                    enabled:
-                        !isTextFieldBlocked, // ✅ Désactivé si fichier présent
-                    onSubmitted: (_) => _handleSend(context),
-                    style: TextStyle(
-                      color: isTextFieldBlocked
-                          ? Colors.grey.shade500 // ✅ Texte grisé si bloqué
-                          : null,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: _getHintText(), // ✅ Hint dynamique
-                      hintStyle: TextStyle(
-                        color: isTextFieldBlocked
-                            ? Colors.grey.shade400
-                            : Colors.grey.shade500,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    maxLines: null,
-                  ),
-                ),
+                child: _buildTextField(context, isTextFieldBlocked),
               ),
               const SizedBox(width: 4),
+              // ✅ Utilise ValueListenableBuilder pour la reconstruction isolée
               _buildSendButton(context),
             ],
           ),
         ],
       ),
     );
-  }
-
-  // ✅ NOUVEAU : Hint dynamique selon le type de preview
-  String _getHintText() {
-    if (controller.previewFile == null) {
-      return "Message";
-    }
-
-    switch (controller.previewType) {
-      case 'image':
-        return "Image prête à envoyer";
-      case 'video':
-        return "Vidéo prête à envoyer";
-      case 'audio':
-        return "Audio prêt à envoyer";
-      case 'file':
-        return "Fichier prêt à envoyer";
-      default:
-        return "Fichier prêt à envoyer";
-    }
-  }
-
-  Widget _buildSendButton(BuildContext context) {
-    // Si un fichier est en preview -> bouton send
-    if (controller.previewFile != null) {
-      return GestureDetector(
-        onTap: () => controller.sendFile(context),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.secondaryColor,
-              ],
-            ),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.send,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-      );
-    }
-
-    // Si du texte est présent -> bouton send
-    if (controller.hasText) {
-      return GestureDetector(
-        onTap: () => controller.sendText(context),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.secondaryColor,
-              ],
-            ),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.send,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-      );
-    }
-
-    // Sinon -> bouton micro
-    return VoiceRecordingButton(
-      isRecording: controller.isRecording,
-      onStartRecording: controller.startRecording,
-      useModernMode: true,
-    );
-  }
-
-  void _handleSend(BuildContext context) {
-    // Cette méthode n'est appelée que par onSubmitted du TextField
-    // Donc uniquement quand pas de fichier
-    if (controller.hasText && controller.previewFile == null) {
-      controller.sendText(context);
-    }
   }
 }

@@ -36,7 +36,7 @@ class StoryScreenState extends State<StoryScreen> {
   void initState() {
     super.initState();
     _loadStories();
-    _screenManager.registerContactScreen(this);
+    _screenManager.registerStoryScreen(this);
     CurrentScreenManager.updateCurrentScreen('story');
   }
 

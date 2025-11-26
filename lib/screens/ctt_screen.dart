@@ -67,6 +67,8 @@ class _ContaScreenState extends State<ContaScreen>
   void dispose() {
     _fadeController.dispose();
     _searchController.dispose();
+    CurrentScreenManager.clear();
+    _screenManager.unregisterContactScreen();
     super.dispose();
   }
 

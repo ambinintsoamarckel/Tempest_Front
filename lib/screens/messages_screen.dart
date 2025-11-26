@@ -32,7 +32,6 @@ class ConversationListScreenState extends State<ConversationListScreen>
   final MessageService _messageService = MessageService();
   final ScreenManager _screenManager = ScreenManager();
 
-
   bool _isInitialLoading = true;
   bool _isSilentLoading = false;
   late AnimationController _fadeController;
@@ -48,16 +47,17 @@ class ConversationListScreenState extends State<ConversationListScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
     );
-
-    _loadConversations();
-    _screenManager.registerContactScreen(this);
+    _screenManager.registerConversationList(this);
     CurrentScreenManager.updateCurrentScreen('conversationList');
+    _loadConversations();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     routeObserver.unsubscribe(this);
+    _screenManager.unregisterConversationList();
+    CurrentScreenManager.clear();
     super.dispose();
   }
 

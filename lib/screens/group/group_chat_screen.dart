@@ -45,7 +45,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void initState() {
     super.initState();
     print('🟢 [GroupChatScreen] initState() - groupId: ${widget.groupId}');
-    _screenManager.registerContactScreen(this);
+    _screenManager.registerGroupChatScreen(this);
     CurrentScreenManager.currentScreen = 'groupChat';
     print(
         '📍 [GroupChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
@@ -82,6 +82,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     print('🔴 [GroupChatScreen] dispose() - removing listener');
     controller.removeListener(_onControllerUpdate);
     controller.dispose();
+    CurrentScreenManager.clear();
+    _screenManager.unregisterGroupChatScreen();
     super.dispose();
   }
 

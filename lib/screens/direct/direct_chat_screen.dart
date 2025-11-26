@@ -50,7 +50,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     print('🟢 [DirectChatScreen] initState() - contactId: ${widget.contactId}');
 
     CurrentScreenManager.currentScreen = 'directChat';
-    _screenManager.registerContactScreen(this);
+    _screenManager.registerDirectChatScreen(this);
     print(
         '📍 [DirectChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
 
@@ -87,6 +87,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   void dispose() {
     print('🔴 [DirectChatScreen] dispose() - removing listener');
     controller.removeListener(_onControllerUpdate);
+    _screenManager.unregisterDirectChatScreen();
+    // 2. Nettoyage de l'écran actuel
+    CurrentScreenManager.clear();
     controller.dispose();
     super.dispose();
   }
