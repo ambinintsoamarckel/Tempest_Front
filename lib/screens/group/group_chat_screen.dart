@@ -10,7 +10,7 @@ import 'package:mini_social_network/screens/group/widgets/group_chat_app_bar.dar
 import 'package:mini_social_network/screens/group/widgets/group_input_area.dart';
 import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/screens/direct/widgets/message_date_badge.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String groupId;
@@ -37,6 +37,7 @@ class GroupChatScreen extends StatefulWidget {
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
+  final ScreenManager _screenManager = ScreenManager();
   late final GroupChatController controller;
   int _updateCount = 0;
 
@@ -44,7 +45,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void initState() {
     super.initState();
     print('🟢 [GroupChatScreen] initState() - groupId: ${widget.groupId}');
-
+    _screenManager.registerContactScreen(this);
     CurrentScreenManager.currentScreen = 'groupChat';
     print(
         '📍 [GroupChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');

@@ -2,16 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 import '../models/grouped_stories.dart';
 import '../widgets/story_widget.dart';
 import '../services/story_service.dart';
 import 'all_screen.dart';
 import 'creation_story.dart';
+
 class StoryScreen extends StatefulWidget {
   final GlobalKey<StoryScreenState> storyScreenKey;
 
-  const StoryScreen({required this.storyScreenKey}) : super(key: storyScreenKey);
+  const StoryScreen({required this.storyScreenKey})
+      : super(key: storyScreenKey);
 
   @override
   StoryScreenState createState() => StoryScreenState();
@@ -27,14 +29,15 @@ class StoryScreen extends StatefulWidget {
 class StoryScreenState extends State<StoryScreen> {
   final List<GroupedStory> _stories = [];
   final StoryService _storyService = StoryService();
-  final CurrentScreenManager screenManager = CurrentScreenManager();
+  final ScreenManager _screenManager = ScreenManager();
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadStories();
-    screenManager.updateCurrentScreen('story');
+    _screenManager.registerContactScreen(this);
+    CurrentScreenManager.updateCurrentScreen('story');
   }
 
   Future<void> _loadStories() async {
@@ -71,17 +74,21 @@ class StoryScreenState extends State<StoryScreen> {
     }
   }
 
-Future<void> _createStory() async {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CreateStoryScreen(onStoryCreated: _reload),
-    ),
-  );
-}
+  Future<void> _createStory() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateStoryScreen(onStoryCreated: _reload),
+      ),
+    );
+  }
 
   void _onStorySelected(int index) {
-    final storyIds = _stories.sublist(index).expand((groupedStory) => groupedStory.stories).map((story) => story.id).toList();
+    final storyIds = _stories
+        .sublist(index)
+        .expand((groupedStory) => groupedStory.stories)
+        .map((story) => story.id)
+        .toList();
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 import '../models/messages.dart';
 import '../services/list_message_service.dart';
 import '../widgets/messages_widget.dart';
@@ -30,7 +30,8 @@ class ConversationListScreenState extends State<ConversationListScreen>
     with RouteAware, SingleTickerProviderStateMixin {
   final List<Conversation> _conversations = [];
   final MessageService _messageService = MessageService();
-  final CurrentScreenManager screenManager = CurrentScreenManager();
+  final ScreenManager _screenManager = ScreenManager();
+
 
   bool _isInitialLoading = true;
   bool _isSilentLoading = false;
@@ -49,7 +50,8 @@ class ConversationListScreenState extends State<ConversationListScreen>
     );
 
     _loadConversations();
-    screenManager.updateCurrentScreen('conversationList');
+    _screenManager.registerContactScreen(this);
+    CurrentScreenManager.updateCurrentScreen('conversationList');
   }
 
   @override
@@ -119,7 +121,7 @@ class ConversationListScreenState extends State<ConversationListScreen>
   @override
   void didPopNext() {
     super.didPopNext();
-    screenManager.updateCurrentScreen('conversationList');
+    CurrentScreenManager.updateCurrentScreen('conversationList');
     _silentReload();
   }
 

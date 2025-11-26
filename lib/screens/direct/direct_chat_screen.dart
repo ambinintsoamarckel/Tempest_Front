@@ -13,7 +13,7 @@ import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/screens/direct/widgets/message_date_badge.dart';
 import 'package:mini_social_network/screens/direct/services/direct_chat_controller.dart';
 import 'widgets/direct_chat_app_bar.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String contactId;
@@ -41,6 +41,7 @@ class DirectChatScreen extends StatefulWidget {
 
 class _DirectChatScreenState extends State<DirectChatScreen> {
   late final DirectChatController controller;
+  final ScreenManager _screenManager = ScreenManager();
   int _updateCount = 0;
 
   @override
@@ -49,6 +50,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     print('🟢 [DirectChatScreen] initState() - contactId: ${widget.contactId}');
 
     CurrentScreenManager.currentScreen = 'directChat';
+    _screenManager.registerContactScreen(this);
     print(
         '📍 [DirectChatScreen] Current screen mis à jour: ${CurrentScreenManager.currentScreen}');
 

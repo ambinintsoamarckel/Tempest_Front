@@ -7,11 +7,13 @@ import 'package:mini_social_network/screens/contacts_screen.dart';
 import 'package:mini_social_network/screens/home_screen.dart';
 import 'package:mini_social_network/screens/messages_screen.dart';
 import 'package:mini_social_network/screens/stories_screen.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 
 class ProfileLogic extends ChangeNotifier {
   final UserService _userService = UserService();
   final SocketService _socketService = SocketService();
   final ImagePicker _picker = ImagePicker();
+  final ScreenManager _screenManager = ScreenManager();
 
   UserModel? _user;
   bool _isLoading = false;
@@ -204,10 +206,7 @@ class ProfileLogic extends ChangeNotifier {
       bool deconnected = await _userService.logout();
 
       if (deconnected) {
-        HomeScreenState.contactScreenState = GlobalKey<ContactScreenState>();
-        HomeScreenState.conversationListScreen =
-            GlobalKey<ConversationListScreenState>();
-        HomeScreenState.storyScreenKey = GlobalKey<StoryScreenState>();
+        _screenManager.clearAll();
         _socketService.disconnect();
         return true;
       }
@@ -224,10 +223,7 @@ class ProfileLogic extends ChangeNotifier {
       bool success = await _userService.delete();
 
       if (success) {
-        HomeScreenState.contactScreenState = GlobalKey<ContactScreenState>();
-        HomeScreenState.conversationListScreen =
-            GlobalKey<ConversationListScreenState>();
-        HomeScreenState.storyScreenKey = GlobalKey<StoryScreenState>();
+        _screenManager.clearAll();
         _socketService.disconnect();
         return true;
       }

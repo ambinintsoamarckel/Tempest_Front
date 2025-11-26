@@ -22,7 +22,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  // Envelopper l'app avec ChangeNotifierProvider
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -36,7 +35,6 @@ class NoConnectionApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Utiliser Consumer pour accéder au thème
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
@@ -82,7 +80,6 @@ class NoConnectionApp extends StatelessWidget {
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // Redémarrer l'app ou réessayer la connexion
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const SplashScreen()),
@@ -124,17 +121,17 @@ class MyApp extends StatelessWidget {
           navigatorObservers: [routeObserver],
           title: 'Houatsappy',
           debugShowCheckedModeBanner: false,
-
-          // Utilisation du nouveau système de thème
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.themeMode, // Utilise le thème du provider
-
+          themeMode: themeProvider.themeMode,
           initialRoute: '/',
           routes: {
             '/': (context) => const SplashScreen(),
             '/login': (context) => const LoginScreen(),
             '/home': (context) => const HomeScreen(),
+            '/home/contacts': (context) => const HomeScreen(),
+            '/home/messages': (context) => const HomeScreen(),
+            '/home/stories': (context) => const HomeScreen(),
             '/profile': (context) {
               final user =
                   ModalRoute.of(context)!.settings.arguments as UserModel;
@@ -203,10 +200,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _initializeApp() async {
-    // Attendre un peu pour l'animation
     await Future.delayed(const Duration(milliseconds: 800));
 
-    // Vérifie la connectivité avant tout
     bool isConnected = await checkConnectivity();
     if (!isConnected && mounted) {
       Navigator.pushReplacement(
@@ -216,19 +211,18 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    // Si connecté, vérifie la session
     try {
       UserModel isValidSession = await _userService.checkSession();
       socketService.initializeSocket(isValidSession.uid);
       if (mounted) {
+        // Navigation vers /home/messages par défaut
         Navigator.pushReplacementNamed(
           context,
-          '/home',
+          '/home/messages',
           arguments: isValidSession,
         );
       }
     } catch (e) {
-      // Si la session n'est pas valide, redirige vers la page de connexion
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
@@ -250,7 +244,6 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo de l'application avec gradient
                     Container(
                       width: 120,
                       height: 120,
@@ -281,8 +274,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 32),
-
-                    // Nom de l'application
                     const Text(
                       'Houatsappy',
                       style: TextStyle(
@@ -292,7 +283,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-
                     Text(
                       'Connectez-vous avec vos proches',
                       style: TextStyle(
@@ -302,8 +292,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 48),
-
-                    // Indicateur de chargement moderne
                     SizedBox(
                       width: 40,
                       height: 40,

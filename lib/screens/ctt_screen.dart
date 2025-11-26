@@ -4,7 +4,7 @@ import 'package:mini_social_network/services/discu_message_service.dart';
 import '../models/contact.dart';
 import '../services/contact_service.dart';
 import '../services/discu_group_service.dart';
-import '../services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 import '../theme/app_theme.dart';
 import '../widgets/contact_widget.dart';
 
@@ -32,7 +32,7 @@ class _ContaScreenState extends State<ContaScreen>
   final List<Contact> _contacts = [];
   final List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
-  final CurrentScreenManager screenManager = CurrentScreenManager();
+  final ScreenManager _screenManager = ScreenManager();
 
   bool _isProcessing = false;
   bool _isInitialLoading = true;
@@ -56,7 +56,11 @@ class _ContaScreenState extends State<ContaScreen>
     );
 
     _loadContacts();
-    screenManager.updateCurrentScreen('contact');
+    // ✅ 1. Enregistrer ce state dans le ScreenManager
+    _screenManager.registerContactScreen(this);
+
+    // ✅ 2. Mettre à jour l'écran actuel
+    CurrentScreenManager.updateCurrentScreen('contact');
   }
 
   @override

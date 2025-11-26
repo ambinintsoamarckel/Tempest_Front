@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mini_social_network/screens/group/group_chat_screen.dart';
-import 'package:mini_social_network/services/current_screen_manager.dart';
+import 'package:mini_social_network/utils/screen_manager.dart';
 import '../models/contact.dart';
 import '../widgets/contact_widget.dart';
 import '../services/contact_service.dart';
@@ -30,7 +30,7 @@ class ContactScreenState extends State<ContactScreen>
   final List<Contact> _filteredContacts = [];
   final Set<Contact> _selectedContacts = {};
   final TextEditingController _searchController = TextEditingController();
-  final CurrentScreenManager screenManager = CurrentScreenManager();
+  final ScreenManager _screenManager = ScreenManager();
 
   bool _isSelectionMode = false;
   bool _isInitialLoading = true;
@@ -50,7 +50,11 @@ class ContactScreenState extends State<ContactScreen>
     );
 
     _loadContacts();
-    screenManager.updateCurrentScreen('contact');
+    // ✅ 1. Enregistrer ce state dans le ScreenManager
+    _screenManager.registerContactScreen(this);
+
+    // ✅ 2. Mettre à jour l'écran actuel
+    CurrentScreenManager.updateCurrentScreen('contact');
   }
 
   @override
