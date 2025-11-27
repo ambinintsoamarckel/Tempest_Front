@@ -10,6 +10,9 @@ class AttachmentMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Détection du thème actif
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
@@ -40,13 +43,13 @@ class AttachmentMenu extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // Titre
+              // Titre avec couleur adaptative
               Text(
                 'Envoyer une pièce jointe',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimaryDark,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 24),
@@ -55,7 +58,7 @@ class AttachmentMenu extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 20,
                 alignment: WrapAlignment.center,
-                children: options.map((opt) => _buildOption(opt)).toList(),
+                children: options.map((opt) => _buildOption(context, opt)).toList(),
               ),
               const SizedBox(height: 8),
             ],
@@ -65,7 +68,9 @@ class AttachmentMenu extends StatelessWidget {
     );
   }
 
-  Widget _buildOption(AttachmentOption opt) {
+  Widget _buildOption(BuildContext context, AttachmentOption opt) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return SizedBox(
       width: 80,
       child: Material(
@@ -111,12 +116,12 @@ class AttachmentMenu extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Label
+                // Label avec couleur adaptative
                 Text(
                   opt.label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme.textPrimaryDark,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,

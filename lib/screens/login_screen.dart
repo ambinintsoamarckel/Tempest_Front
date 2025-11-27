@@ -103,11 +103,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       body: Stack(
         children: [
           // Gradient de fond
@@ -129,8 +124,8 @@ class _LoginScreenState extends State<LoginScreen>
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
@@ -142,14 +137,13 @@ class _LoginScreenState extends State<LoginScreen>
                         Hero(
                           tag: 'app_logo',
                           child: Container(
-                            padding: const EdgeInsets.all(30),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      AppTheme.secondaryColor.withOpacity(0.3),
+                                  color: AppTheme.secondaryColor.withOpacity(0.3),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
@@ -157,38 +151,37 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             child: Image.asset(
                               'assets/images/icon.png',
-                              height: 180,
-                              width: 180,
+                              height: 120,
+                              width: 120,
                               fit: BoxFit.contain,
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
 
                         // Titre
                         Text(
                           'Content de vous revoir!',
                           style: Theme.of(context)
                               .textTheme
-                              .headlineMedium
+                              .headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primaryColor,
                               ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           'Veuillez vous connecter à votre compte',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey,
+                              ),
                           textAlign: TextAlign.center,
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
 
                         // Carte de formulaire
                         Card(
@@ -198,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen>
                             borderRadius: BorderRadius.circular(24),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(24.0),
+                            padding: const EdgeInsets.all(20.0),
                             child: Column(
                               children: [
                                 // Email
@@ -208,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   icon: Icons.email_rounded,
                                   keyboardType: TextInputType.emailAddress,
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 16),
 
                                 // Mot de passe
                                 _buildTextField(
@@ -231,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 30),
+                                const SizedBox(height: 20),
 
                                 // Bouton de connexion
                                 _buildLoginButton(),
@@ -240,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // Lien vers inscription
                         Row(
@@ -346,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLoginButton() {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 50,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _signIn,
         style: ElevatedButton.styleFrom(
