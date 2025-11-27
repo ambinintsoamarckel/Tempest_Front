@@ -89,39 +89,65 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
     setState(() => _isLoading = true);
 
     try {
-      // Charger toutes les stories groupées
-      for (String storyId in widget.storyIds) {
-        final story = await _storyService.getStoryById(storyId);
+      // Charger seulement la première story
+      final firstStoryId = widget.storyIds[widget.initialIndex];
+      final firstStory = await _storyService.getStoryById(firstStoryId);
 
-        // Grouper par utilisateur
-        final existingGroupIndex = _groupedStories.indexWhere(
-          (group) => group.utilisateur.id == story!.user.id,
+      if (firstStory != null) {
+        _groupedStories.add(
+          GroupedStory(
+            utilisateur: firstStory.user,
+            stories: [firstStory],
+          ),
         );
 
-        if (existingGroupIndex != -1) {
-          _groupedStories[existingGroupIndex].stories.add(story!);
-        } else {
-          _groupedStories.add(
-            GroupedStory(
-              utilisateur: story!.user,
-              stories: [story],
-            ),
-          );
+        if (mounted) {
+          _currentGroupedStory = _groupedStories[0];
+          _currentStory = _currentGroupedStory!.stories[0];
+          _initializeProgressControllers();
+          _startStoryProgress();
+
+          setState(() => _isLoading = false);
+
+          // Précharger les autres stories en arrière-plan
+          _preloadOtherStories();
         }
       }
-
-      if (mounted && _groupedStories.isNotEmpty) {
-        _currentGroupedStory = _groupedStories[_currentUserIndex];
-        _currentStory = _currentGroupedStory!.stories[0];
-        _initializeProgressControllers();
-        _startStoryProgress();
-
-        setState(() => _isLoading = false);
-      }
     } catch (e) {
-      print('❌ Error loading stories: $e');
+      print('❌ Error loading first story: $e');
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _preloadOtherStories() async {
+    // Charger les autres stories progressivement
+    for (int i = 0; i < widget.storyIds.length; i++) {
+      if (i == widget.initialIndex) continue; // Déjà chargé
+
+      try {
+        final storyId = widget.storyIds[i];
+        final story = await _storyService.getStoryById(storyId);
+
+        if (story != null && mounted) {
+          final existingGroupIndex = _groupedStories.indexWhere(
+            (group) => group.utilisateur.id == story.user.id,
+          );
+
+          if (existingGroupIndex != -1) {
+            _groupedStories[existingGroupIndex].stories.add(story);
+          } else {
+            _groupedStories.add(
+              GroupedStory(
+                utilisateur: story.user,
+                stories: [story],
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('⚠️ Error preloading story: $e');
       }
     }
   }
@@ -417,11 +443,8 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
                   // Top bar with user info
                   _buildTopBar(),
 
-                  // Bottom info
+                  // Bottom info (caption + views)
                   if (_currentStory != null) _buildBottomInfo(),
-
-                  // Navigation hints
-                  if (_showControls) _buildNavigationHints(),
                 ],
               ),
             ),
@@ -511,21 +534,6 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
           padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
           child: Row(
             children: [
-              // Close button
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white),
-                  iconSize: 24,
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
               // User avatar
               Container(
                 decoration: BoxDecoration(
@@ -556,7 +564,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
                 ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
 
               // User name and time
               Expanded(
@@ -600,10 +608,12 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
                 ),
               ),
 
+              const SizedBox(width: 12),
+
               // More options
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -615,6 +625,28 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
                   },
                 ),
               ),
+
+              const SizedBox(width: 8),
+
+              // Close button (moderne et minimaliste)
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -623,6 +655,13 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
   }
 
   Widget _buildBottomInfo() {
+    // Vérifier si on doit afficher quelque chose
+    final bool hasCaption = _currentStory!.contenu.caption != null &&
+        _currentStory!.contenu.caption!.isNotEmpty;
+    final bool showViews = _currentStory!.user.id == _currentUserId;
+
+    if (!hasCaption && !showViews) return const SizedBox();
+
     return Positioned(
       left: 0,
       right: 0,
@@ -647,9 +686,8 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Caption
-                if (_currentStory!.contenu.caption != null &&
-                    _currentStory!.contenu.caption!.isNotEmpty)
+                // Caption (pour toutes les stories qui en ont)
+                if (hasCaption)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
@@ -669,7 +707,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
                   ),
 
                 // Views (si c'est notre story)
-                if (_currentStory!.user.id == _currentUserId)
+                if (showViews)
                   InkWell(
                     onTap: () {
                       _pauseStoryProgress();
@@ -720,68 +758,6 @@ class _AllStoriesScreenState extends State<AllStoriesScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationHints() {
-    return FadeTransition(
-      opacity: _fadeController,
-      child: Row(
-        children: [
-          // Left hint
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.arrow_back_ios_rounded,
-                  color: Colors.white24,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-
-          // Center (tap zone)
-          Expanded(
-            child: Container(),
-          ),
-
-          // Right hint
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Colors.white24,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
