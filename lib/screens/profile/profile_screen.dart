@@ -251,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         context,
         MaterialPageRoute(
           builder: (context) =>
-              archive.StoryScreen(stories: _logic.user!.archives),
+              archive.ArchiveStoryScreen(stories: _logic.user!.archives),
         ),
       );
     }
