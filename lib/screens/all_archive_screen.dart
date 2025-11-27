@@ -55,6 +55,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
       _currentUserId = user;
     });
   }
+
   Future<void> _loadStory(String storyId) async {
     setState(() {
       _isLoading = true;
@@ -111,12 +112,13 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                   final user = _currentStory!.vues[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: user.photo != null ? NetworkImage(user.photo!):null,
+                      backgroundImage:
+                          user.photo != null ? NetworkImage(user.photo!) : null,
                       child: user.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+                          ? const Icon(Icons.person, size: 24.0)
+                          : null,
                     ),
-                    title: Text(user.name),
+                    title: Text(user.nom),
                   );
                 },
               )
@@ -185,7 +187,9 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
               bottom: MediaQuery.of(context).padding.bottom + 16,
               left: 16,
               child: GestureDetector(
-                onTap: _currentStory != null && _currentStory!.vues.isNotEmpty ? _showViews : null,
+                onTap: _currentStory != null && _currentStory!.vues.isNotEmpty
+                    ? _showViews
+                    : null,
                 child: Row(
                   children: [
                     const Icon(
@@ -207,14 +211,16 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: _currentStory?.user.photo != '' ? NetworkImage(_currentStory?.user.photo ?? '') : null,
-                  child:  _currentStory?.user.photo == null
-              ? const Icon(Icons.person, size: 24.0)
-              : null,
+                  backgroundImage: _currentStory?.user.photo != ''
+                      ? NetworkImage(_currentStory?.user.photo ?? '')
+                      : null,
+                  child: _currentStory?.user.photo == null
+                      ? const Icon(Icons.person, size: 24.0)
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _currentStory?.user.name ?? '',
+                  _currentStory?.user.nom ?? '',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
@@ -234,7 +240,8 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
         color: isTextStory ? backgroundColor : null,
         image: !isTextStory
             ? DecorationImage(
-                image: NetworkImage(story.contenu.image ?? story.contenu.video ?? ''),
+                image: NetworkImage(
+                    story.contenu.image ?? story.contenu.video ?? ''),
                 fit: BoxFit.cover,
               )
             : null,

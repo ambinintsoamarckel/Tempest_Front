@@ -1,96 +1,95 @@
 // models/user.dart
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'stories.dart';
+import 'user.dart';
 
-enum StoryType { texte, image,  video }
+class GroupedStory {
+  final User utilisateur;
+  final List<Story> stories;
 
-class StoryContent {
-  final StoryType type;
-  final String? texte;
-  final String? image;
-  final String? video;
-
-  StoryContent({
-    required this.type,
-    this.texte,
-    this.image,
-    this.video,
-  });
-
-  factory StoryContent.fromJson(Map<String, dynamic> json) {
-
-    return StoryContent(
-      type: StoryType.values.firstWhere(
-        (e) => describeEnum(e) == json['type'],
-        orElse: () => StoryType.texte,
-      ),
-      texte: json['texte'],
-      image: json['image'],
-      video: json['video'],
-    );
-  }
-}
-class User {
-  final String id;
-  final String name;
-  final String email;
-  final String? photo;
-
-  User({required this.id, required this.name, required this.email,required this.photo });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'],
-      name: json['nom'],
-      email: json['email'],
-      photo: json['photo'],
-    );
-  }
-}
-
-// models/story.dart
-class Story {
-  final String id;
-  final StoryContent contenu;
-  final DateTime creationDate;
-  final DateTime expirationDate;
-  final List<dynamic> vues;
-
-  Story({
-    required this.id,
-    required this.contenu,
-    required this.creationDate,
-    required this.expirationDate,
-    required this.vues,
-  });
-
-  factory Story.fromJson(Map<String, dynamic> json) {
-    return Story(
-      id: json['_id'],
-      contenu: StoryContent.fromJson(json['contenu']),
-      creationDate: DateTime.parse(json['dateCreation']),
-      expirationDate: DateTime.parse(json['dateExpiration']),
-      vues: json['vues'],
-    );
-  }
-
-  
-}
-class GroupedStory
-  {
-    final User utilisateur;
-    final List<Story> stories;
-      GroupedStory({
+  GroupedStory({
     required this.utilisateur,
     required this.stories,
   });
-    factory GroupedStory.fromJson(Map<String, dynamic> json) {
-    var storiesfromjson  = json['stories'] as List;
-    List<Story> storiesList = storiesfromjson.map((i) => Story.fromJson(i)).toList();
+
+  factory GroupedStory.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      throw Exception('GroupedStory JSON is null');
+    }
+
+    // ✅ Parser l'utilisateur de façon robuste
+    User user;
+    try {
+      if (json['utilisateur'] == null) {
+        throw Exception('utilisateur is null');
+      }
+
+      if (json['utilisateur'] is! Map<String, dynamic>) {
+        throw Exception(
+            'utilisateur is not a Map: ${json['utilisateur'].runtimeType}');
+      }
+
+      user = User.fromJson(json['utilisateur']);
+    } catch (e) {
+      print('⚠️ [GroupedStory] Error parsing utilisateur: $e');
+      user = User(
+        id: 'unknown',
+        nom: 'Utilisateur inconnu',
+        email: 'unknown@example.com',
+      );
+    }
+
+    // ✅ Parser les stories de façon robuste
+    List<Story> storiesList = [];
+    try {
+      if (json['stories'] != null && json['stories'] is List) {
+        var storiesFromJson = json['stories'] as List;
+
+        for (var storyJson in storiesFromJson) {
+          try {
+            // Vérifier que storyJson n'est pas null ET est un Map
+            if (storyJson == null) {
+              print('! [GroupedStory] Skipping null story');
+              continue;
+            }
+
+            if (storyJson is! Map<String, dynamic>) {
+              print(
+                  '! [GroupedStory] Failed to parse individual story: type \'${storyJson.runtimeType}\' is not a subtype of type \'Map<String, dynamic>\'');
+              continue;
+            }
+
+            Story story = Story.fromJson(storyJson);
+            storiesList.add(story);
+          } catch (e) {
+            print('! [GroupedStory] Failed to parse individual story: $e');
+            continue;
+          }
+        }
+      }
+    } catch (e) {
+      print('⚠️ [GroupedStory] Error parsing stories list: $e');
+    }
+
+    if (storiesList.isEmpty) {
+      print('! [GroupedStory] No valid stories found for user ${user.nom}');
+    }
+
     return GroupedStory(
-
-      utilisateur: User.fromJson(json['utilisateur']),
-      stories: storiesList ,
-
+      utilisateur: user,
+      stories: storiesList,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'utilisateur': utilisateur.toJson(),
+      'stories': stories.map((s) => s.toJson()).toList(),
+    };
   }
+
+  Story? get firstStory => stories.isNotEmpty ? stories.first : null;
+  int get storyCount => stories.length;
+  bool get hasStories => stories.isNotEmpty;
+}

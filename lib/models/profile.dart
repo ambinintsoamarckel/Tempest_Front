@@ -1,4 +1,5 @@
 import '../models/grouped_stories.dart';
+import 'stories.dart';
 class Group {
   final String id;
   final String nom;
@@ -37,7 +38,7 @@ class UserModel {
   final List<Group> groupes;
   final List<Story> stories;
   final List<Story>archives;
-  
+
 
   UserModel({
     required this.uid,

@@ -1,5 +1,12 @@
-// models/stories.dart
+// models/story_models.dart
+// 📦 Tous les modèles liés aux stories centralisés ici
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'user.dart';
+
+// ============================================================================
+// ENUMS & STORY CONTENT
+// ============================================================================
 
 enum StoryType { texte, image, video }
 
@@ -9,14 +16,14 @@ class StoryContent {
   final String? image;
   final String? video;
 
-  // ✅ Nouveaux champs pour les stories texte stylisées
+  // Champs pour les stories texte stylisées
   final String? backgroundColor;
   final String? textColor;
   final String? textAlign;
   final double? fontSize;
   final String? fontWeight;
 
-  // ✅ Nouveau champ pour les légendes des images/vidéos
+  // Légende pour images/vidéos
   final String? caption;
 
   StoryContent({
@@ -32,12 +39,25 @@ class StoryContent {
     this.caption,
   });
 
-  factory StoryContent.fromJson(Map<String, dynamic> json) {
+  factory StoryContent.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return StoryContent(type: StoryType.texte);
+    }
+
+    StoryType storyType = StoryType.texte;
+    try {
+      if (json['type'] != null) {
+        storyType = StoryType.values.firstWhere(
+          (e) => describeEnum(e) == json['type'],
+          orElse: () => StoryType.texte,
+        );
+      }
+    } catch (e) {
+      print('⚠️ Erreur parsing type: $e');
+    }
+
     return StoryContent(
-      type: StoryType.values.firstWhere(
-        (e) => describeEnum(e) == json['type'],
-        orElse: () => StoryType.texte,
-      ),
+      type: storyType,
       texte: json['texte'],
       image: json['image'],
       video: json['video'],
@@ -68,40 +88,6 @@ class StoryContent {
     return data;
   }
 }
-
-class User {
-  final String id;
-  final String name;
-  final String email;
-  final String? photo;
-
-  User({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.photo,
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'],
-      name: json['nom'],
-      email: json['email'],
-      photo: json['photo'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'nom': name,
-      'email': email,
-      'photo': photo,
-    };
-  }
-}
-
-// models/story.dart
 class Story {
   final String id;
   final StoryContent contenu;
@@ -119,17 +105,77 @@ class Story {
     required this.user,
   });
 
-  factory Story.fromJson(Map<String, dynamic> json) {
-    var vuesFromJson = json['vues'] as List;
-    List<User> vuesList = vuesFromJson.map((i) => User.fromJson(i)).toList();
+  factory Story.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      throw Exception('Story JSON is null');
+    }
+
+    // ✅ Parser les vues de façon robuste
+    List<User> vuesList = [];
+    try {
+      if (json['vues'] != null && json['vues'] is List) {
+        var vuesFromJson = json['vues'] as List;
+        vuesList = vuesFromJson
+            .where((item) {
+              // Filtrer les null et les non-Map (comme les strings d'IDs)
+              if (item == null) return false;
+              if (item is! Map<String, dynamic>) {
+                print(
+                    '! Erreur parsing vues: type \'${item.runtimeType}\' is not a subtype of type \'Map<String, dynamic>\'');
+                return false;
+              }
+              return true;
+            })
+            .map((i) => User.fromJson(i))
+            .toList();
+      }
+    } catch (e) {
+      print('⚠️ Erreur parsing vues: $e');
+    }
+
+    // ✅ Parser les dates avec fallback
+    DateTime creationDate = DateTime.now();
+    DateTime expirationDate = DateTime.now().add(const Duration(hours: 24));
+
+    try {
+      if (json['dateCreation'] != null) {
+        creationDate = DateTime.parse(json['dateCreation']);
+      }
+    } catch (e) {
+      print('⚠️ Erreur parsing dateCreation: $e');
+    }
+
+    try {
+      if (json['dateExpiration'] != null) {
+        expirationDate = DateTime.parse(json['dateExpiration']);
+      }
+    } catch (e) {
+      print('⚠️ Erreur parsing dateExpiration: $e');
+    }
+
+    // ✅ Parser l'utilisateur
+    User storyUser;
+    try {
+      if (json['utilisateur'] == null) {
+        throw Exception('utilisateur is null');
+      }
+      storyUser = User.fromJson(json['utilisateur']);
+    } catch (e) {
+      print('⚠️ Erreur parsing utilisateur: $e');
+      storyUser = User(
+        id: 'unknown',
+        nom: 'Utilisateur inconnu',
+        email: 'unknown@example.com',
+      );
+    }
 
     return Story(
-      id: json['_id'],
+      id: json['_id'] ?? 'unknown',
       contenu: StoryContent.fromJson(json['contenu']),
-      creationDate: DateTime.parse(json['dateCreation']),
-      expirationDate: DateTime.parse(json['dateExpiration']),
+      creationDate: creationDate,
+      expirationDate: expirationDate,
       vues: vuesList,
-      user: User.fromJson(json['utilisateur']),
+      user: storyUser,
     );
   }
 
@@ -144,13 +190,11 @@ class Story {
     };
   }
 
-  /// Helper pour savoir si c'est une story texte stylisée
   bool get isStyledTextStory {
     return contenu.type == StoryType.texte &&
         (contenu.backgroundColor != null || contenu.textColor != null);
   }
 
-  /// Helper pour savoir si la story a une légende
   bool get hasCaption {
     return contenu.caption != null && contenu.caption!.isNotEmpty;
   }

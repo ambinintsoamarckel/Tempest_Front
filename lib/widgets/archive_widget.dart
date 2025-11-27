@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/grouped_stories.dart';
+import '../models/stories.dart';
 import 'dart:math';
 
 class StoryTile extends StatelessWidget {
@@ -57,7 +58,7 @@ class StoryTile extends StatelessWidget {
                   ),
                 ),
               ),
-            
+
           ],
         ),
       ),

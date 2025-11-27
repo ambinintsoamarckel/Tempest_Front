@@ -118,7 +118,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                           ? const Icon(Icons.person, size: 24.0)
                           : null,
                     ),
-                    title: Text(user.name),
+                    title: Text(user.nom),
                   );
                 },
               )
@@ -220,7 +220,7 @@ class _AllStoriesScreenState extends State<AllStoriesScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _currentStory?.user.name ?? '',
+                  _currentStory?.user.nom ?? '',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],

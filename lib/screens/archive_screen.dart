@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mini_social_network/utils/screen_manager.dart';
 import '../models/grouped_stories.dart';
+import '../models/stories.dart';
 import '../widgets/archive_widget.dart';
 import '../services/story_service.dart';
 import 'all_archive_screen.dart';

@@ -30,6 +30,7 @@ class StoryScreenState extends State<StoryScreen> {
   final ScreenManager _screenManager = ScreenManager();
   bool _isLoading = true;
   bool _isSilentReloading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -47,24 +48,37 @@ class StoryScreenState extends State<StoryScreen> {
 
   /// Chargement initial avec loader
   Future<void> _loadStories() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
+      print('📥 [StoryScreen] Loading stories...');
       final stories = await _storyService.getStories();
 
-      // ✅ Vérifier mounted avant setState
       if (!mounted) return;
 
+      // ✅ Filtrer les stories vides
+      final validStories = stories.where((story) => story.hasStories).toList();
+
       setState(() {
-        _stories.addAll(stories);
+        _stories.clear();
+        _stories.addAll(validStories);
         _isLoading = false;
       });
-    } catch (e) {
-      print('❌ Failed to load stories: $e');
 
-      // ✅ Vérifier mounted avant setState
+      print('✅ [StoryScreen] Loaded ${validStories.length} valid stories');
+    } catch (e) {
+      print('❌ [StoryScreen] Failed to load stories: $e');
+
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
+        _errorMessage = 'Impossible de charger les stories';
       });
     }
   }
@@ -73,27 +87,35 @@ class StoryScreenState extends State<StoryScreen> {
   Future<void> _reload() async {
     if (!mounted) return;
 
-    try {
-      setState(() {
-        _isLoading = true;
-      });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
+    try {
+      print('🔄 [StoryScreen] Reloading stories...');
       final stories = await _storyService.getStories();
 
       if (!mounted) return;
 
+      // ✅ Filtrer les stories vides
+      final validStories = stories.where((story) => story.hasStories).toList();
+
       setState(() {
         _stories.clear();
-        _stories.addAll(stories);
+        _stories.addAll(validStories);
         _isLoading = false;
       });
+
+      print('✅ [StoryScreen] Reloaded ${validStories.length} valid stories');
     } catch (e) {
-      print('❌ Failed to reload stories: $e');
+      print('❌ [StoryScreen] Failed to reload stories: $e');
 
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
+        _errorMessage = 'Échec du rechargement';
       });
     }
   }
@@ -106,6 +128,7 @@ class StoryScreenState extends State<StoryScreen> {
 
     setState(() {
       _isSilentReloading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -113,13 +136,17 @@ class StoryScreenState extends State<StoryScreen> {
 
       if (!mounted) return;
 
+      // ✅ Filtrer les stories vides
+      final validStories = stories.where((story) => story.hasStories).toList();
+
       setState(() {
         _stories.clear();
-        _stories.addAll(stories);
+        _stories.addAll(validStories);
         _isSilentReloading = false;
       });
 
-      print('✅ [StoryScreen] Silent reload completed');
+      print(
+          '✅ [StoryScreen] Silent reload completed with ${validStories.length} stories');
     } catch (e) {
       print('❌ [StoryScreen] Silent reload error: $e');
 
@@ -127,6 +154,7 @@ class StoryScreenState extends State<StoryScreen> {
 
       setState(() {
         _isSilentReloading = false;
+        _errorMessage = 'Erreur de mise à jour';
       });
     }
   }
@@ -146,6 +174,8 @@ class StoryScreenState extends State<StoryScreen> {
   }
 
   void _onStorySelected(int index) {
+    if (index >= _stories.length) return;
+
     final storyIds = _stories
         .sublist(index)
         .expand((groupedStory) => groupedStory.stories)
@@ -169,12 +199,24 @@ class StoryScreenState extends State<StoryScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: _isLoading
-          ? _buildLoadingState()
-          : _stories.isEmpty
-              ? _buildEmptyState(isDark)
-              : _buildStoryGrid(isDark),
+      body: _buildBody(isDark),
     );
+  }
+
+  Widget _buildBody(bool isDark) {
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorState(isDark);
+    }
+
+    if (_stories.isEmpty) {
+      return _buildEmptyState(isDark);
+    }
+
+    return _buildStoryGrid(isDark);
   }
 
   Widget _buildLoadingState() {
@@ -206,6 +248,49 @@ class StoryScreenState extends State<StoryScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: const Icon(
+              Icons.error_outline_rounded,
+              size: 50,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _errorMessage ?? 'Une erreur est survenue',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Réessayer'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],
@@ -352,6 +437,11 @@ class StoryScreenState extends State<StoryScreen> {
   }
 
   Widget _buildStoryItem(int index, bool isDark) {
+    // ✅ Vérifier l'index
+    if (index >= _stories.length) {
+      return const SizedBox.shrink();
+    }
+
     return GestureDetector(
       onTap: () => _onStorySelected(index),
       child: Hero(

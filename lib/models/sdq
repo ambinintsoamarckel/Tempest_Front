@@ -137,8 +137,7 @@ class StoryService {
       final response = await dio.get('/stories');
 
       print('📊 [StoryService] Response status: ${response.statusCode}');
-      print(
-          '📊 [StoryService] Response data type: ${response.data.runtimeType}');
+      print('📊 [StoryService] Response data type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
         // ✅ Vérifier que response.data n'est pas null
@@ -149,8 +148,7 @@ class StoryService {
 
         // ✅ Vérifier que response.data est une liste
         if (response.data is! List) {
-          print(
-              '⚠️ [StoryService] Stories data is not a list: ${response.data.runtimeType}');
+          print('⚠️ [StoryService] Stories data is not a list: ${response.data.runtimeType}');
           print('📄 [StoryService] Data content: ${response.data}');
           return [];
         }
@@ -165,8 +163,8 @@ class StoryService {
               continue;
             }
 
-            group.GroupedStory story = group.GroupedStory.fromJson(userStories);
-            stories.add(story);
+          group.GroupedStory story = group.GroupedStory.fromJson(userStories);
+          stories.add(story);
           } catch (e) {
             print('⚠️ [StoryService] Failed to parse story: $e');
             print('📄 [StoryService] Story data: $userStories');
@@ -175,8 +173,7 @@ class StoryService {
           }
         }
 
-        print(
-            '✅ [StoryService] Successfully loaded ${stories.length} grouped stories');
+        print('✅ [StoryService] Successfully loaded ${stories.length} grouped stories');
         return stories;
       } else {
         throw Exception('Failed to load stories: ${response.statusCode}');
