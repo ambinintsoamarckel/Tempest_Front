@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'texte_screen.dart';
 import 'image_story_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class CreateStoryScreen extends StatefulWidget {
   final VoidCallback onStoryCreated;
@@ -47,19 +48,40 @@ class _CreateStoryScreenState extends State<CreateStoryScreen>
     super.dispose();
   }
 
-  Future<void> _pickMedia(ImageSource source) async {
+Future<void> _pickMedia(ImageSource source) async {
     try {
-      // Demander la permission appropriée
-      Permission permission =
-          source == ImageSource.camera ? Permission.camera : Permission.photos;
+      PermissionStatus status;
 
-      PermissionStatus status = await permission.request();
+      if (source == ImageSource.camera) {
+        // Permission caméra
+        status = await Permission.camera.request();
+      } else {
+        // Permission galerie - gestion Android 13+
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          if (androidInfo.version.sdkInt >= 33) {
+            // Android 13+ : demander READ_MEDIA_IMAGES
+            status = await Permission.photos.request();
+          } else {
+            // Android 12 et inférieur
+            status = await Permission.storage.request();
+          }
+        } else {
+          // iOS
+          status = await Permission.photos.request();
+        }
+      }
 
       if (!status.isGranted) {
         if (mounted) {
-          _showErrorSnackBar(source == ImageSource.camera
-              ? 'Permission caméra refusée'
-              : 'Permission galerie refusée');
+          // Vérifier si l'utilisateur a refusé définitivement
+          if (status.isPermanentlyDenied) {
+            _showPermissionDialog(source);
+          } else {
+            _showErrorSnackBar(source == ImageSource.camera
+                ? 'Permission caméra refusée'
+                : 'Permission galerie refusée');
+          }
         }
         return;
       }
@@ -89,13 +111,40 @@ class _CreateStoryScreenState extends State<CreateStoryScreen>
         }
       }
     } catch (e) {
-      print('Erreur: $e'); // Pour le debug
+      print('Erreur: $e');
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sélection de l\'image');
       }
     }
   }
 
+// Nouvelle méthode pour gérer les permissions refusées définitivement
+  void _showPermissionDialog(ImageSource source) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission requise'),
+        content: Text(
+          source == ImageSource.camera
+              ? 'L\'accès à la caméra est nécessaire. Veuillez l\'activer dans les paramètres.'
+              : 'L\'accès à la galerie est nécessaire. Veuillez l\'activer dans les paramètres.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Paramètres'),
+          ),
+        ],
+      ),
+    );
+  }
   Future<void> _openTextStory() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
