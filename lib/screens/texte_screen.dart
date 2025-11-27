@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:mini_social_network/services/story_service.dart';
+import '../theme/app_theme.dart';
 
 class TextStoryScreen extends StatefulWidget {
   final VoidCallback onStoryCreated;
@@ -14,209 +11,535 @@ class TextStoryScreen extends StatefulWidget {
   _TextStoryScreenState createState() => _TextStoryScreenState();
 }
 
-class _TextStoryScreenState extends State<TextStoryScreen> {
-  Color _backgroundColor = Colors.orangeAccent;
+class _TextStoryScreenState extends State<TextStoryScreen>
+    with SingleTickerProviderStateMixin {
+  Color _backgroundColor = const Color(0xFFFF6B6B);
   String _storyText = "";
   Color _textColor = Colors.white;
   TextAlign _textAlign = TextAlign.center;
+  FontWeight _fontWeight = FontWeight.w600;
+  double _fontSize = 28.0;
+
   final TextEditingController _textController = TextEditingController();
   final StoryService _storyService = StoryService();
-  final ScreenshotController _screenshotController = ScreenshotController();
+  bool _isCreating = false;
+  bool _showColorPicker = false;
+  bool _isTextColorPicker = false;
 
-  void _pickTextColor() async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Choisir une couleur de texte'),
-          content: SingleChildScrollView(
-            child: BlockPicker(
-              pickerColor: _textColor,
-              onColorChanged: (color) {
-                setState(() {
-                  _textColor = color;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-      },
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  // Palettes de couleurs prédéfinies
+  final List<Color> _backgroundColors = [
+    const Color(0xFFFF6B6B), // Rouge corail
+    const Color(0xFF4ECDC4), // Turquoise
+    const Color(0xFF45B7D1), // Bleu ciel
+    const Color(0xFF96CEB4), // Vert menthe
+    const Color(0xFFFECE63), // Jaune doré
+    const Color(0xFFFF8B94), // Rose
+    const Color(0xFF9B59B6), // Violet
+    const Color(0xFF3498DB), // Bleu
+    const Color(0xFFE67E22), // Orange
+    const Color(0xFF1ABC9C), // Turquoise foncé
+    const Color(0xFFE74C3C), // Rouge
+    const Color(0xFF34495E), // Gris bleuté
+  ];
+
+  final List<Color> _textColors = [
+    Colors.white,
+    Colors.black,
+    const Color(0xFFFFD700), // Or
+    const Color(0xFFFF1493), // Rose vif
+    const Color(0xFF00CED1), // Cyan
+    const Color(0xFFFF6347), // Tomate
+    const Color(0xFF9370DB), // Violet moyen
+    const Color(0xFF00FA9A), // Vert spring
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
     );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
   }
 
-  void _pickBackgroundColor() async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Choisir une couleur de fond'),
-          content: SingleChildScrollView(
-            child: BlockPicker(
-              pickerColor: _backgroundColor,
-              onColorChanged: (color) {
-                setState(() {
-                  _backgroundColor = color;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-      },
-    );
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _textController.dispose();
+    super.dispose();
   }
-Future<void> _submitStory() async {
-  // Enlever le focus du clavier
-  FocusScope.of(context).unfocus();
 
-  // Attendre une seconde avant de capturer l'écran
-  await Future.delayed(const Duration(seconds: 1));
+  Future<void> _submitStory() async {
+    if (_storyText.trim().isEmpty) {
+      _showErrorSnackBar('Veuillez écrire du texte');
+      return;
+    }
 
-  try {
-    final directory = await getTemporaryDirectory();
-    final imagePath = '${directory.path}/story.png';
-    _screenshotController.captureAndSave(
-      directory.path,
-      fileName: 'story.png',
-      pixelRatio: 2.0,
-    ).then((path) async {
-      File imageFile = File(imagePath);
-      if (await imageFile.exists()) {
-        await _storyService.createStoryFile(imagePath);
-        widget.onStoryCreated();
-        Navigator.popUntil(context, (route) => route.isFirst);
-      } else {
-        print('Failed to create story: Image file does not exist');
-      }
-    }).catchError((error) {
-      print('Failed to create story: $error');
+    if (!mounted) return;
+
+    setState(() {
+      _isCreating = true;
     });
-  } catch (e) {
-    print('Failed to create story: $e');
+
+    // Convertir les couleurs en format hex
+    String bgColorHex =
+        '#${_backgroundColor.value.toRadixString(16).substring(2)}';
+    String textColorHex = '#${_textColor.value.toRadixString(16).substring(2)}';
+
+    Map<String, dynamic> storyData = {
+      'type': 'texte',
+      'texte': _storyText,
+      'backgroundColor': bgColorHex,
+      'textColor': textColorHex,
+      'textAlign':
+          _textAlign.toString().split('.').last, // 'left', 'center', 'right'
+      'fontSize': _fontSize,
+      'fontWeight':
+          _fontWeight.toString().split('.').last, // 'w600', 'w700', etc.
+    };
+
+    try {
+      await _storyService.createStory(storyData);
+
+      if (!mounted) return;
+
+      widget.onStoryCreated();
+      _showSuccessSnackBar('Story créée avec succès !');
+
+      // Retourner true pour indiquer le succès
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      print('❌ Failed to create story: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _isCreating = false;
+      });
+      _showErrorSnackBar('Erreur lors de la création');
+    }
   }
-}
 
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _toggleColorPicker(bool isTextColor) {
+    setState(() {
+      _showColorPicker = !_showColorPicker;
+      _isTextColorPicker = isTextColor;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _submitStory,
-            child: const Text(
-              'PARTAGER',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      body: Stack(
+        children: [
+          // Contenu principal
+          SafeArea(
+            child: Column(
+              children: [
+                // AppBar personnalisée
+                _buildAppBar(),
+
+                // Zone de texte
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showColorPicker = false;
+                      });
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Center(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: TextField(
+                            controller: _textController,
+                            style: TextStyle(
+                              color: _textColor,
+                              fontSize: _fontSize,
+                              fontWeight: _fontWeight,
+                              height: 1.4,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Écrivez votre message...',
+                              hintStyle: TextStyle(
+                                color: _textColor.withOpacity(0.5),
+                                fontSize: _fontSize,
+                                fontWeight: _fontWeight,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            textAlign: _textAlign,
+                            maxLines: null,
+                            maxLength: 200,
+                            onChanged: (value) {
+                              setState(() {
+                                _storyText = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Barre d'outils en bas
+                _buildToolbar(),
+              ],
+            ),
+          ),
+
+          // Color picker overlay
+          if (_showColorPicker) _buildColorPickerOverlay(),
+
+          // Loading overlay
+          if (_isCreating) _buildLoadingOverlay(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        children: [
+          // Bouton retour
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          const Spacer(),
+          // Bouton partager
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.white, Colors.white70],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _isCreating ? null : _submitStory,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.send_rounded,
+                        color: _backgroundColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Partager',
+                        style: TextStyle(
+                          color: _backgroundColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Stack(
-          children: [
-            Screenshot(
-              controller: _screenshotController,
-              child: Container(
-                color: _backgroundColor,
-                width: double.infinity,
-                height: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 26.0),
-                child: Center(
-                  child: TextFormField(
-                    controller: _textController,
-                    style: TextStyle(
-                      color: _textColor,
-                      fontSize: 24,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'Appuyez pour écrire...',
-                      hintStyle: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 24,
-                      ),
-                      border: InputBorder.none,
-                    ),
-                    textAlign: _textAlign,
-                    maxLines: null,
-                    onChanged: (value) {
-                      setState(() {
-                        _storyText = value;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 10,
-              top: 100,
-              child: Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.color_lens, color: Colors.white),
-                    onPressed: _pickTextColor,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_align_left, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        _textAlign = TextAlign.left;
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_align_center, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        _textAlign = TextAlign.center;
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_align_right, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        _textAlign = TextAlign.right;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: GestureDetector(
-                onTap: _pickBackgroundColor,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _backgroundColor,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ),
+    );
+  }
 
+  Widget _buildToolbar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildToolButton(
+            icon: Icons.palette_rounded,
+            label: 'Fond',
+            onTap: () => _toggleColorPicker(false),
+          ),
+          _buildToolButton(
+            icon: Icons.format_color_text_rounded,
+            label: 'Texte',
+            onTap: () => _toggleColorPicker(true),
+          ),
+          _buildToolButton(
+            icon: _textAlign == TextAlign.left
+                ? Icons.format_align_left_rounded
+                : _textAlign == TextAlign.center
+                    ? Icons.format_align_center_rounded
+                    : Icons.format_align_right_rounded,
+            label: 'Aligner',
+            onTap: _cycleTextAlign,
+          ),
+          _buildToolButton(
+            icon: Icons.format_size_rounded,
+            label: 'Taille',
+            onTap: _cycleFontSize,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorPickerOverlay() {
+    final colors = _isTextColorPicker ? _textColors : _backgroundColors;
+
+    return Positioned(
+      bottom: 140,
+      left: 0,
+      right: 0,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              _isTextColorPicker ? 'Couleur du texte' : 'Couleur de fond',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: colors.map((color) {
+                final isSelected = _isTextColorPicker
+                    ? color == _textColor
+                    : color == _backgroundColor;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (_isTextColorPicker) {
+                        _textColor = color;
+                      } else {
+                        _backgroundColor = color;
+                      }
+                      _showColorPicker = false;
+                    });
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? Colors.white : Colors.white24,
+                        width: isSelected ? 3 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: color.withOpacity(0.5),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: isSelected
+                        ? const Icon(Icons.check, color: Colors.white)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.7),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Publication...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _cycleTextAlign() {
+    setState(() {
+      if (_textAlign == TextAlign.left) {
+        _textAlign = TextAlign.center;
+      } else if (_textAlign == TextAlign.center) {
+        _textAlign = TextAlign.right;
+      } else {
+        _textAlign = TextAlign.left;
+      }
+    });
+  }
+
+  void _cycleFontSize() {
+    setState(() {
+      if (_fontSize == 24.0) {
+        _fontSize = 28.0;
+      } else if (_fontSize == 28.0) {
+        _fontSize = 32.0;
+      } else if (_fontSize == 32.0) {
+        _fontSize = 36.0;
+      } else {
+        _fontSize = 24.0;
+      }
+    });
   }
 }

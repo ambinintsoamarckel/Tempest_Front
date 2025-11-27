@@ -26,7 +26,10 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   DateTime? _lastPressedAt;
 
-  // GlobalKeys pour les enfants (juste pour passer aux widgets)
+  // ✅ PageController pour gérer le swipe
+  late PageController _pageController;
+
+  // GlobalKeys pour les enfants
   late GlobalKey<StoryScreenState> storyScreenKey;
   late GlobalKey<ConversationListScreenState> conversationListScreen;
   late GlobalKey<ContactScreenState> contactScreenState;
@@ -58,8 +61,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     conversationListScreen = GlobalKey<ConversationListScreenState>();
     contactScreenState = GlobalKey<ContactScreenState>();
 
-    // ✅ Les enfants s'enregistreront eux-mêmes dans le ScreenManager
-    // Pas besoin de le faire ici
+    // ✅ Initialiser le PageController avec la page par défaut (Messages = index 1)
+    _pageController = PageController(initialPage: _selectedIndex);
 
     _animationController = AnimationController(
       vsync: this,
@@ -88,15 +91,24 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Déterminer l'index basé sur la route actuelle
     final route = ModalRoute.of(context)?.settings.name;
     if (route != null) {
+      int newIndex = _selectedIndex;
       if (route.contains('contacts')) {
-        _selectedIndex = 0;
-        // ✅ CurrentScreenManager sera mis à jour par ContactScreen lui-même
+        newIndex = 0;
       } else if (route.contains('messages')) {
-        _selectedIndex = 1;
-        // ✅ CurrentScreenManager sera mis à jour par ConversationListScreen lui-même
+        newIndex = 1;
       } else if (route.contains('stories')) {
-        _selectedIndex = 2;
-        // ✅ CurrentScreenManager sera mis à jour par StoryScreen lui-même
+        newIndex = 2;
+      }
+
+      // ✅ Mettre à jour le PageController après que le widget soit construit
+      if (newIndex != _selectedIndex) {
+        _selectedIndex = newIndex;
+        // Utiliser addPostFrameCallback pour s'assurer que le PageView est construit
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pageController.hasClients) {
+            _pageController.jumpToPage(newIndex);
+          }
+        });
       }
     }
 
@@ -115,14 +127,40 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _animationController.dispose();
+    _pageController.dispose(); // ✅ Dispose du PageController
     super.dispose();
   }
 
+  // ✅ Méthode mise à jour pour gérer la navigation
   void _onNavItemTapped(int index) {
     if (_selectedIndex != index) {
       setState(() {
         _selectedIndex = index;
       });
+
+      // ✅ Animer le changement de page
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+
+      // Naviguer vers la nouvelle route
+      final currentRoute = _navItems[index].route;
+      Navigator.of(context).pushReplacementNamed(
+        currentRoute,
+        arguments: user,
+      );
+    }
+  }
+
+  // ✅ Nouvelle méthode appelée quand on swipe
+  void _onPageChanged(int index) {
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+      });
+
       _animationController.reset();
       _animationController.forward();
 
@@ -171,21 +209,6 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return true;
-  }
-
-  Widget _getCurrentScreen() {
-    switch (_selectedIndex) {
-      case 0:
-        return ContactScreen(contactScreenKey: contactScreenState);
-      case 1:
-        return ConversationListScreen(
-            conversationListScreenKey: conversationListScreen);
-      case 2:
-        return StoryScreen(storyScreenKey: storyScreenKey);
-      default:
-        return ConversationListScreen(
-            conversationListScreenKey: conversationListScreen);
-    }
   }
 
   @override
@@ -311,11 +334,17 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
 
-        // Contenu avec animation
+        // ✅ Contenu avec PageView pour le swipe
         Expanded(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: _getCurrentScreen(),
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              ContactScreen(contactScreenKey: contactScreenState),
+              ConversationListScreen(
+                  conversationListScreenKey: conversationListScreen),
+              StoryScreen(storyScreenKey: storyScreenKey),
+            ],
           ),
         ),
       ],
