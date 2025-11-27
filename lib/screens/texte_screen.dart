@@ -176,6 +176,20 @@ class _TextStoryScreenState extends State<TextStoryScreen>
       backgroundColor: _backgroundColor,
       body: Stack(
         children: [
+          // 🎨 Effet de dégradé subtil pour plus de profondeur
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _backgroundColor,
+                  _backgroundColor.withOpacity(0.85),
+                ],
+              ),
+            ),
+          ),
+
           // Contenu principal
           SafeArea(
             child: Column(
@@ -183,7 +197,7 @@ class _TextStoryScreenState extends State<TextStoryScreen>
                 // AppBar personnalisée
                 _buildAppBar(),
 
-                // Zone de texte
+                // Zone de texte - SANS fond blanc
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -192,7 +206,6 @@ class _TextStoryScreenState extends State<TextStoryScreen>
                       });
                     },
                     child: Container(
-                      color: Colors.transparent,
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
                       child: Center(
                         child: FadeTransition(
@@ -204,20 +217,31 @@ class _TextStoryScreenState extends State<TextStoryScreen>
                               fontSize: _fontSize,
                               fontWeight: _fontWeight,
                               height: 1.4,
+                              shadows: [
+                                // ✨ Ombre portée pour améliorer la lisibilité
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 8,
+                                ),
+                              ],
                             ),
                             decoration: InputDecoration(
                               hintText: 'Écrivez votre message...',
                               hintStyle: TextStyle(
-                                color: _textColor.withOpacity(0.5),
+                                color: _textColor.withOpacity(0.4),
                                 fontSize: _fontSize,
                                 fontWeight: _fontWeight,
                               ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,
+                              filled: false,
+                              fillColor: Colors.transparent,
                             ),
                             textAlign: _textAlign,
                             maxLines: null,
                             maxLength: 200,
+                            cursorColor: _textColor,
                             onChanged: (value) {
                               setState(() {
                                 _storyText = value;
@@ -251,11 +275,22 @@ class _TextStoryScreenState extends State<TextStoryScreen>
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
-          // Bouton retour
+          // Bouton retour avec effet glassmorphism
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: IconButton(
               icon: const Icon(Icons.close_rounded, color: Colors.white),
@@ -263,20 +298,16 @@ class _TextStoryScreenState extends State<TextStoryScreen>
             ),
           ),
           const Spacer(),
-          // Bouton partager
+          // Bouton partager avec design moderne
           Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.white, Colors.white70],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -317,10 +348,22 @@ class _TextStoryScreenState extends State<TextStoryScreen>
 
   Widget _buildToolbar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -369,6 +412,10 @@ class _TextStoryScreenState extends State<TextStoryScreen>
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
             ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
@@ -379,6 +426,13 @@ class _TextStoryScreenState extends State<TextStoryScreen>
               color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w500,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
         ],
@@ -390,19 +444,23 @@ class _TextStoryScreenState extends State<TextStoryScreen>
     final colors = _isTextColorPicker ? _textColors : _backgroundColors;
 
     return Positioned(
-      bottom: 140,
+      bottom: 110,
       left: 0,
       right: 0,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 30,
               offset: const Offset(0, 10),
             ),
           ],
@@ -415,6 +473,13 @@ class _TextStoryScreenState extends State<TextStoryScreen>
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -445,21 +510,29 @@ class _TextStoryScreenState extends State<TextStoryScreen>
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? Colors.white : Colors.white24,
-                        width: isSelected ? 3 : 1,
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.3),
+                        width: isSelected ? 3 : 1.5,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: color.withOpacity(0.5),
-                                blurRadius: 12,
+                                color: color.withOpacity(0.6),
+                                blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
                             ]
-                          : [],
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
+                        ? const Icon(Icons.check, color: Colors.white, size: 28)
                         : null,
                   ),
                 );

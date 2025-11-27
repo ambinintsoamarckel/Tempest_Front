@@ -5,6 +5,7 @@ import '../services/story_service.dart';
 import '../theme/app_theme.dart';
 import 'texte_screen.dart';
 import 'image_story_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class CreateStoryScreen extends StatefulWidget {
   final VoidCallback onStoryCreated;
@@ -48,6 +49,21 @@ class _CreateStoryScreenState extends State<CreateStoryScreen>
 
   Future<void> _pickMedia(ImageSource source) async {
     try {
+      // Demander la permission appropriée
+      Permission permission =
+          source == ImageSource.camera ? Permission.camera : Permission.photos;
+
+      PermissionStatus status = await permission.request();
+
+      if (!status.isGranted) {
+        if (mounted) {
+          _showErrorSnackBar(source == ImageSource.camera
+              ? 'Permission caméra refusée'
+              : 'Permission galerie refusée');
+        }
+        return;
+      }
+
       final pickedFile = await ImagePicker().pickImage(
         source: source,
         imageQuality: 85,
@@ -68,12 +84,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen>
           ),
         );
 
-        // Si la story a été créée, fermer cet écran
         if (result == true && mounted) {
           Navigator.of(context).pop(true);
         }
       }
     } catch (e) {
+      print('Erreur: $e'); // Pour le debug
       if (mounted) {
         _showErrorSnackBar('Erreur lors de la sélection de l\'image');
       }

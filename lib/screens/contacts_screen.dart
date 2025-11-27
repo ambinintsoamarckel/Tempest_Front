@@ -50,10 +50,7 @@ class ContactScreenState extends State<ContactScreen>
     );
 
     _loadContacts();
-    // ✅ 1. Enregistrer ce state dans le ScreenManager
     _screenManager.registerContactScreen(this);
-
-    // ✅ 2. Mettre à jour l'écran actuel
     CurrentScreenManager.updateCurrentScreen('contact');
   }
 
@@ -89,7 +86,6 @@ class ContactScreenState extends State<ContactScreen>
     }
   }
 
-  /// 🔇 Silent reload - pas de loader visible
   Future<void> _silentReload() async {
     if (_isSilentLoading) return;
 
@@ -108,7 +104,6 @@ class ContactScreenState extends State<ContactScreen>
           _isSilentLoading = false;
         });
 
-        // Réappliquer le filtre de recherche si nécessaire
         if (_searchController.text.isNotEmpty) {
           _filterContacts(_searchController.text);
         }
@@ -389,37 +384,32 @@ class ContactScreenState extends State<ContactScreen>
             )
           : CustomScrollView(
               slivers: [
-                // AppBar moderne
-                SliverAppBar(
-                  floating: true,
-                  snap: true,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  elevation: 0,
-                  title: _isSelectionMode
-                      ? Text(
-                          '${_selectedContacts.length} sélectionné${_selectedContacts.length > 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null, // 🔧 Suppression du texte "Contacts"
-                  leading: _isSelectionMode
-                      ? IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: _cancelSelection,
-                        )
-                      : null,
-                  actions: _isSelectionMode
-                      ? [
-                          IconButton(
-                            icon: const Icon(Icons.group_add),
-                            tooltip: 'Créer un groupe',
-                            onPressed: _showCreateGroupDialog,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ]
-                      : null,
-                ),
+                // 🔧 SliverAppBar seulement en mode sélection
+                if (_isSelectionMode)
+                  SliverAppBar(
+                    floating: true,
+                    snap: true,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    elevation: 0,
+                    title: Text(
+                      '${_selectedContacts.length} sélectionné${_selectedContacts.length > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    leading: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: _cancelSelection,
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.group_add),
+                        tooltip: 'Créer un groupe',
+                        onPressed: _showCreateGroupDialog,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ],
+                  ),
                 // Barre de recherche
                 SliverToBoxAdapter(
                   child: Padding(

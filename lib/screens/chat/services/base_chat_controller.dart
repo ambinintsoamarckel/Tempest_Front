@@ -10,7 +10,6 @@ import 'package:mini_social_network/models/user.dart';
 import 'package:mini_social_network/models/message_content.dart';
 import 'package:mini_social_network/services/user_service.dart';
 import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
-// Import manquant pour FilePickerUtil
 import 'package:mini_social_network/utils/discu_file_picker.dart';
 
 /// Classe abstraite de base pour tous les controllers de chat
@@ -167,10 +166,37 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
     await _recorder!.openRecorder();
   }
 
-  /// Demande des permissions
+  /// Demande des permissions avec vérification du statut
   Future<bool> _requestPermissions(List<Permission> perms) async {
-    final status = await perms.request();
-    return status.values.every((s) => s == PermissionStatus.granted);
+    try {
+      // Vérifier d'abord si les permissions sont déjà accordées
+      bool allGranted = true;
+      for (var perm in perms) {
+        final status = await perm.status;
+        if (!status.isGranted) {
+          allGranted = false;
+          break;
+        }
+      }
+
+      if (allGranted) return true;
+
+      // Demander les permissions
+      final statuses = await perms.request();
+
+      // Vérifier si toutes sont accordées
+      for (var status in statuses.values) {
+        if (!status.isGranted) {
+          print('⚠️ [BaseChatController] Permission refusée: $status');
+          return false;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      print('❌ [BaseChatController] Erreur permissions: $e');
+      return false;
+    }
   }
 
   // ========== Gestion des fichiers/médias ==========
@@ -189,7 +215,18 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
 
   Future<void> pickImage() async {
     closeAttachmentMenu();
-    if (!await _requestPermissions([Permission.storage])) return;
+
+    // Demander la permission de stockage/photos
+    final permission = Platform.isAndroid
+        ? (await Permission.photos.status.isDenied
+            ? Permission.photos
+            : Permission.storage)
+        : Permission.photos;
+
+    if (!await _requestPermissions([permission])) {
+      print('⚠️ [BaseChatController] Permission galerie refusée');
+      return;
+    }
 
     try {
       final file = await ImagePicker().pickImage(
@@ -204,7 +241,12 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
 
   Future<void> takePhoto() async {
     closeAttachmentMenu();
-    if (!await _requestPermissions([Permission.camera])) return;
+
+    // Demander UNIQUEMENT la permission caméra
+    if (!await _requestPermissions([Permission.camera])) {
+      print('⚠️ [BaseChatController] Permission caméra refusée');
+      return;
+    }
 
     try {
       final file = await ImagePicker().pickImage(
@@ -212,7 +254,10 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
         imageQuality: 85,
         preferredCameraDevice: CameraDevice.rear,
       );
-      if (file != null) _setPreview(File(file.path), 'image');
+      if (file != null) {
+        print('✅ [BaseChatController] Photo prise: ${file.path}');
+        _setPreview(File(file.path), 'image');
+      }
     } catch (e) {
       print('❌ [BaseChatController] Erreur takePhoto: $e');
     }
@@ -220,10 +265,24 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
 
   Future<void> pickFile() async {
     closeAttachmentMenu();
-    final path = await FilePickerUtil.pickFile();
-    if (path != null) {
-      final realType = FilePreview.detectFileType(path);
-      _setPreview(File(path), realType);
+
+    // Demander la permission de stockage
+    final permission =
+        Platform.isAndroid ? Permission.storage : Permission.photos;
+
+    if (!await _requestPermissions([permission])) {
+      print('⚠️ [BaseChatController] Permission fichiers refusée');
+      return;
+    }
+
+    try {
+      final path = await FilePickerUtil.pickFile();
+      if (path != null) {
+        final realType = FilePreview.detectFileType(path);
+        _setPreview(File(path), realType);
+      }
+    } catch (e) {
+      print('❌ [BaseChatController] Erreur pickFile: $e');
     }
   }
 
