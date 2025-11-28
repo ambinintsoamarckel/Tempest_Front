@@ -14,17 +14,34 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Écoute les changements du controller pour le group
-    if (controller.isLoading || controller.currentGroup == null) {
-      return AppBar(
-        title: const Text('Chargement...'),
-      );
-    }
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, child) {
+        if (controller.isLoading || controller.currentGroup == null) {
+          return AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Chargement...'),
+          );
+        }
 
-    return GroupAppBar(
-      group: controller.currentGroup!,
-      onBack: () => Navigator.pop(context),
+        return GroupAppBar(
+          group: controller.currentGroup!,
+          onBack: () => Navigator.pop(context),
+          // ✅ Callback pour reload après Settings
+          onSettingsClose: () => _handleSettingsClose(),
+        );
+      },
     );
+  }
+
+  // ✅ Méthode appelée après fermeture de GroupSettings
+  Future<void> _handleSettingsClose() async {
+    print('🔄 [GroupChatAppBar] Settings fermé, reload silencieux du groupe');
+    await controller.reloadSilently();
+    print('✅ [GroupChatAppBar] Reload terminé');
   }
 
   @override

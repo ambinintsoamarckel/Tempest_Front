@@ -8,11 +8,13 @@ import 'package:mini_social_network/theme/app_theme.dart';
 class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Group group;
   final VoidCallback onBack;
+  final VoidCallback? onSettingsClose; // ✅ Nouveau callback
 
   const GroupAppBar({
     Key? key,
     required this.group,
     required this.onBack,
+    this.onSettingsClose, // ✅ Optionnel
   }) : super(key: key);
 
   @override
@@ -24,11 +26,8 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: Row(
         children: [
-          // Avatar du groupe (ou icône par défaut)
           _buildGroupAvatar(),
           const SizedBox(width: 12),
-
-          // Infos du groupe
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,28 +58,22 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        // Bouton appel vidéo (optionnel pour groupe)
         ActionIcon(
           icon: Icons.videocam_outlined,
           onPressed: () {
             // TODO: Implémenter appel vidéo de groupe
           },
         ),
-
-        // Bouton appel audio (optionnel pour groupe)
         ActionIcon(
           icon: Icons.call_outlined,
           onPressed: () {
             // TODO: Implémenter appel audio de groupe
           },
         ),
-
-        // Bouton paramètres du groupe
         ActionIcon(
           icon: Icons.settings,
           onPressed: () => _navigateToSettings(context),
         ),
-
         const SizedBox(width: 8),
       ],
     );
@@ -96,7 +89,6 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
       );
     }
 
-    // Avatar par défaut pour groupe (icône groupe)
     return Container(
       width: 40,
       height: 40,
@@ -113,12 +105,18 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Future<void> _navigateToSettings(BuildContext context) async {
+    print('🔧 [GroupAppBar] Navigation vers les paramètres du groupe');
+
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => GroupSettingsScreen(groupe: group),
       ),
     );
+
+    // ✅ Appel du callback après retour de Settings
+    print('🔄 [GroupAppBar] Retour des paramètres, déclenchement du reload');
+    onSettingsClose?.call();
   }
 
   @override

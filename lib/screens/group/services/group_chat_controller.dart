@@ -30,19 +30,37 @@ class GroupChatController
 
   GroupChatController(this.groupId);
 
-  // ========== Getter spécifique au groupe ==========
   Group? get currentGroup => _currentGroup;
-
-  // ========== Implémentation des méthodes abstraites ==========
 
   @override
   Future<List<GroupMessage>> fetchMessagesFromService() async {
+    print('📡 [GroupChatController] Fetch des messages pour groupId: $groupId');
     final messages = await _messageService.receiveGroupMessages(groupId);
 
-    // Charger le groupe depuis le premier message
+    // ✅ CRITICAL: Mettre à jour le groupe à chaque fetch
     if (messages.isNotEmpty) {
-      _currentGroup = messages.first.groupe;
-      print('✅ [GroupChatController] Groupe chargé: ${_currentGroup!.nom}');
+      final newGroup = messages.first.groupe;
+
+      // Log des changements pour debug
+      if (_currentGroup != null) {
+        if (_currentGroup!.nom != newGroup.nom) {
+          print(
+              '🔄 [GroupChatController] Nom du groupe changé: "${_currentGroup!.nom}" → "${newGroup.nom}"');
+        }
+        if (_currentGroup!.photo != newGroup.photo) {
+          print('🔄 [GroupChatController] Photo du groupe changée');
+        }
+        if (_currentGroup!.membres.length != newGroup.membres.length) {
+          print(
+              '🔄 [GroupChatController] Nombre de membres changé: ${_currentGroup!.membres.length} → ${newGroup.membres.length}');
+        }
+      }
+
+      _currentGroup = newGroup;
+      print('✅ [GroupChatController] Groupe mis à jour: ${_currentGroup!.nom}');
+    } else {
+      print(
+          '⚠️ [GroupChatController] Aucun message reçu, groupe non mis à jour');
     }
 
     return messages;
@@ -113,8 +131,6 @@ class GroupChatController
 
   @override
   String getRecipientId() => groupId;
-
-  // ========== Méthodes utilitaires pour accéder au wrapper ==========
 
   @override
   String? getTempId(GroupMessageWrapper wrapper) => wrapper.tempId;
