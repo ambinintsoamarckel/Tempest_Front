@@ -91,8 +91,7 @@ class SocketService {
           print('📩 Message reçu de ${message.expediteur.nom}');
 
           // Notification
-          String notificationContent =
-              _getNotificationContent(message.contenu.type);
+          String notificationContent = _getNotificationContent(message.contenu);
           await NotificationService().showNotification(
             0,
             'Nouveau message de ${message.expediteur.nom}',
@@ -125,7 +124,7 @@ class SocketService {
 
           if (isMember && message.expediteur.id != _currentUserId) {
             String notificationContent =
-                _getNotificationContent(message.contenu.type);
+                _getNotificationContent(message.contenu);
 
             await NotificationService().showNotification(
               0,
@@ -187,10 +186,10 @@ class SocketService {
   }
 
   // ✅ Une seule fonction pour les deux types de messages
-  String _getNotificationContent(MessageType type) {
-    switch (type) {
+  String _getNotificationContent(MessageContent content) {
+    switch (content.type) {
       case MessageType.texte:
-        return 'Nouveau message texte';
+        return content.texte ?? 'Nouveau message';
       case MessageType.image:
         return 'Nouvelle image';
       case MessageType.fichier:

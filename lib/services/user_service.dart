@@ -132,17 +132,17 @@ class UserService {
     }
   }
 
+// Flutter
   Future<bool> updateUserProfile(Map<String, dynamic> data) async {
     try {
-      final response = await dio.put(
-        '/me',
-        data: jsonEncode(data),
-        options: Options(),
-      );
+      final response = await dio.put('/me', data: data);
+
+      // ✅ Laisser le temps au backend de sauvegarder
+      await Future.delayed(const Duration(milliseconds: 150));
 
       return response.statusCode == 200;
     } catch (e) {
-      print(e);
+      print('Erreur: $e');
       return false;
     }
   }

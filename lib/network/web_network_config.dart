@@ -18,6 +18,8 @@ Dio getClient() {
         return handler.next(options);
       },
       onResponse: (response, handler) async {
+        // Le navigateur gère automatiquement les cookies via les headers
+        // Mais on garde ce code pour compatibilité si le backend envoie dans le body
         if (response.data is Map &&
             (response.data as Map).containsKey('Set-Cookie')) {
           final setCookieHeader = response.data['Set-Cookie'];
