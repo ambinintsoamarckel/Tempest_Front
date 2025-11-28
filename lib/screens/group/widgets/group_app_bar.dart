@@ -105,7 +105,7 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
         shape: BoxShape.circle,
       ),
       child: Icon(
-        Icons.group,
+        Icons.groups_rounded,
         color: AppTheme.primaryColor,
         size: 22,
       ),

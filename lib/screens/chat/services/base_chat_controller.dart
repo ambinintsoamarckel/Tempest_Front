@@ -11,6 +11,7 @@ import 'package:mini_social_network/models/message_content.dart';
 import 'package:mini_social_network/services/user_service.dart';
 import 'package:mini_social_network/screens/direct/widgets/file_preview.dart';
 import 'package:mini_social_network/utils/discu_file_picker.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 /// Classe abstraite de base pour tous les controllers de chat
 /// TMessage: Type de message (DirectMessage, GroupMessage, etc.)
@@ -216,24 +217,45 @@ abstract class BaseChatController<TMessage, TWrapper> extends ChangeNotifier {
   Future<void> pickImage() async {
     closeAttachmentMenu();
 
-    // Demander la permission de stockage/photos
-    final permission = Platform.isAndroid
-        ? (await Permission.photos.status.isDenied
-            ? Permission.photos
-            : Permission.storage)
-        : Permission.photos;
-
-    if (!await _requestPermissions([permission])) {
-      print('⚠️ [BaseChatController] Permission galerie refusée');
-      return;
-    }
-
     try {
+      PermissionStatus status;
+
+      // Gestion des permissions galerie - Android 13+
+      if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        if (androidInfo.version.sdkInt >= 33) {
+          // Android 13+ : demander READ_MEDIA_IMAGES
+          status = await Permission.photos.request();
+        } else {
+          // Android 12 et inférieur
+          status = await Permission.storage.request();
+        }
+      } else {
+        // iOS
+        status = await Permission.photos.request();
+      }
+
+      if (!status.isGranted) {
+        print('⚠️ [BaseChatController] Permission galerie refusée');
+
+        // Optionnel : gérer le cas "refus définitif"
+        if (status.isPermanentlyDenied) {
+          // Afficher un dialog pour rediriger vers les paramètres
+          // ou utiliser ta méthode _showPermissionDialog() si disponible
+          await openAppSettings();
+        }
+        return;
+      }
+
+      // Permission accordée, on peut picker l'image
       final file = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      if (file != null) _setPreview(File(file.path), 'image');
+
+      if (file != null) {
+        _setPreview(File(file.path), 'image');
+      }
     } catch (e) {
       print('❌ [BaseChatController] Erreur pickImage: $e');
     }

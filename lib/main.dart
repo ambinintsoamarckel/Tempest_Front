@@ -13,6 +13,8 @@ import './socket/notification_service.dart';
 import 'utils/connectivity.dart';
 import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
+import 'dart:async';
+import 'package:mini_social_network/utils/auth_error_notifier.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -102,20 +104,58 @@ class NoConnectionApp extends StatelessWidget {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamSubscription? _authErrorSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Écouter les erreurs 401
+    _authErrorSubscription = AuthErrorNotifier.stream.listen((_) {
+      print('🔒 Session expirée - Redirection vers login');
+
+      // Naviguer vers le login
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+      );
+
+      // Afficher un message
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Session expirée, veuillez vous reconnecter'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
     final notificationService = NotificationService();
     notificationService.setNavigatorKey(navigatorKey);
     notificationService.init(context);
+  }
 
+  @override
+  void dispose() {
+    _authErrorSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        print('🏗️ MyApp rebuild - ThemeMode: ${themeProvider.themeMode}');
-        print('🏗️ isDarkMode: ${themeProvider.isDarkMode}');
-
         return MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: [routeObserver],
@@ -132,11 +172,7 @@ class MyApp extends StatelessWidget {
             '/home/contacts': (context) => const HomeScreen(),
             '/home/messages': (context) => const HomeScreen(),
             '/home/stories': (context) => const HomeScreen(),
-            '/profile': (context) {
-              final user =
-                  ModalRoute.of(context)!.settings.arguments as UserModel;
-              return const ProfileScreen();
-            },
+            '/profile': (context) => const ProfileScreen(),
             '/register': (context) => const RegisterScreen(),
           },
           onUnknownRoute: (settings) => MaterialPageRoute(

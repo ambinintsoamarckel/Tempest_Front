@@ -8,8 +8,8 @@ class NetworkConfig {
   final _client = getClient()
     ..options = BaseOptions(
       baseUrl: dotenv.env['API_URL']!,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 6),
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
     );
 
   Dio get client => _client;

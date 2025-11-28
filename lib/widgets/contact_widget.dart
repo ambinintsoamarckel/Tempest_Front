@@ -14,8 +14,9 @@ class ContactWidget extends StatelessWidget {
     this.isSelected = false,
   });
 
-  Widget _buildAvatar(Contact contact, BuildContext context) {
+Widget _buildAvatar(Contact contact, BuildContext context) {
     final hasStory = contact.story.isNotEmpty;
+    final isGroup = contact.type == "groupe";
 
     return GestureDetector(
       onTap: () {
@@ -57,9 +58,9 @@ class ContactWidget extends StatelessWidget {
               ),
               errorWidget: (context, url, error) => Container(
                 color: AppTheme.primaryColor.withOpacity(0.1),
-                child: const Icon(
-                  Icons.person,
-                  size: 28,
+                child: Icon(
+                  isGroup ? Icons.groups_rounded : Icons.person,
+                  size:  28,
                   color: AppTheme.primaryColor,
                 ),
               ),
@@ -71,7 +72,6 @@ class ContactWidget extends StatelessWidget {
       ),
     );
   }
-
   void _navigateToAllStoriesScreen(BuildContext context, Contact contact) {
     Navigator.push(
       context,

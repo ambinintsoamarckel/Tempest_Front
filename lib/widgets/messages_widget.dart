@@ -106,6 +106,7 @@ class ConversationWidget extends StatelessWidget {
 
   Widget _buildAvatar(Contact contact, BuildContext context) {
     final hasStory = contact.story.isNotEmpty;
+    final isGroup = contact.type == "groupe";
 
     return GestureDetector(
       onTap: () {
@@ -147,9 +148,9 @@ class ConversationWidget extends StatelessWidget {
               ),
               errorWidget: (context, url, error) => Container(
                 color: AppTheme.primaryColor.withOpacity(0.1),
-                child: const Icon(
-                  Icons.person,
-                  size: 28,
+                child: Icon(
+                  isGroup ? Icons.groups_rounded : Icons.person,
+                  size: isGroup ? 30 : 28,
                   color: AppTheme.primaryColor,
                 ),
               ),

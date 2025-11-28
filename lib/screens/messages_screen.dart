@@ -127,6 +127,7 @@ class ConversationListScreenState extends State<ConversationListScreen>
 
   Widget _buildAvatar(Contact contact, BuildContext context) {
     final hasStory = contact.story.isNotEmpty;
+    final isGroup = contact.type == "groupe";
 
     return GestureDetector(
       onTap: () {
@@ -176,8 +177,8 @@ class ConversationListScreenState extends State<ConversationListScreen>
               ),
               errorWidget: (context, url, error) => Container(
                 color: AppTheme.primaryColor.withOpacity(0.1),
-                child: const Icon(
-                  Icons.person,
+                child: Icon(
+                  isGroup ? Icons.groups_rounded : Icons.person,
                   size: 28,
                   color: AppTheme.primaryColor,
                 ),
