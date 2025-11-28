@@ -4,6 +4,11 @@ import 'package:mini_social_network/models/user.dart';
 import 'direct_app_bar.dart';
 import 'package:mini_social_network/services/user_service.dart';
 
+// ✅ Interface abstraite
+abstract class ReloadableAppBar {
+  void reload();
+}
+
 class DirectChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String contactId;
 
@@ -16,8 +21,12 @@ class DirectChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _DirectChatAppBarState extends State<DirectChatAppBar> {
-  late Future<User> _contactFuture; // ✅ Enlève le ?
+// ✅ AJOUTE "implements ReloadableAppBar" ici !
+class _DirectChatAppBarState extends State<DirectChatAppBar>
+    implements ReloadableAppBar {
+  // 🔥 C'EST ICI QU'IL MANQUAIT !
+
+  late Future<User> _contactFuture;
 
   @override
   void initState() {
@@ -25,13 +34,21 @@ class _DirectChatAppBarState extends State<DirectChatAppBar> {
     _contactFuture = _loadContact();
   }
 
+  // ✅ Cette méthode implémente maintenant l'interface ReloadableAppBar
+  @override
+  void reload() {
+    if (mounted) {
+      setState(() {
+        _contactFuture = _loadContact();
+      });
+    }
+  }
+
   Future<User> _loadContact() async {
-    // ✅ Enlève le ?
     try {
       final userService = UserService();
       final contact = await userService.getContactById(widget.contactId);
 
-      // ✅ Utilise ?? pour garantir un retour non-null
       return contact ??
           User(
             id: widget.contactId,
@@ -41,7 +58,6 @@ class _DirectChatAppBarState extends State<DirectChatAppBar> {
           );
     } catch (e) {
       print('❌ Erreur chargement contact: $e');
-      // Retourne un user par défaut au lieu de null
       return User(
         id: widget.contactId,
         nom: "Contact inconnu",

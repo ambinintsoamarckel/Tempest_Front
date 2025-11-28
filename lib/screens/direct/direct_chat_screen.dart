@@ -42,6 +42,8 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   late final DirectChatController controller;
   final ScreenManager _screenManager = ScreenManager();
+  final GlobalKey<State<DirectChatAppBar>> _appBarKey =
+      GlobalKey<State<DirectChatAppBar>>();
   int _updateCount = 0;
 
   @override
@@ -102,7 +104,16 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
   Future<void> _reloadFromSocket() async {
     print('🔌 [DirectChatScreen] _reloadFromSocket() appelé');
+
+    // ✅ Cast explicite vers ReloadableAppBar
+    final appBarState = _appBarKey.currentState;
+    if (appBarState is ReloadableAppBar) {
+      (appBarState as ReloadableAppBar).reload(); // ✅ Cast explicite
+    }
+
+    // ✅ Recharger les messages
     await controller.reloadFromSocket();
+
     print('✅ [DirectChatScreen] _reloadFromSocket() terminé');
   }
 
@@ -112,7 +123,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         '🎨 [DirectChatScreen] build() appelé - messages: ${controller.messages.length}');
 
     return Scaffold(
-      appBar: DirectChatAppBar(contactId: widget.contactId),
+      appBar: DirectChatAppBar(key: _appBarKey, contactId: widget.contactId),
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
